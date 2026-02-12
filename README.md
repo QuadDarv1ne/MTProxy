@@ -1,80 +1,78 @@
 # MTProxy
-Simple MT-Proto proxy
+Простой MT-Proto прокси
 
-## Building
-Install dependencies, you would need common set of tools for building from source, and development packages for `openssl` and `zlib`.
+## Сборка
+Установите зависимости, вам понадобится стандартный набор инструментов для сборки из исходного кода и пакеты разработки для `openssl` и `zlib`.
 
-On Debian/Ubuntu:
+В Debian/Ubuntu:
 ```bash
 apt install git curl build-essential libssl-dev zlib1g-dev
 ```
-On CentOS/RHEL:
+В CentOS/RHEL:
 ```bash
 yum install openssl-devel zlib-devel
 yum groupinstall "Development Tools"
 ```
 
-Clone the repo:
+Клонируйте репозиторий:
 ```bash
 git clone https://github.com/TelegramMessenger/MTProxy
 cd MTProxy
 ```
 
-To build, simply run `make`, the binary will be in `objs/bin/mtproto-proxy`:
+Для сборки просто выполните `make`, бинарный файл будет находиться в `objs/bin/mtproto-proxy`:
 
 ```bash
 make && cd objs/bin
 ```
 
-If the build has failed, you should run `make clean` before building it again.
+Если сборка завершилась неудачно, перед повторной сборкой следует выполнить `make clean`.
 
-## Running
-1. Obtain a secret, used to connect to telegram servers.
+## Запуск
+1. Получите секретный ключ, используемый для подключения к серверам Telegram.
 ```bash
 curl -s https://core.telegram.org/getProxySecret -o proxy-secret
 ```
-2. Obtain current telegram configuration. It can change (occasionally), so we encourage you to update it once per day.
+2. Получите текущую конфигурацию Telegram. Она может меняться (иногда), поэтому мы рекомендуем обновлять её один раз в день.
 ```bash
 curl -s https://core.telegram.org/getProxyConfig -o proxy-multi.conf
 ```
-3. Generate a secret to be used by users to connect to your proxy.
+3. Создайте секретный ключ, который будут использовать пользователи для подключения к вашему прокси.
 ```bash
 head -c 16 /dev/urandom | xxd -ps
 ```
-4. Run `mtproto-proxy`:
+4. Запустите `mtproto-proxy`:
 ```bash
-./mtproto-proxy -u nobody -p 8888 -H 443 -S <secret> --aes-pwd proxy-secret proxy-multi.conf -M 1
+./mtproto-proxy -u nobody -p 8888 -H 443 -S <секретный_ключ> --aes-pwd proxy-secret proxy-multi.conf -M 1
 ```
-... where:
-- `nobody` is the username. `mtproto-proxy` calls `setuid()` to drop privileges.
-- `443` is the port, used by clients to connect to the proxy.
-- `8888` is the local port. You can use it to get statistics from `mtproto-proxy`. Like `wget localhost:8888/stats`. You can only get this stat via loopback.
-- `<secret>` is the secret generated at step 3. Also you can set multiple secrets: `-S <secret1> -S <secret2>`.
-- `proxy-secret` and `proxy-multi.conf` are obtained at steps 1 and 2.
-- `1` is the number of workers. You can increase the number of workers, if you have a powerful server.
+... где:
+- `nobody` - имя пользователя. `mtproto-proxy` вызывает `setuid()` для понижения привилегий.
+- `443` - порт, который используют клиенты для подключения к прокси.
+- `8888` - локальный порт. Вы можете использовать его для получения статистики от `mtproto-proxy`. Например `wget localhost:8888/stats`. Эту статистику можно получить только через loopback.
+- `<секретный_ключ>` - секретный ключ, созданный на шаге 3. Также вы можете задать несколько секретных ключей: `-S <секретный_ключ1> -S <секретный_ключ2>`.
+- `proxy-secret` и `proxy-multi.conf` получаются на шагах 1 и 2.
+- `1` - количество рабочих процессов. Вы можете увеличить количество рабочих процессов, если у вас мощный сервер.
 
-Also feel free to check out other options using `mtproto-proxy --help`.
+Также ознакомьтесь с другими параметрами, используя `mtproto-proxy --help`.
 
-5. Generate the link with following schema: `tg://proxy?server=SERVER_NAME&port=PORT&secret=SECRET` (or let the official bot generate it for you).
-6. Register your proxy with [@MTProxybot](https://t.me/MTProxybot) on Telegram.
-7. Set received tag with arguments: `-P <proxy tag>`
-8. Enjoy.
+5. Создайте ссылку по следующей схеме: `tg://proxy?server=ИМЯ_СЕРВЕРА&port=ПОРТ&secret=СЕКРЕТНЫЙ_КЛЮЧ` (или предоставьте официальному боту возможность сгенерировать её за вас).
+6. Зарегистрируйте ваш прокси с [@MTProxybot](https://t.me/MTProxybot) в Telegram.
+7. Установите полученный тег с аргументами: `-P <тег_прокси>`
+8. Наслаждайтесь.
 
-## Random padding
-Due to some ISPs detecting MTProxy by packet sizes, random padding is
-added to packets if such mode is enabled.
+## Случайное заполнение
+Из-за того, что некоторые провайдеры обнаруживают MTProxy по размеру пакетов, случайное заполнение добавляется к пакетам, если такой режим включен.
 
-It's only enabled for clients which request it.
+Он включается только для клиентов, которые запрашивают это.
 
-Add `dd` prefix to secret (`cafe...babe` => `ddcafe...babe`) to enable
-this mode on client side.
+Добавьте префикс `dd` к секретному ключу (`cafe...babe` => `ddcafe...babe`), чтобы включить этот режим на стороне клиента.
 
-## Systemd example configuration
-1. Create systemd service file (it's standard path for the most Linux distros, but you should check it before):
+## Пример конфигурации Systemd
+1. Создайте файл службы systemd (это стандартный путь для большинства дистрибутивов Linux, но проверьте его перед использованием):
 ```bash
 nano /etc/systemd/system/MTProxy.service
 ```
-2. Edit this basic service (especially paths and params):
+2. Отредактируйте эту базовую службу (особенно пути и параметры):
 ```bash
 [Unit]
 Description=MTProxy
@@ -83,27 +81,27 @@ After=network.target
 [Service]
 Type=simple
 WorkingDirectory=/opt/MTProxy
-ExecStart=/opt/MTProxy/mtproto-proxy -u nobody -p 8888 -H 443 -S <secret> -P <proxy tag> <other params>
+ExecStart=/opt/MTProxy/mtproto-proxy -u nobody -p 8888 -H 443 -S <секретный_ключ> -P <тег_прокси> <другие_параметры>
 Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
 ```
-3. Reload daemons:
+3. Перезагрузите демонов:
 ```bash
 systemctl daemon-reload
 ```
-4. Test fresh MTProxy service:
+4. Протестируйте новую службу MTProxy:
 ```bash
 systemctl restart MTProxy.service
-# Check status, it should be active
+# Проверьте статус, он должен быть активным
 systemctl status MTProxy.service
 ```
-5. Enable it, to autostart service after reboot:
+5. Включите автозапуск службы после перезагрузки:
 ```bash
 systemctl enable MTProxy.service
 ```
 
-## Docker image
-Telegram is also providing [official Docker image](https://hub.docker.com/r/telegrammessenger/proxy/).
-Note: the image is outdated.
+## Docker образ
+Telegram также предоставляет [официальный Docker образ](https://hub.docker.com/r/telegrammessenger/proxy/).
+Примечание: образ устарел.
