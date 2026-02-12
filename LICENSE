@@ -1,0 +1,37 @@
+LICENSE INFORMATION FOR MTProxy PROJECT
+=======================================
+
+This project uses multiple licenses depending on the components:
+
+1. APPLICATION COMPONENTS (main proxy server):
+   The main MTProxy application is licensed under the GNU General Public License 
+   version 2 (GPLv2), with the additional exemption that compiling, linking, 
+   and/or using OpenSSL is allowed. You are free to remove this exemption 
+   from derived works.
+
+   See the file GPLv2 for the complete license text.
+
+2. LIBRARY COMPONENTS (utility libraries):
+   The MTProto-proxy Library components are licensed under the GNU Lesser 
+   General Public License version 2.1 (LGPLv2.1).
+
+   See the file LGPLv2 for the complete license text.
+
+COPYRIGHT NOTICE
+================
+
+Copyright 2014-2018 Telegram Messenger Inc
+
+ADDITIONAL NOTES
+================
+
+- The project is composed of both application code (licensed under GPL v2) 
+  and library code (licensed under LGPL v2.1)
+- Both licenses require that the source code be made available when 
+  distributing modified versions
+- The OpenSSL exemption allows the use of OpenSSL cryptographic libraries 
+  without requiring the entire application to be licensed under GPL
+
+For more information about these licenses, visit:
+- GPL: https://www.gnu.org/licenses/gpl-2.0.html
+- LGPL: https://www.gnu.org/licenses/lgpl-2.1.html
