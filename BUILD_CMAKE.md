@@ -149,6 +149,7 @@ cmake --install . --prefix /custom/install/path
 
 **Ошибка**: Could not find OpenSSL/zlib
 **Решение**: Убедитесь, что установлены dev-пакеты:
+
 ```bash
 # Ubuntu/Debian
 sudo apt install libssl-dev zlib1g-dev
@@ -160,6 +161,7 @@ sudo yum install openssl-devel zlib-devel
 #### 2. Ошибки компиляции
 
 **Проверьте**:
+
 - Совместимость версии компилятора
 - Правильность установки зависимостей
 - Достаточно ли свободного места
