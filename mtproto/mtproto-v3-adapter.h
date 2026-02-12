@@ -10,6 +10,20 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#ifndef __SIZE_TYPE__
+#define __SIZE_TYPE__ unsigned long
+#endif
+
+#ifndef _SIZE_T
+#define _SIZE_T
+typedef __SIZE_TYPE__ size_t;
+#endif
+
+#ifndef _TIME_T
+#define _TIME_T
+typedef long time_t;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
