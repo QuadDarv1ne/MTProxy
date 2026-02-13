@@ -63,6 +63,7 @@
 #include "common/tl-parse.h"
 #include "engine/engine.h"
 #include "engine/engine-net.h"
+#include "common/vlog.h"
 
 #ifndef COMMIT
 #define COMMIT "unknown"
@@ -2006,7 +2007,13 @@ static void check_children_dead (void) {
         kill (pids[i], SIGKILL);
       }
     }
-    kprintf ("WARNING: %d children unfinished --> they are now killed\n", cnt);
+    // Using structured logging for child termination warning
+    log_field_t fields[] = {
+      vlog_field_str("event", "child_termination"),
+      vlog_field_int("count", cnt),
+      vlog_field_str("action", "force_kill")
+    };
+    vlog_with_fields(LOG_LEVEL_WARN, "process_manager", "Unfinished children processes force killed", fields, 3);
   }
 }
 
@@ -2099,7 +2106,13 @@ void mtfront_pre_loop (void) {
         assert (LC);
         CONN_INFO(LC)->window_clamp = window_clamp;
         if (setsockopt (http_sfd[i], IPPROTO_TCP, TCP_WINDOW_CLAMP, &window_clamp, 4) < 0) {
-          vkprintf (0, "error while setting window size for socket #%d to %d: %m\n", http_sfd[i], window_clamp);
+          // Using structured logging for window clamp error message
+          log_field_t fields[] = {
+            vlog_field_str("event", "window_clamp_error"),
+            vlog_field_int("socket_fd", http_sfd[i]),
+            vlog_field_int("window_size", window_clamp)
+          };
+          vlog_with_fields(LOG_LEVEL_ERROR, "network", "Error setting window size for socket", fields, 3);
         }
       }
     }
@@ -2253,11 +2266,19 @@ void mtfront_parse_extra_args (int argc, char *argv[]) /* {{{ */ {
     exit (2);
   }
   config_filename = argv[0];
-  vkprintf (0, "config_filename = '%s'\n", config_filename);
+  // Using structured logging for config filename message
+  log_field_t fields[] = {
+    vlog_field_str("event", "config_filename"),
+    vlog_field_str("filename", config_filename)
+  };
+  vlog_with_fields(LOG_LEVEL_INFO, "config", "Configuration file parsed", fields, 2);
 }
 
 // executed BEFORE dropping privileges
 void mtfront_pre_init (void) {
+  // Initialize structured logging system
+  vlog_init("mtproto-proxy", LOG_LEVEL_INFO, true);  // true for JSON format
+  
   init_ct_server_mtfront ();
 
   int res = do_reload_config (0x26);
@@ -2267,7 +2288,12 @@ void mtfront_pre_init (void) {
     exit (-res);
   }
 
-  vkprintf (1, "config loaded!\n");
+  // Using structured logging for config loaded message
+  log_field_t fields[] = {
+    vlog_field_str("event", "config_loaded"),
+    vlog_field_str("status", "success")
+  };
+  vlog_with_fields(LOG_LEVEL_INFO, "config", "Configuration loaded successfully", fields, 2);
 
   if (domain_count) {
     tcp_rpc_init_proxy_domains();
@@ -2286,7 +2312,13 @@ void mtfront_pre_init (void) {
   for (i = 0; i < http_ports_num; i++) {
     http_sfd[i] = server_socket (http_port[i], engine_state->settings_addr, engine_get_backlog (), enable_ipv6);
     if (http_sfd[i] < 0) {
-      kprintf ("cannot open http/tcp server socket at port %d: %m\n", http_port[i]);
+      // Using structured logging for socket error message
+      log_field_t fields[] = {
+        vlog_field_str("event", "socket_error"),
+        vlog_field_int("port", http_port[i]),
+        vlog_field_str("error", "failed to open server socket")
+      };
+      vlog_with_fields(LOG_LEVEL_ERROR, "network", "Cannot open HTTP/TCP server socket", fields, 3);
       exit (1);
     }
   }
@@ -2299,7 +2331,12 @@ void mtfront_pre_init (void) {
     assert (WStats);
     // kprintf_multiprocessing_mode_enable ();
     int real_parent_pid = getpid();
-    vkprintf (0, "creating %d workers\n", workers);
+    // Using structured logging for worker creation message
+    log_field_t fields[] = {
+      vlog_field_str("event", "worker_creation"),
+      vlog_field_int("count", workers)
+    };
+    vlog_with_fields(LOG_LEVEL_INFO, "worker_manager", "Creating worker processes", fields, 2);
     for (i = 0; i < workers; i++) {
       int pid = fork ();
       assert (pid >= 0);
@@ -2343,6 +2380,9 @@ void mtfront_on_exit (void) {
     }
     check_children_dead ();
   }
+  
+  // Shutdown structured logging system
+  vlog_shutdown();
 }
 
 server_functions_t mtproto_front_functions = {
