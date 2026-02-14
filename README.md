@@ -225,7 +225,55 @@ sudo systemctl enable MTProxy.service
 - Экспорт данных для внешних систем
 - Уровни логирования (ERROR, WARNING, INFO, DEBUG)
 
-### ⚡ Расширенная криптографическая оптимизация
+### 🌐 Поддержка WebSocket протокола
+
+- Полная реализация WebSocket RFC 6455
+- Поддержка WSS (WebSocket Secure) через TLS
+- MTProto туннелирование через WebSocket
+- Автоматический handshake и управление соединениями
+- Поддержка текстовых и бинарных фреймов
+- Интеграция с существующей системой MTProto
+
+**Пример использования:**
+```c
+// Инициализация WebSocket поддержки
+websocket_config_t ws_config = {0};
+ws_config.enable_server = 1;
+ws_config.enable_client = 1;
+ws_config.max_connections = 16384;
+ws_config.enable_mtproto_tunnel = 1;
+
+websocket_support_t *websocket = websocket_init(&ws_config);
+
+// Принятие WebSocket соединения
+int client_fd = accept(server_socket, NULL, NULL);
+websocket_accept_connection(websocket, client_fd);
+
+// Выполнение WebSocket handshake
+websocket_perform_server_handshake(websocket, connection_id);
+
+// Включение MTProto туннелирования
+unsigned char mtproto_key[32] = { /* ключ */ };
+websocket_enable_mtproto_tunnel(websocket, connection_id, mtproto_key, session_id);
+
+// Отправка данных через WebSocket
+unsigned char data[1024] = { /* MTProto данные */ };
+websocket_mtproto_send_data(websocket, connection_id, data, sizeof(data));
+
+// Обработка входящих сообщений
+websocket_handle_data(websocket, connection_id);
+
+// Отправка ping/pong
+websocket_send_ping(websocket, connection_id);
+
+// Закрытие соединения
+websocket_close_connection(websocket, connection_id, 1000, "Normal closure");
+
+// Получение статистики
+websocket_stats_t stats;
+websocket_get_stats(websocket, &stats);
+printf("Active connections: %lld\n", stats.active_connections);
+```
 
 - Поддержка ARM64 и x86_64 архитектур
 - Автоматическое определение доступных расширений (AVX-512, AES-NI, NEON)
