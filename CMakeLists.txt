@@ -167,6 +167,15 @@ set(ADVANCED_OPTIMIZATION_SOURCES
     system/advanced-optimizer.h
 )
 
+set(OBFUSCATION_SOURCES
+    ml/anomaly-detector.c
+    ml/anomaly-detector.h
+    net/tls-emulator.c
+    net/tls-emulator.h
+    shadowsocks/shadowsocks-obfuscator.c
+    shadowsocks/shadowsocks-obfuscator.h
+)
+
 set(VV_SOURCES
     vv/vv-tree.c
     vv/vv-tree.h
@@ -226,7 +235,7 @@ set(NET_SOURCES
 )
 
 # Create a static library for common functionality
-add_library(kdb_common STATIC ${COMMON_SOURCES} ${JOBS_SOURCES} ${CRYPTO_SOURCES} ${VV_SOURCES} ${SYSTEM_SOURCES} ${SECURITY_SOURCES})
+add_library(kdb_common STATIC ${COMMON_SOURCES} ${JOBS_SOURCES} ${CRYPTO_SOURCES} ${VV_SOURCES} ${SYSTEM_SOURCES} ${SECURITY_SOURCES} ${ADVANCED_OPTIMIZATION_SOURCES} ${OBFUSCATION_SOURCES})
 
 # Target for the main mtproto-proxy executable
 add_executable(mtproto-proxy
