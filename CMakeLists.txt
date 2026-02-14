@@ -10,8 +10,20 @@ if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -Wall -Wno-array-bounds -fno-strict-aliasing -fno-strict-overflow -fwrapv -DAES=1 -D_GNU_SOURCE=1 -D_FILE_OFFSET_BITS=64")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mpclmul -march=core2 -mfpmath=sse -mssse3")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lm -lrt -lcrypto -lz -lpthread")
+    
+    # Security-specific flags
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fstack-protector-strong -D_FORTIFY_SOURCE=2")
+    
+    # Debug flags for development
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0 -DDEBUG=1")
+    endif()
+    
 elseif(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Wall /D_WIN32_WINNT=0x0600")
+    
+    # Security-specific flags for MSVC
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /GS /guard:cf")
 endif()
 
 # Define COMMIT hash (similar to Makefile)
@@ -34,6 +46,7 @@ add_definitions(-DCOMMIT="${GIT_COMMIT_HASH}")
 # Include directories
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/common)
+include_directories(${PROJECT_SOURCE_DIR}/security)
 
 # Define source files
 set(COMMON_SOURCES
@@ -102,6 +115,14 @@ set(NET_SOURCES
     net/network-analyzer.h
 )
 
+set(SECURITY_SOURCES
+    security/modular-security.c
+    security/modular-security.h
+    security/simple-security.c
+    security/simple-security.h
+    common/mtproxy-fixes-simple.h
+)
+
 set(ENGINE_SOURCES
     engine/engine.c
     engine/engine.h
@@ -126,6 +147,15 @@ set(MTPROTO_SOURCES
     mtproto/mtproto-config.c
     mtproto/mtproto-config.h
     mtproto/mtproto-proxy.c
+    
+    # Security modules
+    security/modular-security.c
+    security/modular-security.h
+    security/simple-security.c
+    security/simple-security.h
+    
+    # Connection with security fixes
+    common/mtproxy-fixes-simple.h
 )
 
 set(NET_SOURCES
@@ -170,6 +200,7 @@ add_library(kdb_common STATIC ${COMMON_SOURCES} ${JOBS_SOURCES} ${CRYPTO_SOURCES
 # Target for the main mtproto-proxy executable
 add_executable(mtproto-proxy
     ${MTPROTO_SOURCES}
+    ${SECURITY_SOURCES}  
     ${ENGINE_SOURCES}
     ${NET_SOURCES}
 )
