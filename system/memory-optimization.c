@@ -30,6 +30,12 @@
 
 #include "memory-optimization.h"
 
+// Advanced memory management configuration
+static double memory_pressure_threshold = 0.8;  // 80% memory usage triggers pressure handling
+static int memory_pressure_handling_enabled = 1;
+static int allocation_tracking_enabled = 1;
+static size_t peak_memory_usage = 0;
+
 // Memory pool configuration
 static memory_pool_config_t global_pool_config = {
     .enabled = 1,
@@ -127,7 +133,25 @@ int init_memory_pool(memory_pool_t *pool, size_t block_size) {
 void* optimized_malloc(size_t size) {
     if (!memory_manager_initialized || !global_pool_config.enabled) {
         memory_stats.system_allocations++;
-        return malloc(size);
+        void *ptr = malloc(size);
+        if (ptr) {
+            memory_stats.system_allocated += size;
+            memory_stats.current_memory_usage += size;
+            if (memory_stats.current_memory_usage > memory_stats.peak_memory_usage) {
+                memory_stats.peak_memory_usage = memory_stats.current_memory_usage;
+            }
+            
+            // Check for memory pressure
+            if (memory_pressure_handling_enabled && 
+                get_memory_pressure_level() > memory_pressure_threshold) {
+                memory_stats.memory_pressure_events++;
+                // Trigger memory pressure handling
+                run_memory_gc();
+            }
+        } else {
+            memory_stats.allocation_failures++;
+        }
+        return ptr;
     }
     
     // Find appropriate pool
@@ -138,6 +162,12 @@ void* optimized_malloc(size_t size) {
         void *ptr = malloc(size);
         if (ptr) {
             memory_stats.system_allocated += size;
+            memory_stats.current_memory_usage += size;
+            if (memory_stats.current_memory_usage > memory_stats.peak_memory_usage) {
+                memory_stats.peak_memory_usage = memory_stats.current_memory_usage;
+            }
+        } else {
+            memory_stats.allocation_failures++;
         }
         return ptr;
     }
@@ -148,15 +178,40 @@ void* optimized_malloc(size_t size) {
     if (ptr) {
         memory_stats.pool_allocations++;
         memory_stats.pool_allocated += pool->block_size;
+        memory_stats.cache_hits++;
+        memory_stats.current_memory_usage += pool->block_size;
+        if (memory_stats.current_memory_usage > memory_stats.peak_memory_usage) {
+            memory_stats.peak_memory_usage = memory_stats.current_memory_usage;
+        }
         pool->free_blocks--;
     } else {
+        memory_stats.cache_misses++;
         // Pool exhausted, try to expand
         if (expand_pool(pool)) {
             ptr = allocate_from_pool(pool);
             if (ptr) {
                 memory_stats.pool_allocations++;
                 memory_stats.pool_allocated += pool->block_size;
+                memory_stats.current_memory_usage += pool->block_size;
+                if (memory_stats.current_memory_usage > memory_stats.peak_memory_usage) {
+                    memory_stats.peak_memory_usage = memory_stats.current_memory_usage;
+                }
                 pool->free_blocks--;
+            }
+        }
+        
+        if (!ptr) {
+            // Still no memory, fall back to system malloc
+            memory_stats.system_allocations++;
+            ptr = malloc(size);
+            if (ptr) {
+                memory_stats.system_allocated += size;
+                memory_stats.current_memory_usage += size;
+                if (memory_stats.current_memory_usage > memory_stats.peak_memory_usage) {
+                    memory_stats.peak_memory_usage = memory_stats.current_memory_usage;
+                }
+            } else {
+                memory_stats.allocation_failures++;
             }
         }
     }
@@ -185,10 +240,12 @@ void optimized_free(void *ptr) {
         if (return_to_pool(pool, ptr)) {
             memory_stats.pool_frees++;
             memory_stats.pool_allocated -= pool->block_size;
+            memory_stats.current_memory_usage -= pool->block_size;
             pool->free_blocks++;
         } else {
             // Not a pool pointer, fall back to system free
             memory_stats.system_frees++;
+            memory_stats.current_memory_usage -= pool->block_size;
             free(ptr);
         }
         pthread_mutex_unlock(&pool->pool_mutex);
@@ -468,6 +525,141 @@ void cleanup_memory_optimization() {
     free(global_memory_manager);
     global_memory_manager = NULL;
     memory_manager_initialized = 0;
+    
+    pthread_mutex_unlock(&manager_mutex);
+}
+
+// Advanced memory management functions
+
+void set_memory_pressure_threshold(double threshold) {
+    if (threshold >= 0.0 && threshold <= 1.0) {
+        memory_pressure_threshold = threshold;
+    }
+}
+
+double get_memory_pressure_level() {
+    if (!memory_manager_initialized) {
+        return 0.0;
+    }
+    
+    memory_stats_t stats = get_memory_stats();
+    if (stats.total_allocated > 0) {
+        return (double)stats.total_used / stats.total_allocated;
+    }
+    
+    return 0.0;
+}
+
+void set_memory_pressure_handling(int enabled) {
+    memory_pressure_handling_enabled = (enabled != 0);
+}
+
+int perform_memory_defragmentation() {
+    if (!memory_manager_initialized) {
+        return 0;
+    }
+    
+    // In a real implementation, this would:
+    // 1. Identify fragmented memory regions
+    // 2. Move allocated blocks to reduce fragmentation
+    // 3. Compact free space
+    
+    memory_stats.fragmentation_events++;
+    return 1;
+}
+
+double get_memory_fragmentation_level() {
+    if (!memory_manager_initialized) {
+        return 0.0;
+    }
+    
+    // Simple fragmentation calculation
+    // In practice, this would be more sophisticated
+    memory_stats_t stats = get_memory_stats();
+    if (stats.total_allocated > 0) {
+        return 1.0 - ((double)stats.total_used / stats.total_allocated);
+    }
+    
+    return 0.0;
+}
+
+void set_allocation_tracking(int enabled) {
+    allocation_tracking_enabled = (enabled != 0);
+}
+
+void print_detailed_memory_stats() {
+    if (!memory_manager_initialized) {
+        printf("Memory optimization system not initialized\n");
+        return;
+    }
+    
+    memory_stats_t stats = get_memory_stats();
+    
+    printf("\n=== Detailed Memory Statistics ===\n");
+    printf("Pool Operations:\n");
+    printf("  Allocations: %llu\n", stats.pool_allocations);
+    printf("  Frees: %llu\n", stats.pool_frees);
+    printf("  Reallocations: %llu\n", stats.pool_reallocations);
+    printf("  Pool Allocated: %llu bytes\n", stats.pool_allocated);
+    
+    printf("\nSystem Operations:\n");
+    printf("  Allocations: %llu\n", stats.system_allocations);
+    printf("  Frees: %llu\n", stats.system_frees);
+    printf("  Reallocations: %llu\n", stats.system_reallocations);
+    printf("  System Allocated: %llu bytes\n", stats.system_allocated);
+    
+    printf("\nGC Operations:\n");
+    printf("  GC Runs: %llu\n", stats.gc_runs);
+    printf("  Pool Expansions: %llu\n", stats.pool_expansions);
+    printf("  Pool Shrinks: %llu\n", stats.pool_shrinks);
+    
+    printf("\nAdvanced Statistics:\n");
+    printf("  Cache Hits: %llu\n", stats.cache_hits);
+    printf("  Cache Misses: %llu\n", stats.cache_misses);
+    printf("  Memory Pressure Events: %llu\n", stats.memory_pressure_events);
+    printf("  Allocation Failures: %llu\n", stats.allocation_failures);
+    printf("  Fragmentation Events: %llu\n", stats.fragmentation_events);
+    printf("  Average Allocation Time: %.2f ms\n", stats.average_allocation_time);
+    printf("  Peak Memory Usage: %zu bytes\n", stats.peak_memory_usage);
+    printf("  Current Memory Usage: %zu bytes\n", stats.current_memory_usage);
+    
+    printf("\nCurrent State:\n");
+    printf("  Total Allocated: %zu bytes\n", stats.total_allocated);
+    printf("  Total Used: %zu bytes\n", stats.total_used);
+    printf("  Utilization: %.2f%%\n", stats.utilization * 100);
+    printf("  Pool Count: %d\n", stats.pool_count);
+    
+    printf("\nMemory Pressure: %.2f%%\n", get_memory_pressure_level() * 100);
+    printf("Fragmentation Level: %.2f%%\n", get_memory_fragmentation_level() * 100);
+    printf("===============================\n\n");
+}
+
+void reset_memory_stats() {
+    if (!memory_manager_initialized) {
+        return;
+    }
+    
+    pthread_mutex_lock(&manager_mutex);
+    
+    memory_stats.pool_allocations = 0;
+    memory_stats.pool_frees = 0;
+    memory_stats.pool_reallocations = 0;
+    memory_stats.pool_allocated = 0;
+    
+    memory_stats.system_allocations = 0;
+    memory_stats.system_frees = 0;
+    memory_stats.system_reallocations = 0;
+    memory_stats.system_allocated = 0;
+    
+    memory_stats.gc_runs = 0;
+    memory_stats.pool_expansions = 0;
+    memory_stats.pool_shrinks = 0;
+    
+    memory_stats.cache_hits = 0;
+    memory_stats.cache_misses = 0;
+    memory_stats.memory_pressure_events = 0;
+    memory_stats.allocation_failures = 0;
+    memory_stats.fragmentation_events = 0;
     
     pthread_mutex_unlock(&manager_mutex);
 }

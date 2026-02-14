@@ -143,6 +143,12 @@ set(SYSTEM_SOURCES
     system/optimizer-integration.h
     system/simple-performance-optimizer.c
     system/simple-performance-optimizer.h
+    system/memory-optimization.c
+    system/memory-optimization.h
+    system/connection-optimizer.c
+    system/connection-optimizer.h
+    system/advanced-cache.c
+    system/advanced-cache.h
 )
 
 set(SECURITY_SOURCES

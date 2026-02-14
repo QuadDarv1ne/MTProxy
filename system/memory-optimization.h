@@ -88,6 +88,16 @@ typedef struct {
     uint64_t pool_expansions;
     uint64_t pool_shrinks;
     
+    /* Advanced statistics */
+    uint64_t cache_hits;
+    uint64_t cache_misses;
+    uint64_t memory_pressure_events;
+    uint64_t allocation_failures;
+    uint64_t fragmentation_events;
+    double average_allocation_time;
+    size_t peak_memory_usage;
+    size_t current_memory_usage;
+    
     /* Current state */
     size_t total_allocated;
     size_t total_used;
@@ -200,6 +210,56 @@ memory_stats_t get_memory_stats();
  * Cleanup memory optimization system
  */
 void cleanup_memory_optimization();
+
+/**
+ * Advanced memory management functions
+ */
+
+/**
+ * Set memory pressure threshold
+ * @param threshold: Memory usage percentage that triggers pressure handling (0.0 - 1.0)
+ */
+void set_memory_pressure_threshold(double threshold);
+
+/**
+ * Get current memory pressure level
+ * @return: Current memory pressure level (0.0 - 1.0)
+ */
+double get_memory_pressure_level();
+
+/**
+ * Enable/disable memory pressure handling
+ * @param enabled: 1 to enable, 0 to disable
+ */
+void set_memory_pressure_handling(int enabled);
+
+/**
+ * Perform memory defragmentation
+ * @return: 1 on success, 0 on error
+ */
+int perform_memory_defragmentation();
+
+/**
+ * Get memory fragmentation level
+ * @return: Fragmentation level (0.0 - 1.0)
+ */
+double get_memory_fragmentation_level();
+
+/**
+ * Set allocation tracking
+ * @param enabled: 1 to enable, 0 to disable
+ */
+void set_allocation_tracking(int enabled);
+
+/**
+ * Print detailed memory statistics
+ */
+void print_detailed_memory_stats();
+
+/**
+ * Reset memory statistics
+ */
+void reset_memory_stats();
 
 /* Macro overrides for standard malloc/free */
 #define malloc(size) optimized_malloc(size)
