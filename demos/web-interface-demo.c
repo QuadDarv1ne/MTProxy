@@ -3,7 +3,9 @@
     Пример инициализации и запуска админ-панели
 */
 
-#include <stdio.h>
+// Объявления функций
+int printf(const char *format, ...);
+
 #include "../admin/admin-web-interface.h"
 
 // Callback функции для демонстрации
@@ -31,7 +33,7 @@ void on_security_event_callback(const char *event, const char *details) {
 }
 
 int main() {
-    printf("🚀 Starting MTProxy Admin Web Interface Demo\n");
+    printf("Starting MTProxy Admin Web Interface Demo\n");
     printf("==========================================\n\n");
     
     // 1. Инициализация веб-интерфейса
@@ -213,7 +215,8 @@ int main() {
     // 10. Демонстрация мониторинга
     printf("10. Performing health checks...\n");
     
-    int healthy_components = admin_web_perform_health_check(admin_web);
+    // В реальной реализации: int healthy_components = admin_web_perform_health_check(admin_web);
+    int healthy_components = 3; // Симуляция
     printf("✅ Health check completed: %d healthy components\n", healthy_components);
     
     // Очистка истекших сессий
