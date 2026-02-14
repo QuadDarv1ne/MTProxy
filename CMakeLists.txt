@@ -82,6 +82,14 @@ set(CRYPTO_SOURCES
     crypto/dh-optimized.h
 )
 
+set(NET_SOURCES
+    ${NET_SOURCES}
+    net/shadowsocks-advanced.c
+    net/shadowsocks-advanced.h
+    net/pluggable-transports.c
+    net/pluggable-transports.h
+)
+
 set(ENGINE_SOURCES
     engine/engine.c
     engine/engine.h
