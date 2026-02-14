@@ -1,90 +1,170 @@
 /*
-    This file is part of MTProxy project.
+    This file is part of Mtproto-proxy Library.
 
-    MTProxy is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
+    Mtproto-proxy Library is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Lesser General Public License as published by
     the Free Software Foundation, either version 2 of the License, or
     (at your option) any later version.
 
-    MTProxy is distributed in the hope that it will be useful,
+    Mtproto-proxy Library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    GNU Lesser General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with MTProxy.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Lesser General Public License
+    along with Mtproto-proxy Library.  If not, see <http://www.gnu.org/licenses/>.
+
+    Copyright 2024-2026 MTProto Proxy Enhanced Project
+              2024-2026 Dupley Maxim Igorevich (Maestro7IT)
 */
 
-#pragma once
+#ifndef __CONFIG_MANAGER_H__
+#define __CONFIG_MANAGER_H__
 
-#include <stdint.h>
+#include <time.h>
 
-// Configuration structure for security settings
-typedef struct {
-    int ddos_protection_enabled;
-    int max_connections_per_ip;
-    double ddos_time_window;
-    double ddos_block_duration;
-    
-    int cert_pinning_enabled;
-    char cert_pinning_mode[16];  // "strict", "warn", etc.
-    
-    int hsm_enabled;
-    char hsm_module_path[256];
-    int hsm_slot_id;
-    
-    int access_control_enabled;
-} security_config_t;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-// Configuration structure for performance settings
-typedef struct {
-    int buffer_pool_enabled;
-    int small_buffer_size;      // e.g., 512 bytes
-    int medium_buffer_size;     // e.g., 2048 bytes
-    int large_buffer_size;      // e.g., 8192 bytes
-    int max_small_buffers;
-    int max_medium_buffers;
-    int max_large_buffers;
-    
-    int connection_pool_enabled;
-    int max_pooled_connections;
-    
-    int async_io_enabled;
-    int io_batch_size;
-} performance_config_t;
+// Configuration statistics
+struct config_manager_stats {
+    long long total_config_loads;
+    long long config_reload_count;
+    long long validation_errors;
+    long long migration_operations;
+    long long runtime_changes;
+    long long config_cache_hits;
+    long long config_cache_misses;
+};
 
-// Configuration structure for monitoring settings
-typedef struct {
-    int prometheus_exporter_enabled;
-    int prometheus_port;
-    char prometheus_prefix[64];
-    
-    int health_checks_enabled;
-    int health_check_port;
-    int liveness_threshold;
-    int readiness_timeout;
-    
-    int structured_logging_enabled;
-    char log_format[16];        // "json", "text"
-    int log_level;              // 0-4 for debug, info, warn, error, fatal
-} monitoring_config_t;
+// Configuration parameter types
+enum config_param_type {
+    CONFIG_TYPE_INT = 0,
+    CONFIG_TYPE_LONG,
+    CONFIG_TYPE_DOUBLE,
+    CONFIG_TYPE_STRING,
+    CONFIG_TYPE_BOOL,
+    CONFIG_TYPE_ENUM
+};
 
-// Main configuration structure
-typedef struct {
-    security_config_t security;
-    performance_config_t performance;
-    monitoring_config_t monitoring;
-} mtproxy_config_t;
+// Configuration parameter structure
+struct config_parameter {
+    char name[128];
+    char description[256];
+    enum config_param_type type;
+    void *value_ptr;
+    size_t value_size;
+    int is_runtime_modifiable;
+    int is_sensitive;
+    char default_value[256];
+    char min_value[64];
+    char max_value[64];
+    time_t last_modified;
+    int version;
+};
 
-// Function declarations
-int load_config_from_file(const char *filename, mtproxy_config_t *config);
-int save_config_to_file(const char *filename, const mtproxy_config_t *config);
-int apply_config(const mtproxy_config_t *config);
-int validate_config(const mtproxy_config_t *config);
-void init_default_config(mtproxy_config_t *config);
-void cleanup_config(mtproxy_config_t *config);
+// Configuration section
+struct config_section {
+    char name[64];
+    struct config_parameter *parameters;
+    int param_count;
+    int param_capacity;
+    time_t last_updated;
+};
 
-// Configuration update functions
-int update_security_config(const security_config_t *new_config);
-int update_performance_config(const performance_config_t *new_config);
-int update_monitoring_config(const monitoring_config_t *new_config);
+// Configuration context
+struct config_context {
+    struct config_section *sections;
+    int section_count;
+    int section_capacity;
+    char config_file_path[512];
+    time_t last_file_modified;
+    int auto_reload_enabled;
+    int validation_enabled;
+};
+
+// Инициализация configuration manager
+int config_manager_init(const char *config_file_path);
+
+// Создание новой секции конфигурации
+int config_manager_create_section(const char *section_name, const char *description);
+
+// Регистрация параметра конфигурации
+int config_manager_register_parameter(
+    const char *section_name,
+    const char *param_name,
+    enum config_param_type type,
+    void *value_ptr,
+    size_t value_size,
+    int is_runtime_modifiable,
+    const char *default_value,
+    const char *description);
+
+// Установка значения параметра
+int config_manager_set_parameter(
+    const char *section_name,
+    const char *param_name,
+    const void *value,
+    size_t value_size);
+
+// Получение значения параметра
+int config_manager_get_parameter(
+    const char *section_name,
+    const char *param_name,
+    void *value_out,
+    size_t value_size);
+
+// Установка строкового параметра
+int config_manager_set_parameter_string(
+    const char *section_name,
+    const char *param_name,
+    const char *value_string);
+
+// Загрузка конфигурации из файла
+int config_manager_load_from_file(const char *file_path);
+
+// Получение статистики
+void config_manager_get_stats(struct config_manager_stats *stats);
+
+// Вывод статистики
+void config_manager_print_stats(void);
+
+// Очистка configuration manager
+void config_manager_cleanup(void);
+
+// Расширенные функции
+int config_manager_save_to_file(const char *file_path);
+int config_manager_validate_config(void);
+int config_manager_migrate_config(int from_version, int to_version);
+int config_manager_enable_auto_reload(int enable);
+int config_manager_get_parameter_info(const char *section_name, 
+                                     const char *param_name,
+                                     struct config_parameter *info_out);
+int config_manager_list_sections(char section_names[][64], int max_sections);
+int config_manager_list_parameters(const char *section_name, 
+                                  char param_names[][128], 
+                                  int max_parameters);
+
+// Вспомогательные макросы
+#define CONFIG_REGISTER_INT(section, name, ptr, modifiable, default_val, desc) \
+    config_manager_register_parameter(section, name, CONFIG_TYPE_INT, ptr, \
+                                    sizeof(int), modifiable, #default_val, desc)
+
+#define CONFIG_REGISTER_STRING(section, name, ptr, modifiable, default_val, desc) \
+    config_manager_register_parameter(section, name, CONFIG_TYPE_STRING, ptr, \
+                                    strlen(ptr) + 1, modifiable, default_val, desc)
+
+#define CONFIG_REGISTER_BOOL(section, name, ptr, modifiable, default_val, desc) \
+    config_manager_register_parameter(section, name, CONFIG_TYPE_BOOL, ptr, \
+                                    sizeof(int), modifiable, #default_val, desc)
+
+#define CONFIG_REGISTER_DOUBLE(section, name, ptr, modifiable, default_val, desc) \
+    config_manager_register_parameter(section, name, CONFIG_TYPE_DOUBLE, ptr, \
+                                    sizeof(double), modifiable, #default_val, desc)
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // __CONFIG_MANAGER_H__
