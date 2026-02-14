@@ -225,7 +225,82 @@ sudo systemctl enable MTProxy.service
 - Экспорт данных для внешних систем
 - Уровни логирования (ERROR, WARNING, INFO, DEBUG)
 
-### 🛡️ Повышенная надежность протоколов
+### ⚡ Расширенная криптографическая оптимизация
+
+- Поддержка ARM64 и x86_64 архитектур
+- Автоматическое определение доступных расширений (AVX-512, AES-NI, NEON)
+- Интеллектуальная балансировка нагрузки между ядрами
+- Оптимизированное использование памяти и пулы
+- Расширенное кэширование криптографических операций
+
+**Пример использования:**
+```c
+// Инициализация расширенной оптимизации
+advanced_crypto_opt_t *crypto_opt = crypto_opt_init(2048, 64*1024*1024); // 2048 контекстов, 64MB памяти
+crypto_opt_configure(crypto_opt, CRYPTO_OPT_AUTO, BALANCE_ADAPTIVE);
+
+// Определение архитектуры
+architecture_info_t arch_info;
+crypto_opt_detect_architecture(&arch_info);
+printf("Архитектура: %s\n", crypto_opt_get_architecture_name(arch_info.supported_extensions));
+
+// Предвыделение контекстов для часто используемых ключей
+const unsigned char *keys[] = {key1, key2, key3};
+crypto_opt_precompute_keys(crypto_opt, keys, 3, 32);
+
+// Оптимизированное шифрование
+unsigned char plaintext[1024];
+unsigned char ciphertext[1024];
+int result = crypto_opt_cache_encrypt(crypto_opt, session_key, plaintext, ciphertext, sizeof(plaintext));
+
+// Балансировка нагрузки между ядрами CPU
+int cpu_core = crypto_opt_balance_operation(crypto_opt, CRYPTO_OPERATION_ENCRYPT);
+
+// Мониторинг производительности
+double cache_hit_rate = crypto_opt_get_cache_hit_rate(crypto_opt);
+int optimal_threads = crypto_opt_get_optimal_thread_count(crypto_opt);
+
+// Получение статистики
+char stats[256];
+crypto_opt_get_stats(crypto_opt, stats, sizeof(stats));
+printf("%s\n", stats);
+```
+
+- Полноценная реализация протокола версии 3.0
+- Perfect Forward Secrecy (PFS) для усиленной безопасности
+- Улучшенные методы аутентификации и шифрования
+- Совместимость с существующими версиями
+- Поддержка расширенных возможностей протокола
+
+**Пример использования:**
+```c
+// Инициализация MTProto v3 соединения
+mtproto_connection_info_t conn;
+mtproto_init_connection(&conn, MTPROTO_VERSION_3_0);
+
+// Handshake с клиентом
+unsigned char client_handshake[64];
+// ... получение данных от клиента ...
+int result = mtproto_handshake_v3(&conn, client_handshake, sizeof(client_handshake));
+
+if (result == 0) {
+    // Успешное рукопожатие
+    int auth_valid = mtproto_validate_auth_v3(&conn);
+    if (auth_valid) {
+        printf("MTProto v3 соединение установлено\n");
+    }
+}
+
+// Шифрование данных
+unsigned char plaintext[1024];
+unsigned char ciphertext[1088]; // +16 байт для тега аутентификации
+int encrypted_len = mtproto_encrypt_v3(&conn, plaintext, ciphertext, sizeof(plaintext));
+
+// Получение информации о соединении
+char info[256];
+mtproto_get_connection_info_v3(&conn, info, sizeof(info));
+printf("%s\n", info);
+```
 
 - Система отслеживания состояния соединений
 - Автоматическое восстановление при ошибках
