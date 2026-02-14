@@ -1,0 +1,52 @@
+{
+  "performance": {
+    "thread_pool": {
+      "size": 16,
+      "enable_cpu_affinity": true,
+      "load_balancing": "round_robin",
+      "max_connections_per_thread": 2000
+    },
+    "memory": {
+      "enable_numa_optimization": true,
+      "memory_pool_size": 134217728,
+      "buffer_pool_size": 67108864,
+      "enable_memory_pooling": true,
+      "allocation_strategy": "first_fit"
+    },
+    "network": {
+      "connection_sharding": true,
+      "shard_count": 16,
+      "enable_zero_copy": true,
+      "tcp_buffer_size": 1048576,
+      "receive_buffer_size": 2097152,
+      "send_buffer_size": 2097152
+    },
+    "optimization": {
+      "enable_cpu_caching": true,
+      "cache_line_size": 64,
+      "enable_prefetching": true,
+      "optimization_level": "aggressive"
+    }
+  },
+  "monitoring": {
+    "enable_performance_metrics": true,
+    "metrics_collection_interval": 1000,
+    "log_performance_stats": true,
+    "performance_log_file": "logs/performance.log",
+    "enable_alerts": true,
+    "performance_thresholds": {
+      "cpu_usage_max": 85.0,
+      "memory_usage_max": 90.0,
+      "latency_max_ms": 200.0,
+      "throughput_min_mbps": 100.0
+    }
+  },
+  "scaling": {
+    "auto_scaling": true,
+    "min_threads": 4,
+    "max_threads": 64,
+    "scale_up_threshold": 75.0,
+    "scale_down_threshold": 30.0,
+    "scaling_interval_seconds": 30
+  }
+}
