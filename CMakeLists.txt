@@ -70,6 +70,10 @@ set(COMMON_SOURCES
     common/config-manager.h
     common/runtime-tuner.c
     common/runtime-tuner.h
+    common/structured-logger.c
+    common/structured-logger.h
+    common/log-aggregator.c
+    common/log-aggregator.h
 )
 
 set(JOBS_SOURCES

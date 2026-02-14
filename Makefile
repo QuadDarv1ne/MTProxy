@@ -64,6 +64,8 @@ LIB_OBJS_NORMAL := \
 	${OBJ}/common/tl-parse.o ${OBJ}/common/common-stats.o \
 	${OBJ}/common/config-manager.o \
 	${OBJ}/common/runtime-tuner.o \
+	${OBJ}/common/structured-logger.o \
+	${OBJ}/common/log-aggregator.o \
 	${OBJ}/engine/engine.o ${OBJ}/engine/engine-signals.o \
 	${OBJ}/engine/engine-net.o \
 	${OBJ}/engine/engine-rpc.o \
