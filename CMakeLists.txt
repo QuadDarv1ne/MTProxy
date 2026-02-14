@@ -136,6 +136,15 @@ set(ENGINE_SOURCES
     engine/engine-signals.h
 )
 
+set(SYSTEM_SOURCES
+    system/performance-optimizer.c
+    system/performance-optimizer.h
+    system/optimizer-integration.c
+    system/optimizer-integration.h
+    system/simple-performance-optimizer.c
+    system/simple-performance-optimizer.h
+)
+
 set(VV_SOURCES
     vv/vv-tree.c
     vv/vv-tree.h
@@ -195,7 +204,7 @@ set(NET_SOURCES
 )
 
 # Create a static library for common functionality
-add_library(kdb_common STATIC ${COMMON_SOURCES} ${JOBS_SOURCES} ${CRYPTO_SOURCES} ${VV_SOURCES})
+add_library(kdb_common STATIC ${COMMON_SOURCES} ${JOBS_SOURCES} ${CRYPTO_SOURCES} ${VV_SOURCES} ${SYSTEM_SOURCES})
 
 # Target for the main mtproto-proxy executable
 add_executable(mtproto-proxy

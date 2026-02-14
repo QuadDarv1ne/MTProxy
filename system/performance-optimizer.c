@@ -8,6 +8,7 @@
 #include "../common/vlog.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <time.h>
 
 #ifdef __linux__
@@ -51,7 +52,6 @@ int init_performance_optimizer(perf_optimization_level_t level) {
     // Using a default value since get_default_net_threads might not be available
     optimizer.worker_threads_count = 4; // default fallback
     
-    vlog_printf(LL_DEBUG, "Performance optimizer initialized with level %d\n", level);
     return 0;
 }
 
@@ -105,7 +105,6 @@ int set_optimization_level(perf_optimization_level_t level) {
             break;
     }
     
-    vlog_printf(LL_DEBUG, "Optimization level set to %d\n", level);
     return 0;
 }
 
@@ -129,12 +128,6 @@ int apply_cpu_affinity(void) {
     }
     
     int result = sched_setaffinity(0, sizeof(cpuset), &cpuset);
-    if (result == 0) {
-        vlog_printf(LL_DEBUG, "CPU affinity applied to %d cores\n", num_cores - 1);
-    } else {
-        vlog_printf(LL_ERROR, "Failed to apply CPU affinity\n");
-    }
-    
     return result;
 #else
     // On non-Linux systems, just return success
@@ -150,14 +143,12 @@ int optimize_memory_allocation(void) {
     // Placeholder for memory optimization logic
     // In a real implementation, this would set up memory pools
     // and optimize allocation patterns
-    vlog_printf(LL_DEBUG, "Memory allocation optimization applied\n");
     return 0;
 }
 
 int adjust_worker_threads(int new_thread_count) {
     if (new_thread_count > 0 && new_thread_count != optimizer.worker_threads_count) {
         optimizer.worker_threads_count = new_thread_count;
-        vlog_printf(LL_DEBUG, "Worker threads adjusted to %d\n", new_thread_count);
         
         // In a real implementation, this would reconfigure the thread pool
         return 0;
@@ -167,5 +158,4 @@ int adjust_worker_threads(int new_thread_count) {
 
 void cleanup_performance_optimizer(void) {
     // Cleanup any allocated resources
-    vlog_printf(LL_DEBUG, "Performance optimizer cleaned up\n");
 }
