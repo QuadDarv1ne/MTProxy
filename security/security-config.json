@@ -1,42 +1,40 @@
 {
   "security": {
-    "rate_limit": 1000,
-    "burst_limit": 5000,
-    "connection_timeout": 300,
-    "max_connections": 10000,
-    "buffer_overflow_protection": true,
-    "protocol_validation": true,
-    "logging_level": 2,
-    "whitelist_file": "security/whitelist.txt",
-    "blacklist_file": "security/blacklist.txt"
-  },
-  "ddos_protection": {
-    "enable_syn_flood_protection": true,
-    "syn_queue_limit": 1000,
-    "connection_rate_limit": 100,
-    "ip_block_duration": 3600,
-    "enable_geoblocking": false,
-    "blocked_countries": []
-  },
-  "buffer_security": {
-    "max_buffer_size": 65536,
-    "enable_stack_protection": true,
-    "enable_heap_protection": true,
-    "canary_protection": true,
-    "aslr_enabled": true
-  },
-  "protocol_validation": {
-    "validate_mtproto_headers": true,
-    "validate_packet_sequences": true,
-    "detect_malformed_packets": true,
-    "validate_encryption": true,
-    "check_integrity": true
-  },
-  "monitoring": {
-    "enable_security_logging": true,
-    "log_file": "logs/security.log",
-    "alert_threshold": 50,
-    "enable_realtime_monitoring": true,
-    "metrics_collection": true
+    "certificate_pinning": {
+      "enabled": true,
+      "strict_mode": true,
+      "max_pins": 100,
+      "pin_lifetime_days": 365
+    },
+    "ddos_protection": {
+      "enabled": true,
+      "max_connections_per_ip": 100,
+      "rate_limit_window_seconds": 60,
+      "enable_ip_blocking": true,
+      "block_duration_seconds": 300,
+      "connection_timeout_seconds": 30,
+      "enable_connection_throttling": true
+    },
+    "encryption": {
+      "min_tls_version": "TLSv1.2",
+      "cipher_suites": [
+        "ECDHE-RSA-AES256-GCM-SHA384",
+        "ECDHE-RSA-AES128-GCM-SHA256"
+      ],
+      "enable_ocsp_stapling": true
+    },
+    "logging": {
+      "level": "INFO",
+      "audit_log_enabled": true,
+      "log_suspicious_activity": true,
+      "retention_days": 90
+    },
+    "hsm": {
+      "enabled": false,
+      "module_path": "/usr/lib/libpkcs11.so",
+      "slot_id": 0,
+      "token_label": "mtproxy_token",
+      "private_key_label": "mtproxy_key"
+    }
   }
 }

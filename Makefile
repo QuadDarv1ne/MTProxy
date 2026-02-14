@@ -75,7 +75,7 @@ LIB_OBJS_NORMAL := \
 	${OBJ}/common/precise-time.o ${OBJ}/common/cpuid.o \
 	${OBJ}/common/server-functions.o ${OBJ}/common/crc32.o \
 	${OBJ}/system/performance-optimizer.o ${OBJ}/system/optimizer-integration.o ${OBJ}/system/simple-performance-optimizer.o \
-	${OBJ}/security/security-manager.o ${OBJ}/security/ddos-protection.o ${OBJ}/security/cert-pinning.o \
+	${OBJ}/security/security-manager.o ${OBJ}/security/ddos-protection.o ${OBJ}/security/cert-pinning.o ${OBJ}/security/security-utils.o \
 
 LIB_OBJS := ${LIB_OBJS_NORMAL}
 

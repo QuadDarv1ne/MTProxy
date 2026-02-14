@@ -152,6 +152,8 @@ set(SECURITY_SOURCES
     security/ddos-protection.h
     security/cert-pinning.c
     security/cert-pinning.h
+    security/security-utils.c
+    security/security-utils.h
 )
 
 set(VV_SOURCES

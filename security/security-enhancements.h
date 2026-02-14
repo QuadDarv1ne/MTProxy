@@ -1,6 +1,6 @@
 /*
- * Security enhancements for MTProxy
- * Includes certificate pinning, DDoS protection, and HSM integration
+ * Улучшения безопасности для MTProxy
+ * Включает привязку сертификатов, защиту от DDoS-атак и интеграцию с HSM
  */
 
 #ifndef _SECURITY_ENHANCEMENTS_H_
