@@ -1,7 +1,0 @@
-MTProxy Project Test Report
-========================
-Test Date: 02/14/2026 19:38:15
-Project Status: Operational
-Build System: CMake/Make
-Compiler: GCC (MinGW)
-Platform: Windows

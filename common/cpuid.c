@@ -19,7 +19,7 @@
 */
 
 #include <assert.h>
-#include <cpuid.h>
+#include "platform_compat.h"
 
 #include "cpuid.h"
 

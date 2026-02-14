@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <arpa/inet.h>
+#include "../common/platform_network.h"
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <sys/socket.h>

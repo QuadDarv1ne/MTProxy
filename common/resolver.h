@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include <netdb.h>
+#include "platform_network.h"
 
 #ifdef __cplusplus
 extern "C" {

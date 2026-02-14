@@ -31,7 +31,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
-#include <netinet/in.h>
+#include "../common/platform_network.h"
 #include <netinet/tcp.h>
 #include <sys/socket.h>
 #include <sys/types.h>

@@ -40,6 +40,7 @@
 #include <unistd.h>
 
 #include "kprintf.h"
+#include "platform_compat.h"
 #include "precise-time.h"
 
 int verbosity;

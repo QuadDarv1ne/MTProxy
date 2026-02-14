@@ -5,6 +5,17 @@ project(MTProxy VERSION 1.0.0 LANGUAGES C)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+# Platform detection
+if(WIN32)
+    message(STATUS "Detected Windows platform")
+    add_definitions(-D_WIN32)
+    set(PLATFORM_LIBS ws2_32)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_WIN32_WINNT=0x0600")
+elseif(UNIX)
+    message(STATUS "Detected Unix/Linux platform")
+    set(PLATFORM_LIBS m rt)
+endif()
+
 # Compiler-specific options
 if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -Wall -Wno-array-bounds -fno-strict-aliasing -fno-strict-overflow -fwrapv -DAES=1 -D_GNU_SOURCE=1 -D_FILE_OFFSET_BITS=64")
@@ -87,6 +98,9 @@ set(COMMON_SOURCES
     common/structured-logger.h
     common/log-aggregator.c
     common/log-aggregator.h
+    common/platform_network.c
+    common/platform_network.h
+    common/platform_compat.h
 )
 
 set(JOBS_SOURCES
@@ -252,7 +266,7 @@ add_executable(mtproto-proxy
 )
 
 # Link libraries
-target_link_libraries(mtproto-proxy kdb_common m rt crypto z pthread)
+target_link_libraries(mtproto-proxy kdb_common ${PLATFORM_LIBS} crypto z pthread)
 
 # Set output directory
 set_target_properties(mtproto-proxy PROPERTIES
