@@ -215,6 +215,38 @@ sudo systemctl enable MTProxy.service
 ./mtproto-proxy --help
 ```
 
+## Мониторинг и логирование
+
+### 📊 Система мониторинга
+
+- Расширенная система метрик и логирования
+- Алертинг по порогам (CPU, память, подключения)
+- Статистика по компонентам и времени отклика
+- Экспорт данных для внешних систем
+- Уровни логирования (ERROR, WARNING, INFO, DEBUG)
+
+**Пример использования:**
+```c
+// Инициализация
+simple_monitoring_t *mon = simple_monitoring_init();
+simple_monitoring_configure(mon, LOG_LEVEL_INFO);
+
+// Метрики
+simple_monitoring_add_metric(mon, "active_connections");
+simple_monitoring_update_metric(mon, "active_connections", 1250);
+
+// Логирование
+simple_monitoring_log_info(mon, "network", "Connection accepted");
+
+// Алерты
+simple_monitoring_set_thresholds(mon, 80.0, 85.0); // CPU, Memory
+simple_monitoring_check_alerts(mon);
+
+// Отчеты
+char report[256];
+simple_monitoring_get_report(mon, report, sizeof(report));
+```
+
 ## Безопасность
 
 - Используйте отдельного пользователя для запуска прокси (не root)
