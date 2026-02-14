@@ -1,50 +1,50 @@
 /*
-    This file is part of MTProxy project.
+ * Security manager header for MTProxy
+ * Defines structures and functions for security enhancements
+ */
 
-    MTProxy is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 2 of the License, or
-    (at your option) any later version.
-
-    MTProxy is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with MTProxy.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-#pragma once
+#ifndef _SECURITY_MANAGER_H_
+#define _SECURITY_MANAGER_H_
 
 #include <stdint.h>
 
-// Permission levels for access control
-typedef enum {
-    ACL_LEVEL_NONE = 0,        // No access
-    ACL_LEVEL_LIMITED = 1,     // Limited access
-    ACL_LEVEL_STANDARD = 2,    // Standard access
-    ACL_LEVEL_FULL_ACCESS = 3  // Full access
-} acl_permission_level_t;
-
 // Security statistics structure
 typedef struct {
-    uint32_t ddos_current_entries;
-    uint32_t ddos_max_entries;
-    uint32_t ddos_max_connections_per_ip;
-    uint32_t acl_entry_count;
-    uint32_t cert_validation_attempts;
-    uint32_t cert_pinning_violations;
-    uint32_t hsm_operations_count;
-    uint32_t total_blocked_connections;
+    long long total_connections_checked;
+    long long blocked_connections;
+    long long failed_auth_attempts;
+    long long detected_attack_patterns;
 } security_stats_t;
 
-// Function declarations for security manager
-int init_security_manager(void);
-void cleanup_security_manager(void);
-int check_ddos_protection(unsigned int ip_address);
-int init_hsm_interface(const char *module_path, int slot_id);
-int init_access_control(void);
-int add_acl_entry(unsigned int ip_address, unsigned int ip_mask, acl_permission_level_t perm_level);
-acl_permission_level_t check_access_permission(unsigned int ip_address);
-void get_security_stats(security_stats_t *stats);
+// DDoS protection settings structure
+typedef struct {
+    int max_connections_per_ip;
+    int rate_limit_window; // in seconds
+    int enable_ip_blocking;
+    int block_duration; // in seconds
+    int connection_timeout;
+} ddos_settings_t;
+
+// Security manager context structure
+typedef struct {
+    int cert_pinning_enabled;
+    int ddos_protection_enabled;
+    int hsm_integration_enabled;
+    ddos_settings_t ddos_settings;
+    security_stats_t stats;
+} security_manager_context_t;
+
+// Function prototypes
+int secmgr_init();
+int secmgr_add_cert_pin(const char *hostname, const unsigned char *cert_hash);
+int secmgr_validate_cert_pinning(const unsigned char *received_cert_hash, const char *hostname);
+int secmgr_check_ddos_protection(const char *client_ip);
+int secmgr_init_hsm(const char *module_path, int slot_id);
+int secmgr_hsm_encrypt(const unsigned char *plaintext, int plaintext_len, 
+                      unsigned char *ciphertext, int *ciphertext_len);
+int secmgr_hsm_decrypt(const unsigned char *ciphertext, int ciphertext_len, 
+                      unsigned char *plaintext, int *plaintext_len);
+security_stats_t secmgr_get_stats();
+void secmgr_cleanup();
+
+#endif

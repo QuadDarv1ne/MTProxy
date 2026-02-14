@@ -145,6 +145,15 @@ set(SYSTEM_SOURCES
     system/simple-performance-optimizer.h
 )
 
+set(SECURITY_SOURCES
+    security/security-manager.c
+    security/security-manager.h
+    security/ddos-protection.c
+    security/ddos-protection.h
+    security/cert-pinning.c
+    security/cert-pinning.h
+)
+
 set(VV_SOURCES
     vv/vv-tree.c
     vv/vv-tree.h
@@ -204,7 +213,7 @@ set(NET_SOURCES
 )
 
 # Create a static library for common functionality
-add_library(kdb_common STATIC ${COMMON_SOURCES} ${JOBS_SOURCES} ${CRYPTO_SOURCES} ${VV_SOURCES} ${SYSTEM_SOURCES})
+add_library(kdb_common STATIC ${COMMON_SOURCES} ${JOBS_SOURCES} ${CRYPTO_SOURCES} ${VV_SOURCES} ${SYSTEM_SOURCES} ${SECURITY_SOURCES})
 
 # Target for the main mtproto-proxy executable
 add_executable(mtproto-proxy
