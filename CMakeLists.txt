@@ -66,6 +66,10 @@ set(COMMON_SOURCES
     common/sha256.h
     common/tl-parse.c
     common/tl-parse.h
+    common/config-manager.c
+    common/config-manager.h
+    common/runtime-tuner.c
+    common/runtime-tuner.h
 )
 
 set(JOBS_SOURCES
