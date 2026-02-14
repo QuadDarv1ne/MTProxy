@@ -88,6 +88,10 @@ set(NET_SOURCES
     net/shadowsocks-advanced.h
     net/pluggable-transports.c
     net/pluggable-transports.h
+    net/network-profiler.c
+    net/network-profiler.h
+    net/network-analyzer.c
+    net/network-analyzer.h
 )
 
 set(ENGINE_SOURCES

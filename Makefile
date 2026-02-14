@@ -52,6 +52,8 @@ LIB_OBJS_NORMAL := \
 		${OBJ}/crypto/dh-optimized.o \
 		${OBJ}/net/shadowsocks-advanced.o \
 		${OBJ}/net/pluggable-transports.o \
+		${OBJ}/net/network-profiler.o \
+		${OBJ}/net/network-analyzer.o \
 	${OBJ}/jobs/jobs.o ${OBJ}/common/mp-queue.o \
 	${OBJ}/net/net-events.o ${OBJ}/net/net-msg.o ${OBJ}/net/net-msg-buffers.o \
 	${OBJ}/net/net-config.o ${OBJ}/net/net-crypto-aes.o ${OBJ}/net/net-crypto-dh.o ${OBJ}/net/net-timers.o \
