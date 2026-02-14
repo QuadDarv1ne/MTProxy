@@ -50,6 +50,8 @@ LIB_OBJS_NORMAL := \
 	${OBJ}/crypto/aesni256.o \
 		${OBJ}/crypto/aes-optimized.o \
 		${OBJ}/crypto/dh-optimized.o \
+		${OBJ}/crypto/crypto-optimizer.o \
+		${OBJ}/crypto/vectorized-crypto.o \
 		${OBJ}/net/shadowsocks-advanced.o \
 		${OBJ}/net/pluggable-transports.o \
 		${OBJ}/net/network-profiler.o \
@@ -66,6 +68,7 @@ LIB_OBJS_NORMAL := \
 	${OBJ}/common/runtime-tuner.o \
 	${OBJ}/common/structured-logger.o \
 	${OBJ}/common/log-aggregator.o \
+	${OBJ}/common/advanced-logger.o \
 	${OBJ}/engine/engine.o ${OBJ}/engine/engine-signals.o \
 	${OBJ}/engine/engine-net.o \
 	${OBJ}/engine/engine-rpc.o \
@@ -75,7 +78,7 @@ LIB_OBJS_NORMAL := \
 	${OBJ}/common/precise-time.o ${OBJ}/common/cpuid.o \
 	${OBJ}/common/server-functions.o ${OBJ}/common/crc32.o \
 	${OBJ}/system/performance-optimizer.o ${OBJ}/system/optimizer-integration.o ${OBJ}/system/simple-performance-optimizer.o \
-	${OBJ}/system/memory-optimization.o ${OBJ}/system/connection-optimizer.o ${OBJ}/system/advanced-cache.o \
+	${OBJ}/system/memory-optimization.o ${OBJ}/system/connection-optimizer.o ${OBJ}/system/advanced-cache.o ${OBJ}/system/memory-manager.o \
 	${OBJ}/security/security-manager.o ${OBJ}/security/ddos-protection.o ${OBJ}/security/cert-pinning.o ${OBJ}/security/security-utils.o \
 	${OBJ}/system/numa-allocator.o ${OBJ}/system/io-uring-interface.o ${OBJ}/system/dpdk-interface.o ${OBJ}/system/advanced-optimizer.o \
 	${OBJ}/ml/anomaly-detector.o ${OBJ}/net/tls-emulator.o ${OBJ}/shadowsocks/shadowsocks-obfuscator.o \

@@ -98,6 +98,8 @@ set(COMMON_SOURCES
     common/structured-logger.h
     common/log-aggregator.c
     common/log-aggregator.h
+    common/advanced-logger.c
+    common/advanced-logger.h
     common/platform_network.c
     common/platform_network.h
     common/platform_compat.h
@@ -115,6 +117,10 @@ set(CRYPTO_SOURCES
     crypto/aes-optimized.h
     crypto/dh-optimized.c
     crypto/dh-optimized.h
+    crypto/crypto-optimizer.c
+    crypto/crypto-optimizer.h
+    crypto/vectorized-crypto.c
+    crypto/vectorized-crypto.h
 )
 
 set(NET_SOURCES
@@ -163,6 +169,8 @@ set(SYSTEM_SOURCES
     system/connection-optimizer.h
     system/advanced-cache.c
     system/advanced-cache.h
+    system/memory-manager.c
+    system/memory-manager.h
 )
 
 set(SECURITY_SOURCES
@@ -185,6 +193,19 @@ set(ADVANCED_OPTIMIZATION_SOURCES
     system/dpdk-interface.h
     system/advanced-optimizer.c
     system/advanced-optimizer.h
+)
+
+set(PERF_MONITOR_SOURCES
+    perf_monitor/advanced-metrics.c
+    perf_monitor/advanced-metrics.h
+    perf_monitor/advanced-monitoring.c
+    perf_monitor/advanced-monitoring.h
+    perf_monitor/simple-monitoring.c
+    perf_monitor/simple-monitoring.h
+    perf_monitor/extended-monitoring.c
+    perf_monitor/extended-monitoring.h
+    perf_monitor/perf-monitor.c
+    perf_monitor/perf-monitor.h
 )
 
 set(OBFUSCATION_SOURCES
@@ -255,7 +276,7 @@ set(NET_SOURCES
 )
 
 # Create a static library for common functionality
-add_library(kdb_common STATIC ${COMMON_SOURCES} ${JOBS_SOURCES} ${CRYPTO_SOURCES} ${VV_SOURCES} ${SYSTEM_SOURCES} ${SECURITY_SOURCES} ${ADVANCED_OPTIMIZATION_SOURCES} ${OBFUSCATION_SOURCES})
+add_library(kdb_common STATIC ${COMMON_SOURCES} ${JOBS_SOURCES} ${CRYPTO_SOURCES} ${VV_SOURCES} ${SYSTEM_SOURCES} ${SECURITY_SOURCES} ${ADVANCED_OPTIMIZATION_SOURCES} ${OBFUSCATION_SOURCES} ${PERF_MONITOR_SOURCES})
 
 # Target for the main mtproto-proxy executable
 add_executable(mtproto-proxy
