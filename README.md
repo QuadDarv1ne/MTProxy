@@ -225,7 +225,148 @@ sudo systemctl enable MTProxy.service
 - Экспорт данных для внешних систем
 - Уровни логирования (ERROR, WARNING, INFO, DEBUG)
 
-### 🖥️ Web-интерфейс администратора
+### 📚 Система примеров и документации
+
+- Практические примеры для всех сценариев использования
+- Интерактивные примеры с пошаговыми инструкциями
+- Автоматическая генерация конфигурационных файлов
+- Поддержка Docker и containerized deployments
+- Система difficulty levels для разных уровней подготовки
+- Экспорт примеров в различные форматы
+
+**Пример использования:**
+```c
+// Инициализация системы примеров
+mtproxy_examples_t *examples = examples_init(8, 32);
+
+// Просмотр доступных коллекций
+char collections_list[1024];
+examples_list_collections(examples, collections_list, sizeof(collections_list));
+printf("%s\n", collections_list);
+
+// Запуск базовых примеров
+examples_run_examples_by_type(examples, EXAMPLE_TYPE_BASIC);
+
+// Запуск примеров безопасности
+examples_run_examples_by_scenario(examples, SCENARIO_SECURITY_HARDENED);
+
+// Генерация конфигурационного файла для примера
+examples_generate_configuration_file(examples, example_id, "config.json");
+
+// Генерация Docker Compose для деплоя
+examples_generate_docker_compose(examples, example_id, "docker-compose.yml");
+
+// Экспорт всех примеров
+examples_export_all_examples(examples, "all-examples.zip");
+
+// Очистка
+examples_cleanup(examples);
+```
+
+- Комплексное тестирование всех компонентов
+- Модульные, интеграционные и стресс-тесты
+- Автоматическая генерация отчетов
+- Тесты производительности и безопасности
+- Система assertions и проверок
+- Поддержка различных форматов отчетов
+
+**Пример использования:**
+```c
+// Инициализация системы тестирования
+automated_testing_t *testing = testing_init(8, 64);
+
+testing_config_t test_config = {0};
+test_config.enable_parallel_execution = 1;
+test_config.max_parallel_tests = 4;
+test_config.verbose_output = 1;
+test_config.test_timeout_ms = 30000;
+
+// Создание тестовых наборов
+testing_create_suite(testing, "Security Tests", "Security module testing");
+testing_create_suite(testing, "Performance Tests", "Performance benchmarking");
+testing_create_suite(testing, "Integration Tests", "Component integration tests");
+
+// Добавление тестов
+testing_add_test(testing, 1, "Buffer Overflow Protection",
+                "Test buffer overflow protection mechanisms",
+                TEST_TYPE_SECURITY, TEST_CRITICALITY_CRITICAL,
+                test_buffer_overflow_protection);
+
+testing_add_test(testing, 1, "DDoS Protection",
+                "Test DDoS attack mitigation",
+                TEST_TYPE_SECURITY, TEST_CRITICALITY_HIGH,
+                test_ddos_protection);
+
+testing_add_test(testing, 2, "Crypto Performance",
+                "Test cryptographic performance optimization",
+                TEST_TYPE_PERFORMANCE, TEST_CRITICALITY_MEDIUM,
+                test_crypto_performance);
+
+// Запуск тестов
+int failed_tests = testing_run_all_tests(testing);
+printf("Failed tests: %d\n", failed_tests);
+
+// Получение статистики
+testing_stats_t stats;
+testing_get_stats(testing, &stats);
+printf("Pass rate: %.2f%%\n", stats.pass_rate_percentage);
+
+// Генерация отчета
+testing_generate_report(testing, "test-results.json");
+
+// Очистка
+testing_cleanup(testing);
+```
+
+- Единая точка управления всеми подсистемами
+- Автоматическая координация компонентов
+- Мониторинг здоровья системы
+- Автоматическое восстановление после сбоев
+- Управление зависимостями между компонентами
+- Централизованная статистика и отчеты
+
+**Пример использования:**
+```c
+// Инициализация системы интеграции
+component_integration_t *integration = integration_init(16);
+
+// Регистрация компонентов
+integration_register_component(integration, COMPONENT_TYPE_SECURITY,
+                              "security-module", "Security protection system",
+                              PRIORITY_CRITICAL, security_module);
+
+integration_register_component(integration, COMPONENT_TYPE_NETWORK,
+                              "network-stack", "Advanced networking",
+                              PRIORITY_HIGH, network_module);
+
+integration_register_component(integration, COMPONENT_TYPE_MONITORING,
+                              "monitoring-system", "Performance monitoring",
+                              PRIORITY_MEDIUM, monitoring_module);
+
+// Запуск всех компонентов
+integration_start_all_components(integration);
+
+// Проверка здоровья системы
+int healthy_components = integration_perform_health_check(integration);
+printf("Healthy components: %d\n", healthy_components);
+
+// Мониторинг состояния
+integration_stats_t stats;
+integration_get_stats(integration, &stats);
+printf("Active components: %lld\n", stats.active_components);
+
+// Автоматическое восстановление
+integration_perform_auto_recovery(integration);
+
+// Получение отчетов
+char report[1024];
+integration_get_system_report(integration, report, sizeof(report));
+printf("System report: %s\n", report);
+
+// Остановка системы
+integration_stop_all_components(integration);
+integration_cleanup(integration);
+```
 
 - Современный REST API для управления MTProxy
 - Веб-панель управления с аутентификацией
