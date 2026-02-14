@@ -76,6 +76,10 @@ set(JOBS_SOURCES
 set(CRYPTO_SOURCES
     crypto/aesni256.c
     crypto/aesni256.h
+    crypto/aes-optimized.c
+    crypto/aes-optimized.h
+    crypto/dh-optimized.c
+    crypto/dh-optimized.h
 )
 
 set(ENGINE_SOURCES

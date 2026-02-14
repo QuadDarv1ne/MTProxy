@@ -48,6 +48,8 @@ LIB_OBJS_NORMAL := \
 	${OBJ}/common/resolver.o \
 	${OBJ}/common/parse-config.o \
 	${OBJ}/crypto/aesni256.o \
+		${OBJ}/crypto/aes-optimized.o \
+		${OBJ}/crypto/dh-optimized.o \
 	${OBJ}/jobs/jobs.o ${OBJ}/common/mp-queue.o \
 	${OBJ}/net/net-events.o ${OBJ}/net/net-msg.o ${OBJ}/net/net-msg-buffers.o \
 	${OBJ}/net/net-config.o ${OBJ}/net/net-crypto-aes.o ${OBJ}/net/net-crypto-dh.o ${OBJ}/net/net-timers.o \
