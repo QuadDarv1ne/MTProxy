@@ -225,7 +225,61 @@ sudo systemctl enable MTProxy.service
 - Экспорт данных для внешних систем
 - Уровни логирования (ERROR, WARNING, INFO, DEBUG)
 
-### 🌐 Поддержка WebSocket протокола
+### 🖥️ Web-интерфейс администратора
+
+- Современный REST API для управления MTProxy
+- Веб-панель управления с аутентификацией
+- Система пользователей и ролей доступа
+- API ключи для программного доступа
+- Мониторинг в реальном времени
+- Логирование безопасности и аудит
+
+**Пример использования:**
+```c
+// Инициализация веб-интерфейса
+web_server_config_t web_config = {0};
+web_config.enable_http = 1;
+web_config.http_port = 8080;
+web_config.enable_https = 1;
+web_config.https_port = 8443;
+web_config.enable_rate_limiting = 1;
+web_config.requests_per_minute = 60;
+
+admin_web_interface_t *admin_web = admin_web_init(&web_config);
+admin_web_start_server(admin_web);
+
+// Создание администратора
+admin_web_create_user(admin_web, "admin", "secure_password123", 
+                     "admin@example.com", ADMIN_ACCESS_ADMIN);
+
+// Создание API ключа
+c
+har api_key[128];
+admin_web_create_api_key(admin_web, user_id, "Monitoring service", 
+                        API_KEY_TYPE_READ, 86400, api_key);
+
+// Аутентификация через API
+uint64_t user_id;
+api_key_type_t key_type;
+if (admin_web_validate_api_key(admin_web, api_key, &key_type, &user_id) == 0) {
+    printf("API ключ валиден, тип: %d\n", key_type);
+}
+
+// Обработка API запросов
+char response[1024];
+int status = admin_web_handle_api_request(admin_web, HTTP_METHOD_GET,
+                                         API_ENDPOINT_STATS, NULL, 
+                                         api_key, response, sizeof(response));
+
+// Мониторинг статистики
+web_interface_stats_t stats;
+admin_web_get_stats(admin_web, &stats);
+printf("Активные соединения: %lld\n", stats.active_sessions);
+
+// Закрытие веб-интерфейса
+admin_web_stop_server(admin_web);
+admin_web_cleanup(admin_web);
+```
 
 - Полная реализация WebSocket RFC 6455
 - Поддержка WSS (WebSocket Secure) через TLS
