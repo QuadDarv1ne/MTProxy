@@ -156,6 +156,17 @@ set(SECURITY_SOURCES
     security/security-utils.h
 )
 
+set(ADVANCED_OPTIMIZATION_SOURCES
+    system/numa-allocator.c
+    system/numa-allocator.h
+    system/io-uring-interface.c
+    system/io-uring-interface.h
+    system/dpdk-interface.c
+    system/dpdk-interface.h
+    system/advanced-optimizer.c
+    system/advanced-optimizer.h
+)
+
 set(VV_SOURCES
     vv/vv-tree.c
     vv/vv-tree.h
