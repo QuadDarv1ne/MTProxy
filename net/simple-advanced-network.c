@@ -5,6 +5,7 @@
 #include "simple-advanced-network.h"
 
 // Глобальная сеть
+#define NULL ((void*)0)
 static simple_adv_network_t *g_simple_net = NULL;
 static uint64_t g_request_counter = 0;
 
