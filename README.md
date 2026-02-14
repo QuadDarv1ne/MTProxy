@@ -225,26 +225,80 @@ sudo systemctl enable MTProxy.service
 - Экспорт данных для внешних систем
 - Уровни логирования (ERROR, WARNING, INFO, DEBUG)
 
+### 🛡️ Повышенная надежность протоколов
+
+- Система отслеживания состояния соединений
+- Автоматическое восстановление при ошибках
+- Мониторинг качества и времени отклика
+- Интеллектуальная диагностика проблем
+- Поддержка множества протоколов (MTProto, Shadowsocks, HTTP, SOCKS5)
+
+**Пример использования:**
+```c
+// Инициализация системы надежности
+protocol_reliability_t *reliability = protocol_reliability_init(65536);
+protocol_reliability_configure(reliability, 1, 5, 1000); // auto-reconnect, 5 attempts, 1s delay
+
+// Отслеживание соединения
+protocol_reliability_track_connection(reliability, fd, PROTOCOL_TYPE_MTProto, 
+                                    remote_ip, remote_port);
+
+// Обработка ошибок
+protocol_reliability_handle_error(reliability, conn_id, PROTOCOL_ERROR_TIMEOUT);
+
+// Мониторинг
+protocol_reliability_start_monitoring(reliability);
+protocol_reliability_perform_health_check(reliability);
+
+// Получение статистики
+char stats[256];
+double success_rate = protocol_reliability_get_success_rate(reliability);
+protocol_reliability_get_stats(reliability, stats, sizeof(stats));
+
+// Callback функции
+protocol_reliability_set_error_callback(reliability, error_handler);
+protocol_reliability_set_reconnect_callback(reliability, reconnect_handler);
+```
+
+- Автоматическая оптимизация под текущую нагрузку
+- Самообучение и адаптация к изменяющимся условиям
+- Прогнозирование и предотвращение проблем
+- Стратегии настройки: консервативная, агрессивная, сбалансированная
+
 **Пример использования:**
 ```c
 // Инициализация
-simple_monitoring_t *mon = simple_monitoring_init();
-simple_monitoring_configure(mon, LOG_LEVEL_INFO);
+adaptive_tuning_t *tuning = adaptive_tuning_init(STRATEGY_BALANCED);
+adaptive_tuning_configure(tuning, 0.9, 1.0); // target 90%, aggressiveness 1.0
 
-// Метрики
-simple_monitoring_add_metric(mon, "active_connections");
-simple_monitoring_update_metric(mon, "active_connections", 1250);
+// Определение параметров для настройки
+adaptive_tuning_add_parameter(tuning, "thread_pool_size", "Размер пула потоков", 
+                             PARAM_TYPE_INTEGER, 16, 32);
+adaptive_tuning_add_parameter(tuning, "buffer_size", "Размер буферов",
+                             PARAM_TYPE_INTEGER, 8192, 16384);
 
-// Логирование
-simple_monitoring_log_info(mon, "network", "Connection accepted");
+// Настройка целевых метрик
+adaptive_tuning_add_metric(tuning, "throughput", 100.0, 200.0, 1.0);
+adaptive_tuning_add_metric(tuning, "response_time", 20.0, 10.0, 1.0);
 
-// Алерты
-simple_monitoring_set_thresholds(mon, 80.0, 85.0); // CPU, Memory
-simple_monitoring_check_alerts(mon);
+// Запуск адаптивной настройки
+adaptive_tuning_start(tuning);
 
-// Отчеты
-char report[256];
-simple_monitoring_get_report(mon, report, sizeof(report));
+// Регулярная адаптация (в отдельном потоке)
+while (running) {
+    adaptive_tuning_collect_state(tuning);
+    adaptive_tuning_analyze_performance(tuning);
+    adaptive_tuning_make_adjustments(tuning);
+    adaptive_tuning_apply_optimizations(tuning);
+    
+    char recommendations[256];
+    adaptive_tuning_get_recommendations(tuning, recommendations, sizeof(recommendations));
+    
+    sleep_ms(5000);
+}
+
+adaptive_tuning_stop(tuning);
+adaptive_tuning_cleanup(tuning);
 ```
 
 ## Безопасность
