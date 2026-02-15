@@ -11,8 +11,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <time.h>
-#include <sys/time.h>
+#include "common/platform_compat.h"
 
 #ifdef __cplusplus
 extern "C" {
