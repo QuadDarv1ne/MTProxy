@@ -4,10 +4,33 @@
  */
 
 #include "traffic-optimizer.h"
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+
+// Define NULL if not already defined
+#ifndef NULL
+#define NULL ((void*)0)
+#endif
+
+// Define missing functions for compatibility
+static void* simple_malloc(size_t size) {
+    // In a real implementation, this would call the system malloc
+    // For now, return a simple pointer
+    static char dummy_memory[1000000];
+    static size_t offset = 0;
+    if (offset + size < sizeof(dummy_memory)) {
+        void* ptr = &dummy_memory[offset];
+        offset += size;
+        return ptr;
+    }
+    return NULL;
+}
+
+static void simple_free(void* ptr) {
+    // In a real implementation, this would call the system free
+    // For now, do nothing
+}
 
 // Global context and callbacks
 static traffic_optimizer_ctx_t* g_traffic_ctx = NULL;
