@@ -18,9 +18,26 @@ endif()
 
 # Compiler-specific options
 if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
+    # Base optimization flags
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -Wall -Wno-array-bounds -fno-strict-aliasing -fno-strict-overflow -fwrapv -DAES=1 -D_GNU_SOURCE=1 -D_FILE_OFFSET_BITS=64")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mpclmul -march=core2 -mfpmath=sse -mssse3")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lm -lrt -lcrypto -lz -lpthread")
+    
+    # Architecture-specific optimizations
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mpclmul -march=native -mfpmath=sse -mssse3")
+    
+    # Advanced optimization flags
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto -ffast-math -funroll-loops -ftree-vectorize")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native -mtune=native")
+    
+    # Profile-guided optimization support
+    option(ENABLE_PGO "Enable Profile-Guided Optimization" OFF)
+    if(ENABLE_PGO)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-generate")
+        message(STATUS "PGO enabled - building with profiling instrumentation")
+    endif()
+    
+    # Link-time optimization
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto=auto")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -flto=auto")
     
     # Security-specific flags
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fstack-protector-strong -D_FORTIFY_SOURCE=2")
@@ -28,13 +45,68 @@ if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
     # Debug flags for development
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0 -DDEBUG=1")
+    elseif(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -DNDEBUG")
+    elseif(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Os -DNDEBUG")
+    else()
+        # Release build - maximum optimization
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -DNDEBUG")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native -mtune=native")
     endif()
+    
+    # Additional optimization flags for specific architectures
+    include(CheckCCompilerFlag)
+    CHECK_C_COMPILER_FLAG("-mavx2" HAS_AVX2)
+    if(HAS_AVX2)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx2")
+    endif()
+    
+    CHECK_C_COMPILER_FLAG("-mavx512f" HAS_AVX512)
+    if(HAS_AVX512)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx512f")
+    endif()
+    
+    # Enable link-time garbage collection
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffunction-sections -fdata-sections")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--gc-sections")
+    
+    # Static linking options
+    option(STATIC_LINKING "Enable static linking" OFF)
+    if(STATIC_LINKING)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
+    endif()
+    
+    # Memory optimization flags
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fomit-frame-pointer")
+    
+    # Vectorization hints
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ftree-vectorize")
+    
+    # Cache optimization
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -freorder-blocks-algorithm=stc")
+    
+    # Branch prediction optimization
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-correction")
     
 elseif(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Wall /D_WIN32_WINNT=0x0600")
     
+    # MSVC optimization flags
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /O2 /GL /Gy /Gw")
+    
     # Security-specific flags for MSVC
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /GS /guard:cf")
+    
+    # Whole program optimization
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LTCG")
+    
+    # Debug flags
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Zi /Od /DDEBUG=1")
+    else()
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /O2 /DNDEBUG")
+    endif()
 endif()
 
 # Define COMMIT hash (similar to Makefile)
@@ -171,6 +243,12 @@ set(SYSTEM_SOURCES
     system/advanced-cache.h
     system/memory-manager.c
     system/memory-manager.h
+    system/distributed-monitor.c
+    system/distributed-monitor.h
+    system/threat-detector.c
+    system/threat-detector.h
+    system/auto-scaler.c
+    system/auto-scaler.h
 )
 
 set(SECURITY_SOURCES
