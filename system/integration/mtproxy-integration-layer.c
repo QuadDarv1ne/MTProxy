@@ -4,7 +4,18 @@
  */
 
 #include "mtproxy-integration-layer.h"
-#include "system-integration-coordinator.h"
+
+// Include necessary function declarations
+#define SYSTEM_TYPE_DIAGNOSTIC 0
+#define SYSTEM_TYPE_MONITORING 1
+#define SYSTEM_TYPE_DEBUGGING 2
+#define SYSTEM_TYPE_CORRELATION 3
+#define SYSTEM_TYPE_OPTIMIZER 4
+#define SYSTEM_TYPE_LOAD_BALANCER 5
+#define SYSTEM_TYPE_CACHE_MANAGER 6
+#define SYSTEM_TYPE_SECURITY 7
+
+int register_system(struct integration_coordinator_context* ctx, int type, void* context, const char* name, int priority);
 
 // Helper function to compare strings
 static int string_compare(const char* str1, const char* str2) {
