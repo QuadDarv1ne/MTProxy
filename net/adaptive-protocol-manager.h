@@ -233,16 +233,16 @@ void register_protocol_performance_callback(protocol_performance_callback_t call
 void register_emergency_switch_callback(emergency_switch_callback_t callback);
 
 // Integration functions
-int integrate_with_network_analyzer(adaptive_protocol_manager* manager);
-int integrate_with_performance_monitor(adaptive_protocol_manager* manager);
-int apply_protocol_optimizations(adaptive_protocol_manager* manager);
-int verify_protocol_integrity(adaptive_protocol_manager* manager);
+int integrate_with_network_analyzer(adaptive_protocol_manager_t* manager);
+int integrate_with_performance_monitor(adaptive_protocol_manager_t* manager);
+int apply_protocol_optimizations(adaptive_protocol_manager_t* manager);
+int verify_protocol_integrity(adaptive_protocol_manager_t* manager);
 
 // Utility functions
 const char* protocol_type_to_string(protocol_type_t protocol);
 protocol_type_t string_to_protocol_type(const char* protocol_str);
 const char* protocol_switch_reason_to_string(const protocol_switch_decision_t* decision);
-double calculate_protocol_score(adaptive_protocol_manager* manager, protocol_type_t protocol,
+double calculate_protocol_score(adaptive_protocol_manager_t* manager, protocol_type_t protocol,
                               const network_conditions_t* conditions);
 
 #endif // ADAPTIVE_PROTOCOL_MANAGER_H
