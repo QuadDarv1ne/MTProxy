@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  mtproxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mtproxy
+    restart: unless-stopped
+    
+    # Environment variables
+    environment:
+      # Set your secret key here or use secrets
+      - MTPROXY_SECRET=${MTPROXY_SECRET:-CHANGE_ME_SECRET}
+      - MTPROXY_TAG=${MTPROXY_TAG:-}
+      - WORKERS=${WORKERS:-1}
+    
+    # Ports
+    ports:
+      - "443:443"      # MTProxy port
+      - "127.0.0.1:8888:8888"  # Statistics (localhost only)
+    
+    # Command override with environment variables
+    command: >
+      -u mtproxy
+      -p 8888
+      -H 443
+      -S ${MTPROXY_SECRET:-CHANGE_ME_SECRET}
+      --aes-pwd /opt/mtproxy/config/proxy-secret
+      /opt/mtproxy/config/proxy-multi.conf
+      -M ${WORKERS:-1}
+    
+    # Volumes for persistent data
+    volumes:
+      - ./config:/opt/mtproxy/config:ro
+      - ./logs:/opt/mtproxy/logs
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+    
+    # Network mode
+    network_mode: bridge
+
+# Optional: Create a custom network
+networks:
+  default:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# Optional: Volumes for data persistence
+volumes:
+  config:
+    driver: local
+  logs:
+    driver: local
