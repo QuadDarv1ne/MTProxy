@@ -58,7 +58,7 @@ cmake --build . --parallel
 # Executable will be created in build/bin/
 ```
 
-For more details on building with CMake, see [BUILD_CMAKE.md](BUILD_CMAKE.md).
+For more details on building with CMake, see [build-scripts/README.md](build-scripts/README.md).
 
 ## Running
 
@@ -211,7 +211,7 @@ For detailed documentation, see the [docs](docs/) directory.
 - Main application: GNU General Public License version 2 (GPLv2)
 - Library components: GNU Lesser General Public License version 2.1 (LGPLv2.1)
 
-See `LICENSE`, `GPLv2` and `LGPLv2` files for details.
+See [licenses/](licenses/) directory for details.
 
 ---
 
