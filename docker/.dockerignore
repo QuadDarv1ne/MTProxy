@@ -1,0 +1,58 @@
+# Git
+.git/
+.gitignore
+.github/
+
+# Documentation
+*.md
+!docker/README.md
+docs/
+
+# Development files
+.vscode/
+.idea/
+*.swp
+*~
+
+# Build artifacts
+objs/
+obj/
+bin/
+build/
+*.o
+*.a
+*.so
+*.exe
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+*.old
+logs/
+tmp/
+
+# Docker files (not needed in image)
+docker-compose.yml
+.env
+.env.*
+
+# Test files
+testing/
+tests/
+*_test.c
+test_*.c
+
+# CI/CD
+.github/
+
+# IDE
+.qoder/
+.kiro/
+
+# Backups
+backups/
+*.backup
+
+# Scripts (not needed in runtime)
+scripts/

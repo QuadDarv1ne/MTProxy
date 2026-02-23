@@ -248,7 +248,7 @@ int main() {
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the same license as the project (GPLv2/LGPLv2.1).
+By contributing, you agree that your contributions will be licensed under the same license as the project (GPLv2/LGPLv2.1). See [licenses/](licenses/) directory for details.
 
 ---
 
