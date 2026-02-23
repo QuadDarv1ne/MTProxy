@@ -251,7 +251,7 @@ void kprintf (const char *format, ...) {
   struct timeval tv;
   char mp_kprintf_buf[PIPE_BUF];
 
-  if (gettimeofday (&tv, NULL) || !localtime_r (&tv.tv_sec, &t)) {
+  if (gettimeofday (&tv, NULL) || !localtime_r ((const time_t*)&tv.tv_sec, &t)) {
     memset (&t, 0, sizeof (t));
   }
 

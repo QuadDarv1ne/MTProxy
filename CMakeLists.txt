@@ -195,8 +195,9 @@ set(CRYPTO_SOURCES
     crypto/vectorized-crypto.h
 )
 
+# NET_SOURCES - все сетевые модули (объединено)
 set(NET_SOURCES
-    ${NET_SOURCES}
+    # Расширенные функции
     net/shadowsocks-advanced.c
     net/shadowsocks-advanced.h
     net/pluggable-transports.c
@@ -205,13 +206,56 @@ set(NET_SOURCES
     net/network-profiler.h
     net/network-analyzer.c
     net/network-analyzer.h
+    # Основные сетевые модули
+    net/net-config.c
+    net/net-config.h
+    net/net-connections.c
+    net/net-connections.h
+    net/net-crypto-aes.c
+    net/net-crypto-aes.h
+    net/net-crypto-dh.c
+    net/net-crypto-dh.h
+    net/net-events.c
+    net/net-events.h
+    net/net-http-server.c
+    net/net-http-server.h
+    net/net-msg-buffers.c
+    net/net-msg-buffers.h
+    net/net-msg.c
+    net/net-msg.h
+    net/net-rpc-targets.c
+    net/net-rpc-targets.h
+    net/net-stats.c
+    net/net-tcp-connections.c
+    net/net-tcp-connections.h
+    net/net-tcp-rpc-client.c
+    net/net-tcp-rpc-client.h
+    net/net-tcp-rpc-common.c
+    net/net-tcp-rpc-common.h
+    net/net-tcp-rpc-ext-server.c
+    net/net-tcp-rpc-ext-server.h
+    net/net-tcp-rpc-server.c
+    net/net-tcp-rpc-server.h
+    net/net-thread.c
+    net/net-thread.h
+    net/net-timers.c
+    net/net-timers.h
 )
 
+# SECURITY_SOURCES - все модули безопасности (объединено)
 set(SECURITY_SOURCES
     security/modular-security.c
     security/modular-security.h
     security/simple-security.c
     security/simple-security.h
+    security/security-manager.c
+    security/security-manager.h
+    security/ddos-protection.c
+    security/ddos-protection.h
+    security/cert-pinning.c
+    security/cert-pinning.h
+    security/security-utils.c
+    security/security-utils.h
     common/mtproxy-fixes-simple.h
 )
 
@@ -249,17 +293,6 @@ set(SYSTEM_SOURCES
     system/threat-detector.h
     system/auto-scaler.c
     system/auto-scaler.h
-)
-
-set(SECURITY_SOURCES
-    security/security-manager.c
-    security/security-manager.h
-    security/ddos-protection.c
-    security/ddos-protection.h
-    security/cert-pinning.c
-    security/cert-pinning.h
-    security/security-utils.c
-    security/security-utils.h
 )
 
 set(ADVANCED_OPTIMIZATION_SOURCES
@@ -306,51 +339,6 @@ set(MTPROTO_SOURCES
     mtproto/mtproto-config.c
     mtproto/mtproto-config.h
     mtproto/mtproto-proxy.c
-    
-    # Security modules
-    security/modular-security.c
-    security/modular-security.h
-    security/simple-security.c
-    security/simple-security.h
-    
-    # Connection with security fixes
-    common/mtproxy-fixes-simple.h
-)
-
-set(NET_SOURCES
-    net/net-config.c
-    net/net-config.h
-    net/net-connections.c
-    net/net-connections.h
-    net/net-crypto-aes.c
-    net/net-crypto-aes.h
-    net/net-crypto-dh.c
-    net/net-crypto-dh.h
-    net/net-events.c
-    net/net-events.h
-    net/net-http-server.c
-    net/net-http-server.h
-    net/net-msg-buffers.c
-    net/net-msg-buffers.h
-    net/net-msg.c
-    net/net-msg.h
-    net/net-rpc-targets.c
-    net/net-rpc-targets.h
-    net/net-stats.c
-    net/net-tcp-connections.c
-    net/net-tcp-connections.h
-    net/net-tcp-rpc-client.c
-    net/net-tcp-rpc-client.h
-    net/net-tcp-rpc-common.c
-    net/net-tcp-rpc-common.h
-    net/net-tcp-rpc-ext-server.c
-    net/net-tcp-rpc-ext-server.h
-    net/net-tcp-rpc-server.c
-    net/net-tcp-rpc-server.h
-    net/net-thread.c
-    net/net-thread.h
-    net/net-timers.c
-    net/net-timers.h
 )
 
 # Create a static library for common functionality
@@ -359,7 +347,6 @@ add_library(kdb_common STATIC ${COMMON_SOURCES} ${JOBS_SOURCES} ${CRYPTO_SOURCES
 # Target for the main mtproto-proxy executable
 add_executable(mtproto-proxy
     ${MTPROTO_SOURCES}
-    ${SECURITY_SOURCES}  
     ${ENGINE_SOURCES}
     ${NET_SOURCES}
 )
