@@ -33,10 +33,9 @@ kdb_cpuid_t *kdb_cpuid (void) {
     return &cached;
   }
 
-  unsigned int eax;
   assert(
     __get_cpuid(1,
-        &eax,
+        (unsigned int*) &cached.eax,
         (unsigned int*) &cached.ebx,
         (unsigned int*) &cached.ecx,
         (unsigned int*) &cached.edx

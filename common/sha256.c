@@ -58,7 +58,6 @@ void sha256_two_chunks (const unsigned char *input1, int ilen1, const unsigned c
 
 void sha256_hmac (unsigned char *key, int keylen, unsigned char *input, int ilen, unsigned char output[32]) {
   unsigned int len = 0;
-  unsigned char *result = HMAC(EVP_sha256(), key, keylen, input, ilen, output, &len);
-  assert (result == output);
+  HMAC(EVP_sha256(), key, keylen, input, ilen, output, &len);
   assert (len == 32);
 }

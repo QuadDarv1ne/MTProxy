@@ -33,13 +33,14 @@ long long precise_time_rdtsc;
 
 double get_utime_monotonic (void) __attribute__ ((weak));
 double get_utime_monotonic (void) {
-  struct timespec T;
 #if _POSIX_TIMERS
+  struct timespec T;
   assert (clock_gettime (CLOCK_MONOTONIC, &T) >= 0);
   precise_now_rdtsc = rdtsc ();
   return precise_now = T.tv_sec + (double) T.tv_nsec * 1e-9;
 #else
 #error "No high-precision clock"
+  struct timespec T = {0, 0};
   return precise_now = time ();
 #endif
 }
@@ -59,8 +60,8 @@ double get_double_time (void) {
 }
 
 double get_utime (int clock_id) {
-  struct timespec T;
 #if _POSIX_TIMERS
+  struct timespec T;
   assert (clock_gettime (clock_id, &T) >= 0);
   double res = T.tv_sec + (double) T.tv_nsec * 1e-9;
 #else
