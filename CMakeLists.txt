@@ -570,8 +570,22 @@ set_target_properties(mtproxy-admin PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# Test executable for new modules
+add_executable(test-new-modules
+    testing/test_new_modules.c
+)
+
+target_link_libraries(test-new-modules
+    kdb_common
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-new-modules PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # Installation rules
-install(TARGETS mtproto-proxy mtproxy-admin
+install(TARGETS mtproto-proxy mtproxy-admin test-new-modules
     RUNTIME DESTINATION bin
 )
 
