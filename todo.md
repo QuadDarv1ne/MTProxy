@@ -2,6 +2,15 @@
 
 ## ✅ Выполнено (Март 2026)
 
+### FFI интеграция и Mobile App
+- [x] Shared library для FFI (BUILD_SHARED_LIB)
+- [x] Публичный API (src/mtproxy.c, include/mtproxy.h)
+- [x] Mobile app на Flutter/Dart (mobile_app/)
+- [x] Скрипты сборки (build-native-libs.sh, build-native-windows.ps1)
+- [x] Тесты для mobile app (test/)
+- [x] Документация (DOCS.md, QUICKSTART.md, README.md)
+- [x] GitHub Actions CI/CD (flutter-ci.yml, codeql.yml, version-bump.yml)
+
 ### Система конфигурации (config-manager)
 - [x] Расширенные типы параметров (ARRAY, OBJECT)
 - [x] Система callback'ов для изменений конфигурации
@@ -162,7 +171,7 @@
 | monitor.sh | ✅ Готов | ⏳ Ручные | ✅ |
 | metrics_collector | ✅ Готов | ⏳ Ручные | ✅ |
 | mtproxy (shared lib) | ✅ Готов | ⏳ FFI тесты | ✅ |
-| mobile_app (Flutter) | ⏳ В разработке | ⏳ Ручные | ✅ |
+| mobile_app (Flutter) | ✅ Готов | ✅ Dart тесты | ✅ |
 
 ### Сборка
 - **CMakeLists.txt**: ✅ Все модули добавлены
@@ -216,13 +225,13 @@ git checkout master && git merge dev && git push origin master
 
 - **Правило:** Качество важнее количества ✅
 - **Workflow:** Улучшения в dev → проверка → merge в main ✅
-- **Текущий статус:** Ветки синхронизированы ✅ (c4ba06e)
+- **Текущий статус:** Ветки синхронизированы ✅ (be3a91d)
 - **Фокус:** Тесты пройдены (45/45), стабильная версия
-- **Новое:** Shared library для FFI (Flutter/Dart mobile app)
+- **Новое:** Shared library + Mobile app (Flutter/Dart) готовы
 
 ---
 
-*Последнее обновление: 19 марта 2026 г. (ветки синхронизированы c4ba06e, тесты 45/45, shared lib добавлена)*
+*Последнее обновление: 19 марта 2026 г. (ветки синхронизированы be3a91d, тесты 45/45, FFI + mobile app готовы)*
 
 ### Реорганизация CMakeLists.txt
 - [x] Объединены NET_SOURCES в одну секцию (20 файлов)
@@ -499,11 +508,12 @@ mtproxy-0.02 compiled at Mar 19 2026 20:08:46 by gcc 13.3.0 64-bit
 ## 📝 Следующие шаги
 
 ### Немедленно
-- [x] Commit изменений в dev — ✅ изменения закоммичены (c4ba06e)
+- [x] Commit изменений в dev — ✅ изменения закоммичены (be3a91d)
 - [ ] Тестирование на Windows (single-worker mode)
 - [x] Запуск test-new-modules после исправления структур — ✅ 45 тестов пройдено
-- [x] Merge в main после проверки — ✅ выполнено (c4ba06e)
-- [ ] Сборка shared library: `cmake -DBUILD_SHARED_LIB=ON`
+- [x] Merge в main после проверки — ✅ выполнено (be3a91d)
+- [x] Сборка shared library: `cmake -DBUILD_SHARED_LIB=ON` — ✅ готово
+- [x] Mobile app (Flutter/Dart) — ✅ готово
 - [ ] Тестирование FFI интеграции (Flutter/Dart)
 
 ### В процессе
@@ -519,16 +529,16 @@ mtproxy-0.02 compiled at Mar 19 2026 20:08:46 by gcc 13.3.0 64-bit
 
 | Метрика | Значение |
 |---------|----------|
-| **Веток** | 2 (master, dev) — ✅ синхронизированы (c4ba06e) |
+| **Веток** | 2 (master, dev) — ✅ синхронизированы (be3a91d) |
 | **Файлов в system/** | 82 |
 | **Модулей безопасности** | 6 + security_enhanced |
 | **Сетевых модулей** | 41 |
 | **Документов** | 7 в docs/, 3 в security/ |
-| **C-файлов в проекте** | 182+ |
+| **C-файлов в проекте** | 183+ |
 | **Собранных бинарников** | mtproto-proxy (536 KB) ✅, mtproxy-admin.exe ✅ |
-| **Тестов** | 45 ✅ (100% пройдено) |
+| **Тестов** | 45 ✅ C + 4 ✅ Dart (100% пройдено) |
 | **TODO/FIXME отметок** | 0 (все реализовано) |
 | **Исправлений Windows** | 16 файлов ✅ (14 Windows + 2 заголовки) |
 | **Shared library** | ✅ Готово (BUILD_SHARED_LIB) |
-| **Mobile app** | ✅ Flutter/Dart (mobile_app/) |
-| **Последняя сборка** | mtproxy-0.02, gcc 13.3.0, commit c4ba06e |
+| **Mobile app** | ✅ Flutter/Dart (mobile_app/, 40+ файлов) |
+| **Последняя сборка** | mtproxy-0.02, gcc 13.3.0, commit be3a91d |
