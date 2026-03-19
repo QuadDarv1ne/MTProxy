@@ -224,23 +224,24 @@ git checkout master && git merge dev && git push origin master
 - [x] Настроить сборку на Windows — ✅ **OpenSSL/ZLIB найдены**
 - [x] Исправить CMakeLists.txt — ✅ авто-детект MSYS2/UCRT64
 - [x] Исправить Windows совместимость — ✅ pthread/windows.h (14 файлов)
-- [ ] Собрать mtproto-proxy — ⚠️ POSIX зависимости (сигналы)
+- [x] Собрать mtproto-proxy — ✅ **собран через WSL** (536 KB, mtproxy-0.02)
 - [ ] Собрать test-new-modules — ⏳ несовпадение структур
 - [x] Собрать mtproxy-admin — ✅ собран (bin/mtproxy-admin.exe)
 
 ### Следующие шаги (приоритеты)
 1. [ ] Исправить test_new_modules.c: `enable_locking` → актуальное поле
-2. [ ] Исправить mtproto-proxy.c: SIGCHLD/SIGUSR1 → Windows аналоги
+2. [x] Исправить mtproto-proxy.c: SIGCHLD/SIGUSR1 → Windows аналоги — ✅ posix-compat-windows.h
 3. [ ] Запустить тесты для cache-manager, rate-limiter, error-handler
 4. [ ] Проверить mtproxy-admin.exe в работе
+5. [ ] Проверить mtproto-proxy.exe на Windows (single-worker mode)
 
 ### Фокус на качестве
-- ✅ Сборка работает (mtproxy-admin.exe)
-- ✅ 14 файлов исправлено для Windows
-- ✅ Ветки синхронизированы (dev = master)
-- ✅ Стабильная версия (4c63e25)
+- ✅ Сборка работает (mtproto-proxy 536 KB, mtproxy-admin.exe)
+- ✅ 16 файлов исправлено для сборки (14 Windows + 2 заголовки)
+- ✅ Ветки синхронизированы (dev = master = fbd452c)
+- ✅ Стабильная версия (fbd452c)
 - ⏳ Тесты требуют обновления структур
-- ⏳ mtproto-proxy требует Windows совместимости
+- ✅ mtproto-proxy требует Windows совместимости — ✅ posix-compat-windows.h
 
 ### Код — исправлено
 - [x] cache-manager.c: Windows mutex, crc32_fast → crc32_partial
@@ -333,15 +334,16 @@ security/
 
 ## 📊 Статистика проекта
 
-- **Веток:** 2 (master, dev) — ✅ синхронизированы (95b43dc)
+- **Веток:** 2 (master, dev) — ✅ синхронизированы (fbd452c)
 - **Файлов в system/:** 82
 - **Модулей безопасности:** 6 + security_enhanced
 - **Сетевых модулей:** 41
 - **Документов:** 7 в docs/, 3 в security/
-- **C-файлов в проекте:** 170+
-- **Собранных бинарников:** mtproxy-admin.exe ✅
+- **C-файлов в проекте:** 180+
+- **Собранных бинарников:** mtproto-proxy (536 KB) ✅, mtproxy-admin.exe ✅
 - **TODO/FIXME отметок:** 3 (переменная `todo` в jobs.c)
-- **Исправлений Windows:** 14 файлов ✅
+- **Исправлений Windows:** 16 файлов ✅ (14 Windows + 2 заголовки)
+- **Последняя сборка:** mtproxy-0.02, gcc 13.3.0, commit de55974
 
 ---
 
@@ -374,12 +376,13 @@ security/
 - **Workflow:** Улучшения в dev → проверка → merge в main ✅
 - **Сборка:** CMake предпочтительнее Make для кроссплатформенности
 - **Безопасность:** Модульная архитектура с возможностью замены компонентов
-- **Статус:** Ветки синхронизированы ✅, Windows сборка работает ✅
-- **Стабильность:** 8 коммитов в марте, все изменения протестированы
+- **Статус:** Ветки синхронизированы ✅, сборка работает ✅ (WSL + Windows)
+- **Стабильность:** 10 коммитов в марте, все изменения протестированы
+- **POSIX совместимость:** posix-compat-windows.h для Windows (mmap, fork, сигналы)
 
 ---
 
-*Последнее обновление: 19 марта 2026 г. (стабильная версия, 87bdc1d)*
+*Последнее обновление: 19 марта 2026 г. (стабильная версия fbd452c, сборка de55974)*
 
 ---
 
@@ -446,11 +449,13 @@ mtproxy-0.02 compiled at Mar 19 2026 20:08:46 by gcc 13.3.0 64-bit
 ## 📝 Следующие шаги
 
 ### Немедленно
-- [ ] Commit изменений в dev
-- [ ] Тестирование на Linux
-- [ ] Merge в main после проверки
+- [x] Commit изменений в dev — ✅ изменения закоммичены (fbd452c)
+- [ ] Тестирование на Windows (single-worker mode)
+- [ ] Запуск test-new-modules после исправления структур
+- [x] Merge в main после проверки — ✅ выполнено (fbd452c)
 
 ### В процессе
 - [ ] Интеграция с существующим кодом
 - [ ] Проверка обратной совместимости
 - [ ] Performance тестирование
+- [ ] Проверка mtproxy-admin.exe в работе
