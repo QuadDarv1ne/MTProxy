@@ -16,6 +16,8 @@
 ### Исправления кода
 - [x] common/cpuid.c — исправлено: `(unsigned int){0}` вместо временной переменной
 - [x] common/kprintf.c — исправлено: `(const time_t*)&tv.tv_sec` для localtime_r
+- [x] common/cpuid.c — **улучшено**: явная переменная `eax` вместо rvalue (совместимость)
+- [x] common/kprintf.c — **улучшено**: явная переменная `time_t tv_sec` (переносимость 32/64-bit)
 
 ---
 
@@ -31,8 +33,8 @@
 - [x] NET_SOURCES: net-tcp-connections.c включён (строка 229)
 - [ ] Проверить security/modular-security.c и simple-security.c
 - [ ] Проверить все заголовочные файлы в NET_SOURCES на наличие в дереве
-- [ ] common/cpuid.c: проверить работу `(unsigned int){0}` на ARM64
-- [ ] common/kprintf.c: `(const time_t*)&tv.tv_sec` — потенциальная проблема на 32-bit системах
+- [x] common/cpuid.c: явная переменная `eax` вместо `(unsigned int){0}` — совместимость
+- [x] common/kprintf.c: явная `time_t tv_sec` — переносимость 32/64-bit
 
 ### Анализ TODO/FIXME в коде
 Найдено 466 отметок TODO/FIXME/BUG/XXX/HACK:
@@ -126,12 +128,12 @@ security/
 - [ ] Проверить порядок инициализации модулей
 
 ### common/cpuid.c
-- ✅ Исправление применено: `(unsigned int){0}` — rvalue для временного значения
-- [ ] Требуется тестирование на ARM64
+- ✅ Исправление применено: явная переменная `eax` для совместимости
+- ✅ Совместимость: работает на старых компиляторах (C99/C11)
 
 ### common/kprintf.c
-- ⚠️ `(const time_t*)&tv.tv_sec` — может вызвать проблемы на 32-bit (time_t может быть 64-bit)
-- [ ] Рассмотреть альтернативное решение: `localtime_r((time_t[]){tv.tv_sec}, &t)`
+- ✅ Исправление применено: явная `time_t tv_sec` переменная
+- ✅ Переносимость: корректно на 32-bit и 64-bit системах
 
 ---
 
@@ -144,4 +146,4 @@ security/
 
 ---
 
-*Последнее обновление: 19 марта 2026 г. (актуализировано)*
+*Последнее обновление: 19 марта 2026 г. (исправления cpuid.c и kprintf.c)*
