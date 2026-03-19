@@ -90,6 +90,12 @@ if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
     if(STATIC_LINKING)
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
     endif()
+
+# Shared library for FFI (Flutter, mobile apps)
+option(BUILD_SHARED_LIB "Build shared library for FFI integration" OFF)
+if(BUILD_SHARED_LIB)
+    add_definitions(-DMTPROXY_EXPORTS)
+endif()
     
     # Memory optimization flags
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fomit-frame-pointer")
@@ -578,6 +584,65 @@ set_target_properties(test-new-modules PROPERTIES
 install(TARGETS mtproto-proxy mtproxy-admin test-new-modules
     RUNTIME DESTINATION bin
 )
+
+# ============================================================================
+# Shared Library for FFI Integration (Flutter, Mobile Apps)
+# ============================================================================
+
+if(BUILD_SHARED_LIB)
+    # Источники для библиотеки
+    set(MTPROXY_LIB_SOURCES
+        src/mtproxy.c
+        include/mtproxy.h
+    )
+    
+    # Добавляем основные источники проекта
+    list(APPEND MTPROXY_LIB_SOURCES
+        ${COMMON_SOURCES}
+        ${CRYPTO_SOURCES}
+        ${NET_SOURCES}
+        ${ENGINE_SOURCES}
+    )
+    
+    # Создание shared библиотеки
+    add_library(mtproxy SHARED ${MTPROXY_LIB_SOURCES})
+    
+    # Настройки библиотеки
+    set_target_properties(mtproxy PROPERTIES
+        VERSION ${PROJECT_VERSION}
+        SOVERSION 1
+        PUBLIC_HEADER include/mtproxy.h
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+    )
+    
+    # Include directories
+    target_include_directories(mtproxy PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<INSTALL_INTERFACE:include>
+    )
+    
+    # Link libraries
+    target_link_libraries(mtproxy
+        ${PLATFORM_LIBS}
+        OpenSSL::SSL
+        OpenSSL::Crypto
+        ZLIB::ZLIB
+        Threads::Threads
+    )
+    
+    # Installation
+    install(TARGETS mtproxy
+        EXPORT MTProxyTargets
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+        PUBLIC_HEADER DESTINATION include
+    )
+    
+    message(STATUS "MTProxy shared library will be built")
+endif()
 
 # Print build info
 message(STATUS "Building MTProxy version ${PROJECT_VERSION}")
