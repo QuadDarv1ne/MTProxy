@@ -31,6 +31,7 @@
 #ifdef _WIN32
     #include <winsock2.h>
     #include <ws2tcpip.h>
+    #include <sys/stat.h>
 #else
     #include <unistd.h>
     #include <sys/types.h>
@@ -371,24 +372,30 @@ struct hostent *kdb_gethostbyname (const char *name) {
 
 
   if (name[0] == '[' && name[len-1] == ']' && len <= 64) {
-    /*
-    if (parse_ipv6 ((unsigned short *) ipv6_addr, name + 1) == len - 2) {
-      hret6.h_name = (char *)name;
-      return &hret6;
-    }
-    */
+#ifdef __linux__
     char buf[64];
     memcpy (buf, name + 1, len - 2);
     buf[len - 2] = 0;
     return gethostbyname2 (buf, AF_INET6);
+#else
+    return NULL;
+#endif
   }
 
   if (kdb_hosts_loaded <= 0) {
+#ifdef __linux__
     return gethostbyname (name) ?: gethostbyname2 (name, AF_INET6);
+#else
+    return gethostbyname (name);
+#endif
   }
 
   if (len >= 128) {
+#ifdef __linux__
     return gethostbyname (name) ?: gethostbyname2 (name, AF_INET6);
+#else
+    return gethostbyname (name);
+#endif
   }
 
   struct host *res = getHash (&Hosts, name, len, 0);
@@ -396,7 +403,11 @@ struct hostent *kdb_gethostbyname (const char *name) {
 
   if (!res) {
     if (strchr (name, '.') || strchr (name, ':')) {
+#ifdef __linux__
       return gethostbyname (name) ?: gethostbyname2 (name, AF_INET6);
+#else
+      return gethostbyname (name);
+#endif
     } else {
       return 0;
     }

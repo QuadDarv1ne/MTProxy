@@ -31,72 +31,13 @@
 #include "common/kprintf.h"
 #include "common/common-stats.h"
 
-// Configuration statistics
-struct config_manager_stats {
-    long long total_config_loads;
-    long long config_reload_count;
-    long long validation_errors;
-    long long migration_operations;
-    long long runtime_changes;
-    long long config_cache_hits;
-    long long config_cache_misses;
-};
-
+/* Configuration statistics - defined in header */
 static struct config_manager_stats config_stats = {0};
 
-// Configuration parameter types
-enum config_param_type {
-    CONFIG_TYPE_INT = 0,
-    CONFIG_TYPE_LONG,
-    CONFIG_TYPE_DOUBLE,
-    CONFIG_TYPE_STRING,
-    CONFIG_TYPE_BOOL,
-    CONFIG_TYPE_ENUM
-};
-
-// Configuration parameter structure
-struct config_parameter {
-    char name[128];
-    char description[256];
-    enum config_param_type type;
-    void *value_ptr;
-    size_t value_size;
-    int is_runtime_modifiable;
-    int is_sensitive; // Для паролей и ключей
-    char default_value[256];
-    char min_value[64];
-    char max_value[64];
-    time_t last_modified;
-    int version;
-};
-
-// Configuration section
-struct config_section {
-    char name[64];
-    struct config_parameter *parameters;
-    int param_count;
-    int param_capacity;
-    time_t last_updated;
-};
-
-// Configuration context
-struct config_context {
-    struct config_section *sections;
-    int section_count;
-    int section_capacity;
-    char config_file_path[512];
-    time_t last_file_modified;
-    int auto_reload_enabled;
-    int validation_enabled;
-    pthread_mutex_t config_mutex;
-    pthread_t reload_thread;
-    int reload_thread_running;
-};
-
-// Global configuration context
+/* Global configuration context */
 static struct config_context global_config_ctx = {0};
 
-// Built-in configuration sections
+/* Built-in configuration sections */
 static const struct builtin_config_section {
     const char *name;
     const char *description;
@@ -278,12 +219,39 @@ int config_manager_register_parameter(
     
     pthread_mutex_unlock(&global_config_ctx.config_mutex);
     
-    vkprintf(3, "Registered config parameter: %s.%s (type %d)\n", 
+    vkprintf(3, "Registered config parameter: %s.%s (type %d)\n",
              section_name, param_name, type);
     return 0;
 }
 
-// Установка значения параметра
+/* Вспомогательные функции поиска */
+static struct config_section *config_manager_find_section(const char *section_name) {
+    for (int i = 0; i < global_config_ctx.section_count; i++) {
+        if (strcmp(global_config_ctx.sections[i].name, section_name) == 0) {
+            return &global_config_ctx.sections[i];
+        }
+    }
+    return NULL;
+}
+
+static struct config_parameter *config_manager_find_parameter(
+    const char *section_name,
+    const char *param_name) {
+
+    struct config_section *section = config_manager_find_section(section_name);
+    if (!section) {
+        return NULL;
+    }
+
+    for (int i = 0; i < section->param_count; i++) {
+        if (strcmp(section->parameters[i].name, param_name) == 0) {
+            return &section->parameters[i];
+        }
+    }
+    return NULL;
+}
+
+/* Установка значения параметра */
 int config_manager_set_parameter(
     const char *section_name,
     const char *param_name,
@@ -357,33 +325,6 @@ int config_manager_get_parameter(
     
     pthread_mutex_unlock(&global_config_ctx.config_mutex);
     return 0;
-}
-
-// Вспомогательные функции поиска
-static struct config_section *config_manager_find_section(const char *section_name) {
-    for (int i = 0; i < global_config_ctx.section_count; i++) {
-        if (strcmp(global_config_ctx.sections[i].name, section_name) == 0) {
-            return &global_config_ctx.sections[i];
-        }
-    }
-    return NULL;
-}
-
-static struct config_parameter *config_manager_find_parameter(
-    const char *section_name, 
-    const char *param_name) {
-    
-    struct config_section *section = config_manager_find_section(section_name);
-    if (!section) {
-        return NULL;
-    }
-    
-    for (int i = 0; i < section->param_count; i++) {
-        if (strcmp(section->parameters[i].name, param_name) == 0) {
-            return &section->parameters[i];
-        }
-    }
-    return NULL;
 }
 
 // Загрузка конфигурации из файла

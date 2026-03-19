@@ -30,76 +30,13 @@
 #include "common/common-stats.h"
 #include "common/config-manager.h"
 
-// Runtime tuner statistics
-struct runtime_tuner_stats {
-    long long total_tuning_operations;
-    long long successful_tunings;
-    long long failed_tunings;
-    long long auto_tunings;
-    long long manual_tunings;
-    long long performance_improvements;
-    long long rollback_operations;
-};
-
+/* Runtime tuner statistics - defined in header */
 static struct runtime_tuner_stats tuner_stats = {0};
 
-// Tuning parameter structure
-struct tuning_parameter {
-    char name[128];
-    char description[256];
-    void *current_value_ptr;
-    enum config_param_type type;
-    double min_value;
-    double max_value;
-    double step_size;
-    double current_value;
-    double optimal_value;
-    double baseline_value;
-    int is_tunable;
-    int auto_tune_enabled;
-    time_t last_tuned;
-    int tuning_attempts;
-    double performance_impact; // -1.0 to 1.0
-};
-
-// Tuning strategy
-enum tuning_strategy {
-    TUNING_STRATEGY_CONSERVATIVE = 0,
-    TUNING_STRATEGY_AGGRESSIVE,
-    TUNING_STRATEGY_ADAPTIVE,
-    TUNING_STRATEGY_PREDICTIVE
-};
-
-// Performance metric
-struct performance_metric {
-    char name[64];
-    double current_value;
-    double baseline_value;
-    double weight; // Вес метрики в общей оценке
-    time_t timestamp;
-    int is_degraded;
-};
-
-// Tuning context
-struct tuning_context {
-    struct tuning_parameter *parameters;
-    int param_count;
-    int param_capacity;
-    struct performance_metric *metrics;
-    int metric_count;
-    int metric_capacity;
-    enum tuning_strategy strategy;
-    double performance_threshold;
-    int auto_tuning_enabled;
-    time_t last_tuning_cycle;
-    int tuning_cycle_interval_seconds;
-    pthread_mutex_t tuner_mutex;
-    int tuner_initialized;
-};
-
+/* Global tuning context */
 static struct tuning_context global_tuner_ctx = {0};
 
-// Built-in tunable parameters
+/* Built-in tunable parameters */
 static const struct builtin_tunable_param {
     const char *name;
     const char *description;
@@ -330,35 +267,35 @@ int runtime_tuner_run_auto_tuning(void) {
     
     // Оценка текущей производительности
     double current_performance = runtime_tuner_evaluate_performance();
-    
+
     // Для каждого tunable параметра
     for (int i = 0; i < global_tuner_ctx.param_count; i++) {
         struct tuning_parameter *param = &global_tuner_ctx.parameters[i];
-        
+
         if (!param->auto_tune_enabled || !param->is_tunable) {
             continue;
         }
-        
+
         // Пробуем изменить параметр
         if (runtime_tuner_try_parameter_change(param, current_performance)) {
             tuner_stats.successful_tunings++;
         } else {
             tuner_stats.failed_tunings++;
         }
-        
+
         tuner_stats.auto_tunings++;
     }
-    
+
     global_tuner_ctx.last_tuning_cycle = now;
     tuner_stats.total_tuning_operations++;
-    
+
     pthread_mutex_unlock(&global_tuner_ctx.tuner_mutex);
-    
+
     vkprintf(2, "Auto-tuning cycle completed. Performance: %.2f\n", current_performance);
     return 0;
 }
 
-// Оценка общей производительности
+/* Оценка общей производительности */
 static double runtime_tuner_evaluate_performance(void) {
     double total_weighted_score = 0.0;
     double total_weight = 0.0;

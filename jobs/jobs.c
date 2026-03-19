@@ -368,6 +368,7 @@ struct job_thread *main_job_thread;
 __thread struct job_thread *this_job_thread;
 __thread job_t this_job;
 
+#ifdef __linux__
 long int lrand48_j (void) {
   if (this_job_thread) {
     long int t;
@@ -397,6 +398,13 @@ double drand48_j (void) {
     return drand48 ();
   }
 }
+#else
+/* Windows/non-Linux fallback */
+#include <stdlib.h>
+long int lrand48_j (void) { return rand(); }
+long int mrand48_j (void) { return rand(); }
+double drand48_j (void) { return (double)rand() / RAND_MAX; }
+#endif
 
 struct mp_queue MainJobQueue __attribute__((aligned(128)));
 
@@ -463,7 +471,11 @@ int create_job_thread_ex (int thread_class, void *(*thread_work)(void *)) {
   JT->id = i;
   assert (JT->job_queue);
 
+#ifdef __linux__
   srand48_r (rdtsc () ^ lrand48 (), &JT->rand_data);
+#else
+  srand (rdtsc () ^ lrand48 ());
+#endif
 
 
   if (thread_class != JC_MAIN) {
