@@ -4,6 +4,7 @@
  */
 
 #include "ddos-protection.h"
+#include <time.h>
 
 // Maximum number of tracked IPs
 #define MAX_TRACKED_IPS 10000
@@ -106,9 +107,18 @@ int ddos_check_connection(const char *ip_address) {
     
     // Check if IP is blocked
     if (g_tracked_ips[ip_index].is_blocked) {
-        // TODO: In real implementation, check if block period expired
-        g_ddos_ctx.stats.connections_blocked++;
-        return 0;
+        // Check if block period has expired
+        long long current_time = (long long)time(NULL);
+        if (current_time >= g_tracked_ips[ip_index].block_expiration) {
+            // Block expired, reset IP entry
+            g_tracked_ips[ip_index].is_blocked = 0;
+            g_tracked_ips[ip_index].connection_count = 0;
+            g_tracked_ips[ip_index].block_expiration = 0;
+        } else {
+            // Still blocked
+            g_ddos_ctx.stats.connections_blocked++;
+            return 0;
+        }
     }
     
     // Update connection count
@@ -118,6 +128,7 @@ int ddos_check_connection(const char *ip_address) {
     if (g_tracked_ips[ip_index].connection_count > g_ddos_ctx.config.max_connections_per_ip) {
         // Block the IP
         g_tracked_ips[ip_index].is_blocked = 1;
+        g_tracked_ips[ip_index].block_expiration = (long long)time(NULL) + g_ddos_ctx.config.block_duration;
         g_ddos_ctx.stats.connections_blocked++;
         g_ddos_ctx.stats.attack_patterns_detected++;
         return 0;
