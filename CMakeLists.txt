@@ -189,6 +189,8 @@ set(COMMON_SOURCES
     common/cache-manager.h
     common/rate-limiter.c
     common/rate-limiter.h
+    common/error-handler.c
+    common/error-handler.h
 )
 
 set(JOBS_SOURCES
