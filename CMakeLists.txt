@@ -540,8 +540,8 @@ add_executable(mtproto-proxy
 )
 
 # Link libraries
-target_link_libraries(mtproto-proxy 
-    kdb_common 
+target_link_libraries(mtproto-proxy
+    kdb_common
     ${PLATFORM_LIBS}
     OpenSSL::SSL
     OpenSSL::Crypto
@@ -554,8 +554,24 @@ set_target_properties(mtproto-proxy PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# Admin CLI utility
+add_executable(mtproxy-admin
+    admin/main.c
+    admin/admin-cli.c
+    admin/admin-cli.h
+)
+
+target_link_libraries(mtproxy-admin
+    kdb_common
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(mtproxy-admin PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # Installation rules
-install(TARGETS mtproto-proxy
+install(TARGETS mtproto-proxy mtproxy-admin
     RUNTIME DESTINATION bin
 )
 
