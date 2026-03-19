@@ -206,6 +206,47 @@ set(NET_SOURCES
     net/network-profiler.h
     net/network-analyzer.c
     net/network-analyzer.h
+    # Дополнительные сетевые модули
+    net/adaptive-protocol-manager.c
+    net/adaptive-protocol-manager.h
+    net/advanced-connection-pool.c
+    net/advanced-connection-pool.h
+    net/advanced-network.c
+    net/advanced-network.h
+    net/async-network-optimizer.c
+    net/async-network-optimizer.h
+    net/enhanced-tls-obfuscation.c
+    net/enhanced-tls-obfuscation.h
+    net/multiproto-manager.c
+    net/multiproto-manager.h
+    net/net-buffer-manager.c
+    net/net-buffer-manager.h
+    net/net-connections-pool.c
+    net/net-connections-pool.h
+    net/net-enhanced-networking.c
+    net/net-enhanced-networking.h
+    net/net-event-handler.c
+    net/net-event-handler.h
+    net/net-performance-manager.c
+    net/net-performance-manager.h
+    net/net-quic-connections.c
+    net/net-quic-connections.h
+    net/network-connection-optimizer.c
+    net/network-connection-optimizer.h
+    net/protocol-reliability.c
+    net/protocol-reliability.h
+    net/routing-optimizer.c
+    net/routing-optimizer.h
+    net/shadowsocks-adapter.c
+    net/shadowsocks-adapter.h
+    net/simple-advanced-network.c
+    net/simple-advanced-network.h
+    net/tls-emulator.c
+    net/tls-emulator.h
+    net/websocket-support.c
+    net/websocket-support.h
+    net/zero-copy-optimizer.c
+    net/zero-copy-optimizer.h
     # Основные сетевые модули
     net/net-config.c
     net/net-config.h
@@ -252,10 +293,20 @@ set(SECURITY_SOURCES
     security/security-manager.h
     security/ddos-protection.c
     security/ddos-protection.h
+    security/ddos-protection-enhanced.c
+    security/ddos-protection-enhanced.h
     security/cert-pinning.c
     security/cert-pinning.h
     security/security-utils.c
     security/security-utils.h
+    security/behavioral-anomaly-detection.c
+    security/behavioral-anomaly-detection.h
+    security/security-enhancements.c
+    security/security-enhancements.h
+    security/security-patch-example.c
+    security/security-patch-example.h
+    security/threat-intelligence-system.c
+    security/threat-intelligence-system.h
     common/mtproxy-fixes-simple.h
 )
 
@@ -383,6 +434,14 @@ set(PERF_MONITOR_SOURCES
     perf_monitor/extended-monitoring.h
     perf_monitor/perf-monitor.c
     perf_monitor/perf-monitor.h
+    perf_monitor/distributed-tracing.c
+    perf_monitor/distributed-tracing.h
+    perf_monitor/distributed-tracing-system.c
+    perf_monitor/distributed-tracing-system.h
+    perf_monitor/enhanced-observability.c
+    perf_monitor/enhanced-observability.h
+    perf_monitor/enhanced-performance-monitor.c
+    perf_monitor/enhanced-performance-monitor.h
 )
 
 set(OBFUSCATION_SOURCES
