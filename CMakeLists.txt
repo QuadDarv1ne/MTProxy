@@ -187,6 +187,8 @@ set(COMMON_SOURCES
     common/vlog.h
     common/cache-manager.c
     common/cache-manager.h
+    common/rate-limiter.c
+    common/rate-limiter.h
 )
 
 set(JOBS_SOURCES
