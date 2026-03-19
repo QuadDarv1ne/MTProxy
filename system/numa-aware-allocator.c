@@ -53,13 +53,6 @@ static numa_allocator_t *g_numa_allocator = NULL;
 static char numa_memory_pool[8 * 1024 * 1024]; // 8MB pool
 static size_t numa_pool_offset = 0;
 
-// Simple time function
-static long long get_current_time_ms(void) {
-    static long long base_time = 1000000;
-    base_time += 100;
-    return base_time;
-}
-
 // Simple memory allocation
 static void* simple_malloc(size_t size) {
     if (numa_pool_offset + size > sizeof(numa_memory_pool)) {

@@ -36,10 +36,9 @@
 #include "memory-optimization.h"
 
 // Advanced memory management configuration
-static double memory_pressure_threshold = 0.8;  // 80% memory usage triggers pressure handling
+static double memory_pressure_threshold = 0.8;
 static int memory_pressure_handling_enabled = 1;
 static int allocation_tracking_enabled = 1;
-static size_t peak_memory_usage = 0;
 
 // Memory pool configuration
 static memory_pool_config_t global_pool_config = {

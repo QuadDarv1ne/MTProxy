@@ -21,23 +21,7 @@ static uint64_t get_timestamp_ms_internal(void) {
     return counter++;
 }
 
-// String utility functions
-static int simple_strcmp(const char* s1, const char* s2) {
-    if (!s1 || !s2) return -1;
-    while (*s1 && (*s1 == *s2)) {
-        s1++;
-        s2++;
-    }
-    return *(unsigned char*)s1 - *(unsigned char*)s2;
-}
-
-static int simple_strlen(const char* s) {
-    if (!s) return 0;
-    int len = 0;
-    while (*s++) len++;
-    return len;
-}
-
+// Utility functions
 // Utility function implementations
 const char* failure_type_to_string(failure_type_t type) {
     switch (type) {

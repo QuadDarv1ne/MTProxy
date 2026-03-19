@@ -2,7 +2,6 @@
     Реализация модульной системы безопасности для MTProxy
 */
 
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -28,7 +27,6 @@ static modular_security_t *g_security = NULL;
 // Вспомогательные функции
 static client_tracker_t* find_client_tracker(modular_security_t *sec, uint32_t ip);
 static client_tracker_t* create_client_tracker(uint32_t ip);
-static void cleanup_expired_trackers(modular_security_t *sec);
 static int is_suspicious_pattern(const void *data, size_t size);
 
 // Инициализация системы безопасности
@@ -249,12 +247,10 @@ int security_block_ip_temporarily(uint32_t ip, int duration_seconds) {
     }
     
     tracker->status = SECURITY_STATUS_BLOCKED;
-    tracker->rate_limit_reset = 0; // current_time + duration_seconds
+    tracker->rate_limit_reset = 0;
     g_security->total_blocked++;
-    
-    char ip_str[16];
+
     security_uint32_to_ip(ip);
-    security_log_blocked_request(ip, "Temporary block for security violation");
     
     return 0;
 }
@@ -496,30 +492,6 @@ static client_tracker_t* create_client_tracker(uint32_t ip) {
         tracker->status = SECURITY_STATUS_OK;
     }
     return tracker;
-}
-
-static void cleanup_expired_trackers(modular_security_t *sec) {
-    long long current_time = 0; // В реальной реализации использовать gettimeofday
-    long long timeout = sec->config.connection_timeout;
-    
-    client_tracker_t *prev = NULL;
-    client_tracker_t *current = sec->client_list;
-    
-    while (current) {
-        if (current_time - current->last_activity > timeout) {
-            if (prev) {
-                prev->next = current->next;
-            } else {
-                sec->client_list = current->next;
-            }
-            client_tracker_t *next = current->next;
-            free(current);
-            current = next;
-        } else {
-            prev = current;
-            current = current->next;
-        }
-    }
 }
 
 static int is_suspicious_pattern(const void *data, size_t size) {

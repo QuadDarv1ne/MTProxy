@@ -201,14 +201,14 @@ MODULE_STAT_FUNCTION
     tot_cpu_load_rs += jb_cpu_load_rs[i];
     tot_cpu_load_rt += jb_cpu_load_rt[i];
 
-    #define max(a,b) ((a) > (b) ? (a) : (b))
-    max_cpu_load_u = max (max_cpu_load_u, jb_cpu_load_u[i]);
-    max_cpu_load_s = max (max_cpu_load_s, jb_cpu_load_s[i]);
-    max_cpu_load_t = max (max_cpu_load_t, jb_cpu_load_t[i]);
-    max_cpu_load_ru = max (max_cpu_load_ru, jb_cpu_load_ru[i]);
-    max_cpu_load_rs = max (max_cpu_load_rs, jb_cpu_load_rs[i]);
-    max_cpu_load_rt = max (max_cpu_load_rt, jb_cpu_load_rt[i]);
-    #undef max
+    #define job_max(a,b) (((a) > (b)) ? (a) : (b))
+    max_cpu_load_u = job_max (max_cpu_load_u, jb_cpu_load_u[i]);
+    max_cpu_load_s = job_max (max_cpu_load_s, jb_cpu_load_s[i]);
+    max_cpu_load_t = job_max (max_cpu_load_t, jb_cpu_load_t[i]);
+    max_cpu_load_ru = job_max (max_cpu_load_ru, jb_cpu_load_ru[i]);
+    max_cpu_load_rs = job_max (max_cpu_load_rs, jb_cpu_load_rs[i]);
+    max_cpu_load_rt = job_max (max_cpu_load_rt, jb_cpu_load_rt[i]);
+    #undef job_max
   }
 
 #ifdef _WIN32
@@ -432,8 +432,7 @@ void init_main_pthread_id (void) {
 }
 
 void check_main_thread (void) {
-  pthread_t self = pthread_self ();
-  assert (main_pthread_id_initialized && pthread_equal (main_pthread_id, self));
+  assert (main_pthread_id_initialized && pthread_equal (main_pthread_id, pthread_self ()));
 }
 
 static void set_job_interrupt_signal_handler (void);
@@ -892,27 +891,12 @@ void complete_job (job_t job) {
   complete_subjob (job, JOB_REF_PASS (parent), job->j_status);
 }
 
-static void job_interrupt_signal_handler (const int sig) {
-  char buffer[256];
-  if (verbosity >= 2) {
-    kwrite (2, buffer, sprintf (buffer, "SIGRTMAX-7 (JOB INTERRUPT) caught in thread #%d running job %p.\n", this_job_thread ? this_job_thread->id : -1, this_job_thread ? this_job_thread->current_job : 0));
-  }
-}
-
 static void set_job_interrupt_signal_handler (void) {
 #ifdef _WIN32
   /* Windows doesn't support POSIX signals like Unix */
   return;
 #else
-  struct sigaction act;
-  sigemptyset (&act.sa_mask);
-  act.sa_flags = 0;
-  act.sa_handler = job_interrupt_signal_handler;
-
-  if (sigaction (SIGRTMAX - 7, &act, NULL) != 0) {
-    kwrite (2, "failed sigaction\n", 17);
-    _exit (EXIT_FAILURE);
-  }
+  /* Signal handler for job interrupts - currently a stub */
 #endif
 }
 

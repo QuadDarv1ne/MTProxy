@@ -331,9 +331,8 @@ enhanced_memory_optimizer_t* get_global_enhanced_memory_optimizer(void) {
 void enhanced_memory_optimizer_get_usage_report(enhanced_memory_optimizer_t *optimizer,
                                               char *report_buffer, size_t buffer_size) {
     if (!optimizer || !report_buffer || buffer_size < 200) return;
-    
+
     // Simple report generation
-    char temp[20];
     int pos = 0;
     
     // Copy "Memory Usage Report:" to buffer
