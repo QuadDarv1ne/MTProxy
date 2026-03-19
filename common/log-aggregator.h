@@ -24,15 +24,13 @@
 #include <time.h>
 #include <regex.h>
 
+#include "common/structured-logger.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// Forward declarations
-struct log_entry;
-enum log_level;
-
-// Aggregator statistics
+/* Aggregator statistics */
 struct aggregator_stats {
     long long total_log_entries_processed;
     long long aggregated_entries;

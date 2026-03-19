@@ -34,9 +34,12 @@
 #include <time.h>
 #include <unistd.h>
 #include <malloc.h>
-#include <sys/syscall.h>
 #include <math.h>
+
+#ifdef __linux__
+#include <sys/syscall.h>
 #include <linux/futex.h>
+#endif
 
 #include "common/proc-stat.h"
 #include "crc32.h"
