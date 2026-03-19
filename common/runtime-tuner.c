@@ -249,7 +249,13 @@ int runtime_tuner_update_metric(const char *name, double value) {
     return 0;
 }
 
-// Выполнение цикла автоматической настройки
+/* Forward declarations for static functions */
+static double runtime_tuner_evaluate_performance(void);
+static int runtime_tuner_try_parameter_change(struct tuning_parameter *param, double current_performance);
+static int runtime_tuner_apply_parameter_change(struct tuning_parameter *param, double new_value);
+static int runtime_tuner_rollback_parameter(struct tuning_parameter *param);
+
+/* Выполнение цикла автоматической настройки */
 int runtime_tuner_run_auto_tuning(void) {
     if (!global_tuner_ctx.auto_tuning_enabled) {
         return 0;

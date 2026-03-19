@@ -32,72 +32,21 @@
 #include "common/common-stats.h"
 #include "common/structured-logger.h"
 
-// Aggregator statistics
-struct aggregator_stats {
-    long long total_log_entries_processed;
-    long long aggregated_entries;
-    long long pattern_matches;
-    long long correlation_events;
-    long long alert_generations;
-    long long filter_operations;
-    long long aggregation_cycles;
-};
+/* Forward declarations for static functions */
+static int log_aggregator_match_patterns(const struct log_entry *entry);
+static int log_aggregator_apply_rules(const struct log_entry *entry);
+static int log_aggregator_check_correlations(const struct log_entry *entry);
+static int log_aggregator_generate_alert(
+    const char *message,
+    enum log_level severity,
+    const char *component,
+    const char *subsystem,
+    const char *context);
 
+/* Aggregator statistics - defined in header */
 static struct aggregator_stats aggregator_stats = {0};
 
-// Log pattern structure
-struct log_pattern {
-    char name[128];
-    char description[256];
-    char regex_pattern[512];
-    regex_t compiled_regex;
-    enum log_level min_level;
-    int is_active;
-    int match_count;
-    time_t last_match;
-    int generate_alert;
-    char alert_message[256];
-};
-
-// Aggregation rule
-struct aggregation_rule {
-    char name[128];
-    char description[256];
-    enum log_level target_level;
-    int time_window_seconds;
-    int min_events;
-    char component_filter[64];
-    char subsystem_filter[64];
-    char message_pattern[256];
-    int is_active;
-    int aggregation_count;
-};
-
-// Correlation rule
-struct correlation_rule {
-    char name[128];
-    char description[256];
-    char first_pattern[128];
-    char second_pattern[128];
-    int time_window_seconds;
-    int is_active;
-    int correlation_count;
-    time_t last_correlation;
-};
-
-// Alert structure
-struct log_alert {
-    char id[64];
-    enum log_level severity;
-    char message[512];
-    char component[64];
-    char subsystem[64];
-    time_t timestamp;
-    int is_resolved;
-    char resolution_info[256];
-};
-
-// Aggregator context
+/* Aggregator context */
 struct aggregator_context {
     struct log_pattern *patterns;
     int pattern_count;
@@ -428,7 +377,7 @@ int log_aggregator_process_entry(const struct log_entry *entry) {
     return 0;
 }
 
-// Pattern matching
+/* Pattern matching */
 static int log_aggregator_match_patterns(const struct log_entry *entry) {
     for (int i = 0; i < global_aggregator_ctx.pattern_count; i++) {
         struct log_pattern *pattern = &global_aggregator_ctx.patterns[i];

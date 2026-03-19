@@ -33,56 +33,18 @@
 #include "common/kprintf.h"
 #include "common/common-stats.h"
 
-// Logging statistics
-struct logger_stats {
-    long long total_log_entries;
-    long long log_level_distribution[LOG_LEVEL_MAX];
-    long long log_format_distribution[LOG_FORMAT_MAX];
-    long long buffer_overflows;
-    long long failed_writes;
-    long long async_log_operations;
-    long long sync_log_operations;
-};
+/* Forward declarations for static functions */
+static void *async_logger_worker(void *arg);
+static int write_log_entry(const struct log_entry *entry);
+static int format_json_log(const struct log_entry *entry, char *buffer, size_t buffer_size);
+static int format_standard_log(const struct log_entry *entry, char *buffer, size_t buffer_size);
+static int async_log_enqueue(const struct log_entry *entry);
+static const char *log_level_to_string(enum log_level level);
 
+/* Logging statistics - defined in header */
 static struct logger_stats logger_stats = {0};
 
-// Log entry structure
-struct log_entry {
-    time_t timestamp;
-    struct timeval precise_time;
-    enum log_level level;
-    enum log_format format;
-    char component[64];
-    char subsystem[64];
-    char message[1024];
-    char context_data[512]; // JSON-like context
-    int thread_id;
-    unsigned int connection_id;
-    unsigned int client_ip;
-    int is_error;
-    int is_security_event;
-};
-
-// Logger configuration
-struct logger_config {
-    enum log_level min_level;
-    enum log_format output_format;
-    int enable_async_logging;
-    int enable_context_logging;
-    int max_message_size;
-    int buffer_size;
-    int flush_interval_seconds;
-    char log_file_path[512];
-    char error_log_file_path[512];
-    int enable_file_logging;
-    int enable_stdout_logging;
-    int enable_stderr_logging;
-    int enable_json_format;
-    int enable_log_rotation;
-    long long max_log_file_size;
-    int max_log_files;
-};
-
+/* Logger configuration - defined in header */
 static struct logger_config global_logger_config = {
     .min_level = LOG_LEVEL_INFO,
     .output_format = LOG_FORMAT_STANDARD,
@@ -96,11 +58,11 @@ static struct logger_config global_logger_config = {
     .enable_stderr_logging = 1,
     .enable_json_format = 1,
     .enable_log_rotation = 1,
-    .max_log_file_size = 100 * 1024 * 1024, // 100MB
+    .max_log_file_size = 100 * 1024 * 1024,
     .max_log_files = 10
 };
 
-// Async logging buffer
+/* Async logging buffer */
 struct log_buffer {
     struct log_entry *entries;
     int capacity;
@@ -190,22 +152,22 @@ int structured_logger_init(const char *log_file_path) {
             return -1;
         }
     }
-    
+
     pthread_mutex_unlock(&logger_mutex);
-    
+
     // Запись startup message
-    structured_log(LOG_LEVEL_INFO, "system", "startup", 
-                   "Structured logger initialized", 
+    structured_log(LOG_LEVEL_INFO, "system", "startup",
+                   "Structured logger initialized",
                    "version=1.0;config=%s", global_logger_config.log_file_path);
-    
+
     vkprintf(1, "Structured logger initialized with async=%s, format=%s\n",
              global_logger_config.enable_async_logging ? "enabled" : "disabled",
              global_logger_config.enable_json_format ? "JSON" : "standard");
-    
+
     return 0;
 }
 
-// Async logger worker thread
+/* Async logger worker thread */
 static void *async_logger_worker(void *arg) {
     struct log_entry entry;
     
@@ -287,8 +249,12 @@ static int write_log_entry(const struct log_entry *entry) {
 static int format_json_log(const struct log_entry *entry, char *buffer, size_t buffer_size) {
     struct tm tm_time;
     char time_str[32];
-    
+
+#ifdef _WIN32
+    localtime_s(&tm_time, &entry->timestamp);
+#else
     localtime_r(&entry->timestamp, &tm_time);
+#endif
     strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", &tm_time);
     
     return snprintf(buffer, buffer_size,
@@ -325,8 +291,12 @@ static int format_json_log(const struct log_entry *entry, char *buffer, size_t b
 static int format_standard_log(const struct log_entry *entry, char *buffer, size_t buffer_size) {
     struct tm tm_time;
     char time_str[32];
-    
+
+#ifdef _WIN32
+    localtime_s(&tm_time, &entry->timestamp);
+#else
     localtime_r(&entry->timestamp, &tm_time);
+#endif
     strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", &tm_time);
     
     return snprintf(buffer, buffer_size,

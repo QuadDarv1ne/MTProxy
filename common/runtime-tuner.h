@@ -22,15 +22,15 @@
 #define __RUNTIME_TUNER_H__
 
 #include <time.h>
+#include <pthread.h>
+
+#include "common/config-manager.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// Forward declarations
-enum config_param_type;
-
-// Runtime tuner statistics
+/* Runtime tuner statistics */
 struct runtime_tuner_stats {
     long long total_tuning_operations;
     long long successful_tunings;
@@ -91,6 +91,8 @@ struct tuning_context {
     int auto_tuning_enabled;
     time_t last_tuning_cycle;
     int tuning_cycle_interval_seconds;
+    pthread_mutex_t tuner_mutex;
+    int tuner_initialized;
 };
 
 // Инициализация runtime tuner
