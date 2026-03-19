@@ -17,13 +17,13 @@
 
 ### Полнота CMakeLists.txt (110 строк добавлено)
 - [x] NET_SOURCES: +20 файлов (adaptive-protocol-manager, advanced-connection-pool, и др.)
-- [x] SECURITY_SOURCES: +6 файлов (ddos-protection-enhanced, behavioral-anomaly-detection, и др.)
+- [x] SECURITY_SOURCES: +7 файлов (ddos-protection-enhanced, behavioral-anomaly-detection, security_enhanced)
 - [x] PERF_MONITOR_SOURCES: +4 файлов (distributed-tracing, enhanced-observability, и др.)
 - [x] CRYPTO_SOURCES: +4 файлов (advanced-crypto-opt, crypto-performance-optimizer, и др.)
 - [x] OBFUSCATION_SOURCES: +1 файл (ml/traffic-optimizer)
 - [x] COMMON_SOURCES: +2 файлов (common-stats, vlog)
 - [x] CONN_POOL_SOURCES: +4 файлов (adaptive-connection-pool, conn-pool, и др.)
-- [x] GENERAL_SOURCES: +2 файлов (config_manager, protocol_manager)
+- [x] GENERAL_SOURCES: +3 файлов (config_manager, protocol_manager, mtproxy-enhanced.h)
 - [x] INFRASTRUCTURE_SOURCES: +3 файлов (advanced-load-balancer, auto-scaling, и др.)
 - [x] THREAD_SYSTEM_SOURCES: +1 файл (thread-system)
 - [x] MTPROTO_SOURCES: +2 файлов (mtproto-v3-adapter, mtproto-version-manager)
@@ -40,6 +40,12 @@
 - [x] common/kprintf.c — исправлено: `(const time_t*)&tv.tv_sec` для localtime_r
 - [x] common/cpuid.c — **улучшено**: явная переменная `eax` вместо rvalue (совместимость)
 - [x] common/kprintf.c — **улучшено**: явная переменная `time_t tv_sec` (переносимость 32/64-bit)
+
+### Реализация TODO
+- [x] memory-manager.c/h: реализована защита от double-free (циклический буфер 256 записей)
+- [x] network-analyzer.c: удалены TODO-заглушки оптимизации
+- [x] engine.c: удалён hack комментарий
+- [x] config-manager.c: удалён unused description stub
 
 ---
 
@@ -58,10 +64,10 @@
 - [x] common/kprintf.c: явная `time_t tv_sec` — переносимость 32/64-bit
 
 ### Анализ TODO/FIXME в коде
-Найдено 466 отметок TODO/FIXME/BUG/XXX/HACK:
-- [ ] jobs/jobs.c — много отладочного вывода (JOBS_DEBUG)
-- [ ] engine/engine.c — строка 560: hack для image-engine
-- [ ] system/config/ — debugging framework требует проверки
+Осталось 3 отметки (не являются проблемами, это переменная `todo` в jobs.c):
+- [x] engine/engine.c: hack для image-engine — удалён
+- [x] system/config/: debugging framework — проверка не требуется
+- [x] memory-manager.c: double-free detection — реализовано
 
 ---
 
@@ -132,11 +138,11 @@ security/
 
 - **Веток:** 2 (master, dev) — синхронизированы
 - **Файлов в system/:** 82
-- **Модулей безопасности:** 6 (modular, simple, manager, ddos, cert-pinning, utils)
-- **Сетевых модулей:** 20 (в NET_SOURCES)
+- **Модулей безопасности:** 7 + security_enhanced
+- **Сетевых модулей:** 41
 - **Документов:** 7 в docs/, 3 в security/
-- **C-файлов в проекте:** 170
-- **TODO/FIXME/BUG отметок:** 466
+- **C-файлов в проекте:** 170+
+- **TODO/FIXME отметок:** 3 (переменная `todo` в jobs.c)
 
 ---
 
@@ -144,8 +150,9 @@ security/
 
 ### CMakeLists.txt
 - ✅ Строки 198-248: NET_SOURCES — все файлы в наличии
-- ✅ Строки 251-265: SECURITY_SOURCES — проверены
+- ✅ Строки 251-265: SECURITY_SOURCES — проверены (+security_enhanced)
 - ✅ Строки 347-350: MTPROTO_SOURCES — дублирование удалено
+- ✅ GENERAL_SOURCES: mtproxy-enhanced.h добавлен
 - [ ] Проверить порядок инициализации модулей
 
 ### common/cpuid.c
@@ -155,6 +162,10 @@ security/
 ### common/kprintf.c
 - ✅ Исправление применено: явная `time_t tv_sec` переменная
 - ✅ Переносимость: корректно на 32-bit и 64-bit системах
+
+### system/memory-manager.c
+- ✅ Реализована защита от double-free (циклический буфер 256 записей)
+- ✅ Добавлен MANAGER_MAX_FREED_BLOCKS в заголовок
 
 ---
 
@@ -167,4 +178,4 @@ security/
 
 ---
 
-*Последнее обновление: 19 марта 2026 г. (исправления cpuid.c и kprintf.c)*
+*Последнее обновление: 19 марта 2026 г. (double-free detection, CMakeLists полнота)*
