@@ -114,7 +114,7 @@
 - **cache-manager**: 5 алгоритмов вытеснения, partitioned кэш (32 раздела)
 - **rate-limiter**: 5 алгоритмов, whitelist/blacklist, adaptive режим
 - **error-handler**: 12 категорий, circuit breaker, exponential backoff
-- **crypto-optimizer**: авто-настройка, рекомендации по производительности
+- **crypto-optimizer**: авто-настройка, рекомендации, benchmark (3 метода)
 
 ### Сборка
 - **WSL/Linux**: полная сборка через `make -j4`, mtproto-proxy 536 KB
@@ -133,8 +133,8 @@
 
 ### Технические долги
 - [x] Проверка порядка инициализации модулей в CMakeLists.txt — ✅ enhanced-crypto-optimizer.h добавлен
+- [x] Рефакторинг stub-реализаций — ✅ benchmark, performance measurement
 - [ ] Оптимизация CMake: кэширование, PGO
-- [ ] Рефакторинг дублирующегося кода
 - [ ] Обновление README с новой структурой
 
 ---
@@ -142,7 +142,7 @@
 ## 📋 Текущий статус
 
 ### Ветки
-- **dev**: ✅ Синхронизирована с origin/dev (9ba6d8c)
+- **dev**: ✅ Синхронизирована с origin/dev (cb4b553)
 - **main/master**: ✅ Ожидает синхронизации
 - **Статус**: dev → main (требуется merge)
 
