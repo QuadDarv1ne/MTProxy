@@ -4,31 +4,41 @@
 
 ### Синхронизация веток
 - [x] Слияние dev → master выполнено
-- [x] Изменения синхронизированы (3 файла: CMakeLists.txt, cpuid.c, kprintf.c)
+- [x] Изменения синхронизированы (CMakeLists.txt, cpuid.c, kprintf.c)
+- [x] Ветки master и dev синхронизированы с origin
 
 ### Реорганизация CMakeLists.txt
-- [x] Объединены NET_SOURCES в одну секцию
-- [x] Объединены SECURITY_SOURCES в одну секцию
-- [x] Удалены дублирующиеся определения
+- [x] Объединены NET_SOURCES в одну секцию (20 файлов)
+- [x] Объединены SECURITY_SOURCES в одну секцию (8 файлов + mtproxy-fixes-simple.h)
+- [x] Удалены дублирующиеся определения SECURITY_SOURCES из MTPROTO_SOURCES
 - [x] Добавлены комментарии для навигации
 
 ### Исправления кода
-- [x] common/cpuid.c — исправлено использование временной переменной
-- [x] common/kprintf.c — исправлен тип для localtime_r
+- [x] common/cpuid.c — исправлено: `(unsigned int){0}` вместо временной переменной
+- [x] common/kprintf.c — исправлено: `(const time_t*)&tv.tv_sec` для localtime_r
 
 ---
 
 ## 🔧 Активные задачи
 
 ### Сборка и компиляция
-- [ ] Настроить сборку на Windows (требуется компилятор C)
+- [ ] Настроить сборку на Windows (требуется компилятор C / MinGW)
 - [ ] Проверить работу CMake после слияния
 - [ ] Протестировать Makefile сборку
+- [ ] Проверить линку с OpenSSL и zlib
 
-### Код
-- [ ] Проверить net/net-tcp-connections.c — не включён в SECURITY_SOURCES
-- [ ] Верифицировать security/modular-security.c и simple-security.c
-- [ ] Проверить все заголовочные файлы в NET_SOURCES
+### Код — критические замечания
+- [x] NET_SOURCES: net-tcp-connections.c включён (строка 229)
+- [ ] Проверить security/modular-security.c и simple-security.c
+- [ ] Проверить все заголовочные файлы в NET_SOURCES на наличие в дереве
+- [ ] common/cpuid.c: проверить работу `(unsigned int){0}` на ARM64
+- [ ] common/kprintf.c: `(const time_t*)&tv.tv_sec` — потенциальная проблема на 32-bit системах
+
+### Анализ TODO/FIXME в коде
+Найдено 466 отметок TODO/FIXME/BUG/XXX/HACK:
+- [ ] jobs/jobs.c — много отладочного вывода (JOBS_DEBUG)
+- [ ] engine/engine.c — строка 560: hack для image-engine
+- [ ] system/config/ — debugging framework требует проверки
 
 ---
 
@@ -97,26 +107,31 @@ security/
 
 ## 📊 Статистика проекта
 
-- **Веток:** 2 (master, dev)
+- **Веток:** 2 (master, dev) — синхронизированы
 - **Файлов в system/:** 82
-- **Модулей безопасности:** 4 основных + enhanced
-- **Сетевых модулей:** 20+
+- **Модулей безопасности:** 6 (modular, simple, manager, ddos, cert-pinning, utils)
+- **Сетевых модулей:** 20 (в NET_SOURCES)
 - **Документов:** 7 в docs/, 3 в security/
+- **C-файлов в проекте:** 170
+- **TODO/FIXME/BUG отметок:** 466
 
 ---
 
 ## 🔍 Замечания по коду
 
 ### CMakeLists.txt
-- Строки 195-350: требуется проверка порядка подключения модулей
-- SECURITY_SOURCES: дублирование удалено, но нужна проверка зависимостей
-- NET_SOURCES: все ли файлы нужны в базовой сборке?
+- ✅ Строки 198-248: NET_SOURCES — все файлы в наличии
+- ✅ Строки 251-265: SECURITY_SOURCES — проверены
+- ✅ Строки 347-350: MTPROTO_SOURCES — дублирование удалено
+- [ ] Проверить порядок инициализации модулей
 
 ### common/cpuid.c
-- Исправление: `(unsigned int*) &cached.ecx` — проверить на всех архитектурах
+- ✅ Исправление применено: `(unsigned int){0}` — rvalue для временного значения
+- [ ] Требуется тестирование на ARM64
 
 ### common/kprintf.c
-- Исправление: `(const time_t*)&tv.tv_sec` — может вызвать проблемы на 32-bit
+- ⚠️ `(const time_t*)&tv.tv_sec` — может вызвать проблемы на 32-bit (time_t может быть 64-bit)
+- [ ] Рассмотреть альтернативное решение: `localtime_r((time_t[]){tv.tv_sec}, &t)`
 
 ---
 
@@ -129,4 +144,4 @@ security/
 
 ---
 
-*Последнее обновление: 19 марта 2026 г.*
+*Последнее обновление: 19 марта 2026 г. (актуализировано)*
