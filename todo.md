@@ -223,16 +223,22 @@ git checkout master && git merge dev && git push origin master
 ### Сборка и компиляция
 - [x] Настроить сборку на Windows — ✅ **OpenSSL/ZLIB найдены**
 - [x] Исправить CMakeLists.txt — ✅ авто-детект MSYS2/UCRT64
-- [x] Исправить Windows совместимость — ✅ pthread/windows.h
+- [x] Исправить Windows совместимость — ✅ pthread/windows.h (14 файлов)
 - [ ] Собрать mtproto-proxy — ⚠️ POSIX зависимости (сигналы)
 - [ ] Собрать test-new-modules — ⏳ несовпадение структур
 - [x] Собрать mtproxy-admin — ✅ собран (bin/mtproxy-admin.exe)
 
-### Следующие шаги
+### Следующие шаги (приоритеты)
 1. [ ] Исправить test_new_modules.c: `enable_locking` → актуальное поле
 2. [ ] Исправить mtproto-proxy.c: SIGCHLD/SIGUSR1 → Windows аналоги
 3. [ ] Запустить тесты для cache-manager, rate-limiter, error-handler
 4. [ ] Проверить mtproxy-admin.exe в работе
+
+### Фокус на качестве
+- ✅ Сборка работает (mtproxy-admin.exe)
+- ✅ 14 файлов исправлено для Windows
+- ⏳ Тесты требуют обновления структур
+- ⏳ mtproto-proxy требует Windows совместимости
 
 ### Код — исправлено
 - [x] cache-manager.c: Windows mutex, crc32_fast → crc32_partial
