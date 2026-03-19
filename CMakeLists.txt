@@ -9,11 +9,11 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 if(WIN32)
     message(STATUS "Detected Windows platform")
     add_definitions(-D_WIN32)
-    set(PLATFORM_LIBS ws2_32)
+    set(PLATFORM_LIBS ws2_32 pthread)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_WIN32_WINNT=0x0600")
 elseif(UNIX)
     message(STATUS "Detected Unix/Linux platform")
-    set(PLATFORM_LIBS m rt)
+    set(PLATFORM_LIBS m rt pthread)
 endif()
 
 # Compiler-specific options

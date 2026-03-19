@@ -31,38 +31,8 @@
 #include "common/common-stats.h"
 #include "crypto/aes-optimized.h"
 
-// Статистика для advanced Shadowsocks
-struct shadowsocks_advanced_stats {
-    long long obfs_encryption_ops;
-    long long obfs_decryption_ops;
-    long long transport_switches;
-    long long traffic_analysis_resistance_activated;
-    long long replay_attack_prevented;
-    long long total_advanced_connections;
-};
-
-static struct shadowsocks_advanced_stats ss_advanced_stats = {0};
-
-// Advanced obfuscation методы
-enum obfs_method {
-    OBFS_NONE = 0,
-    OBFS_HTTP_SIMPLE,
-    OBFS_TLS12_ticket_auth,
-    OBFS_RANDOM_HEAD,
-    OBFS_SALTED_SHA256,
-    OBFS_XOR_MASK,
-    OBFS_BASE64_ENCODE,
-    OBFS_CUSTOM_PATTERN
-};
-
-// Pluggable transports
-enum transport_type {
-    TRANSPORT_TCP = 0,
-    TRANSPORT_UDP,
-    TRANSPORT_WEBSOCKET,
-    TRANSPORT_QUIC,
-    TRANSPORT_HTTP2
-};
+// Глобальная статистика
+struct shadowsocks_advanced_stats ss_advanced_stats = {0};
 
 // Advanced Shadowsocks connection context
 struct ss_advanced_context {
@@ -76,17 +46,6 @@ struct ss_advanced_context {
     unsigned long long bytes_processed;
     time_t last_activity;
     int initialized;
-};
-
-// Traffic analysis resistance параметры
-struct traffic_analysis_params {
-    int enable_timing_obfuscation;
-    int enable_size_obfuscation;
-    int enable_pattern_obfuscation;
-    int min_packet_size;
-    int max_packet_size;
-    int timing_jitter_ms;
-    unsigned char padding_pattern[256];
 };
 
 // Глобальные параметры
@@ -190,7 +149,7 @@ struct ss_advanced_context *shadowsocks_advanced_create_context(
 }
 
 // HTTP Simple obfuscation
-static int obfs_http_simple_encrypt(unsigned char *data, int len, 
+int obfs_http_simple_encrypt(unsigned char *data, int len, 
                                    unsigned char *output, int *output_len) {
     int header_len = sizeof(http_simple_header) - 1;
     int total_len = header_len + len;
@@ -211,7 +170,7 @@ static int obfs_http_simple_encrypt(unsigned char *data, int len,
 }
 
 // TLS 1.2 ticket auth obfuscation
-static int obfs_tls12_encrypt(unsigned char *data, int len,
+int obfs_tls12_encrypt(unsigned char *data, int len,
                              unsigned char *output, int *output_len) {
     int header_len = sizeof(tls12_client_hello);
     int total_len = header_len + len + 16; // +16 for padding
@@ -241,7 +200,7 @@ static int obfs_tls12_encrypt(unsigned char *data, int len,
 }
 
 // Random head obfuscation
-static int obfs_random_head_encrypt(unsigned char *data, int len,
+int obfs_random_head_encrypt(unsigned char *data, int len,
                                    unsigned char *output, int *output_len) {
     int random_len = 16 + (rand() % 64); // 16-80 bytes random header
     int total_len = random_len + len;
@@ -264,7 +223,7 @@ static int obfs_random_head_encrypt(unsigned char *data, int len,
 }
 
 // Salted SHA256 obfuscation
-static int obfs_salted_sha256_encrypt(unsigned char *data, int len,
+int obfs_salted_sha256_encrypt(unsigned char *data, int len,
                                      const unsigned char *salt, int salt_len,
                                      unsigned char *output, int *output_len) {
     EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
@@ -301,7 +260,7 @@ static int obfs_salted_sha256_encrypt(unsigned char *data, int len,
 }
 
 // XOR mask obfuscation
-static int obfs_xor_mask_encrypt(unsigned char *data, int len,
+int obfs_xor_mask_encrypt(unsigned char *data, int len,
                                 const unsigned char *mask, int mask_len,
                                 unsigned char *output, int *output_len) {
     if (len > *output_len) {
@@ -319,7 +278,7 @@ static int obfs_xor_mask_encrypt(unsigned char *data, int len,
 }
 
 // Base64 encode obfuscation
-static int obfs_base64_encrypt(unsigned char *data, int len,
+int obfs_base64_encrypt(unsigned char *data, int len,
                               unsigned char *output, int *output_len) {
     static const char base64_chars[] = 
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -427,7 +386,7 @@ int shadowsocks_advanced_encrypt(struct ss_advanced_context *ctx,
 }
 
 // Traffic analysis resistance - размер обфускация
-static int apply_size_obfuscation(unsigned char *data, int len,
+int apply_size_obfuscation(unsigned char *data, int len,
                                  unsigned char *output, int *output_len) {
     if (!global_ta_params.enable_size_obfuscation) {
         memcpy(output, data, len);
@@ -463,7 +422,7 @@ static int apply_size_obfuscation(unsigned char *data, int len,
 }
 
 // Traffic analysis resistance - тайминг обфускация
-static void apply_timing_obfuscation(void) {
+void apply_timing_obfuscation(void) {
     if (!global_ta_params.enable_timing_obfuscation) {
         return;
     }
@@ -516,7 +475,7 @@ int shadowsocks_advanced_decrypt(struct ss_advanced_context *ctx,
 }
 
 // Проверка на replay атаки
-static int check_replay_attack(struct ss_advanced_context *ctx,
+int check_replay_attack(struct ss_advanced_context *ctx,
                               const unsigned char *data, int len) {
     // Простая проверка на основе packet counter
     // В реальной реализации нужно использовать более сложные методы

@@ -7,6 +7,7 @@
 #define _VECTORIZED_CRYPTO_H_
 
 #include <stdint.h>
+#include <stddef.h>
 
 // Поддерживаемые SIMD инструкции
 typedef enum {

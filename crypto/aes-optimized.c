@@ -30,17 +30,8 @@
 #include "common/kprintf.h"
 #include "common/common-stats.h"
 
-// Статистика для AES оптимизации
-struct aes_optimized_stats {
-    long long key_cache_hits;
-    long long key_cache_misses;
-    long long precomputed_keys_used;
-    long long fallback_operations;
-    long long total_encryptions;
-    long long total_decryptions;
-};
-
-static struct aes_optimized_stats aes_stats = {0};
+// Глобальная статистика AES
+struct aes_optimized_stats aes_stats = {0};
 
 // Кэш предвычисленных ключей AES
 #define AES_KEY_CACHE_SIZE 1024

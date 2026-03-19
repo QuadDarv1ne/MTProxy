@@ -4,6 +4,7 @@
  */
 
 #include "vectorized-crypto.h"
+#include <stddef.h>
 
 // Глобальный контекст векторизованной криптографии
 static vectorized_crypto_context_t g_vec_crypto_ctx = {0};

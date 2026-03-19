@@ -26,8 +26,21 @@
 #pragma once
 
 #include <stdlib.h>
-#include <sys/uio.h>
 #include <assert.h>
+
+#ifdef _WIN32
+    // Windows: define struct iovec manually
+    #ifndef _SSIZE_T_DEFINED
+        typedef ptrdiff_t ssize_t;
+        #define _SSIZE_T_DEFINED
+    #endif
+    struct iovec {
+        void *iov_base;
+        size_t iov_len;
+    };
+#else
+    #include <sys/uio.h>
+#endif
 
 #include "crypto/aesni256.h"
 #include "net/net-msg-buffers.h"

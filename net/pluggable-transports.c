@@ -30,18 +30,8 @@
 #include "common/common-stats.h"
 #include "net/shadowsocks-advanced.h"
 
-// Статистика для pluggable transports
-struct pt_stats {
-    long long transport_registrations;
-    long long transport_activations;
-    long long transport_deactivations;
-    long long data_transmitted;
-    long long transport_switches;
-    long long plugin_loads;
-    long long plugin_unloads;
-};
-
-static struct pt_stats pt_statistics = {0};
+// Глобальная статистика
+struct pt_stats pt_statistics = {0};
 
 // Registry для pluggable transports
 #define MAX_TRANSPORTS 32
@@ -311,7 +301,7 @@ int pt_manager_receive(struct pt_manager_context *ctx, unsigned char *buffer, in
 }
 
 // Автоматическое переключение transport
-static void pt_auto_switch_transport(struct pt_manager_context *ctx) {
+void pt_auto_switch_transport(struct pt_manager_context *ctx) {
     if (!ctx->auto_switch_enabled || active_transport_count <= 1) {
         return;
     }
@@ -342,7 +332,7 @@ static void pt_auto_switch_transport(struct pt_manager_context *ctx) {
 }
 
 // Load balancing между транспортами
-static struct transport_plugin *pt_select_load_balanced_transport(void) {
+struct transport_plugin *pt_select_load_balanced_transport(void) {
     if (active_transport_count <= 0) {
         return NULL;
     }

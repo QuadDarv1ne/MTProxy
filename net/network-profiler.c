@@ -32,41 +32,8 @@
 #include "common/common-stats.h"
 #include "common/precise-time.h"
 
-// Network profiling statistics
-struct network_profiler_stats {
-    // Connection metrics
-    long long total_connections;
-    long long active_connections;
-    long long connection_attempts;
-    long long failed_connections;
-    long long connection_timeouts;
-    
-    // Data transfer metrics
-    long long total_bytes_sent;
-    long long total_bytes_received;
-    long long packets_sent;
-    long long packets_received;
-    long long packet_loss;
-    
-    // Performance metrics
-    long long latency_measurements;
-    long long total_latency_us;
-    long long max_latency_us;
-    long long min_latency_us;
-    
-    // Error metrics
-    long long protocol_errors;
-    long long network_errors;
-    long long timeout_errors;
-    long long buffer_overflows;
-    
-    // Profiling counters
-    long long profiling_samples;
-    long long anomaly_detections;
-    long long performance_degradations;
-};
-
-static struct network_profiler_stats profiler_stats = {0};
+// Глобальная статистика
+struct network_profiler_stats profiler_stats = {0};
 
 // Connection profiling data
 struct connection_profile {

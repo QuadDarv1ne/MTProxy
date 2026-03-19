@@ -30,54 +30,10 @@
 #include "common/common-stats.h"
 #include "net/network-profiler.h"
 
-// Performance analyzer statistics
-struct performance_analyzer_stats {
-    long long total_analysis_runs;
-    long long performance_degradations_detected;
-    long long optimizations_applied;
-    long long false_positives;
-    long long alert_generations;
-    long long auto_adjustments;
-};
-
-static struct performance_analyzer_stats analyzer_stats = {0};
-
-// Performance metrics structure
-struct performance_metrics {
-    double current_throughput_mbps;
-    double current_latency_ms;
-    double current_packet_loss_rate;
-    double current_cpu_usage_percent;
-    double current_memory_usage_percent;
-    double current_connection_efficiency;
-    time_t timestamp;
-};
-
-// Performance baseline
-struct performance_baseline {
-    double avg_throughput_mbps;
-    double avg_latency_ms;
-    double avg_packet_loss_rate;
-    double avg_cpu_usage_percent;
-    double avg_memory_usage_percent;
-    double throughput_std_dev;
-    double latency_std_dev;
-    time_t baseline_timestamp;
-    int sample_count;
-};
+// Глобальная статистика
+struct performance_analyzer_stats analyzer_stats = {0};
 
 // Analysis configuration
-struct analyzer_config {
-    int enable_auto_optimization;
-    int enable_degradation_detection;
-    int enable_predictive_analysis;
-    double degradation_threshold_percent;
-    int analysis_interval_seconds;
-    int baseline_window_minutes;
-    int alert_cooldown_seconds;
-    double optimization_threshold_percent;
-};
-
 static struct analyzer_config global_analyzer_config = {
     .enable_auto_optimization = 1,
     .enable_degradation_detection = 1,
@@ -101,17 +57,6 @@ static struct performance_baseline current_baseline = {0};
 static pthread_mutex_t baseline_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 // Alert system
-struct performance_alert {
-    enum alert_type type;
-    enum alert_severity severity;
-    char message[256];
-    time_t timestamp;
-    int connection_id;
-    double current_value;
-    double baseline_value;
-    int resolved;
-};
-
 #define MAX_ALERTS 100
 static struct performance_alert alert_queue[MAX_ALERTS];
 static int alert_queue_count = 0;
@@ -196,7 +141,7 @@ int performance_analyzer_collect_metrics(
 }
 
 // Проверка критических порогов
-static int performance_analyzer_check_thresholds(
+int performance_analyzer_check_thresholds(
     const struct performance_metrics *metrics) {
     
     int alert_generated = 0;
@@ -378,7 +323,7 @@ int performance_analyzer_run_analysis(void) {
 }
 
 // Обновление performance baseline
-static int performance_analyzer_update_baseline(
+int performance_analyzer_update_baseline(
     const struct performance_metrics *current_metrics) {
     
     pthread_mutex_lock(&baseline_mutex);
@@ -424,7 +369,7 @@ static int performance_analyzer_update_baseline(
 }
 
 // Проверка деградации производительности
-static int performance_analyzer_check_degradation(
+int performance_analyzer_check_degradation(
     const struct performance_metrics *current_metrics) {
     
     pthread_mutex_lock(&baseline_mutex);
@@ -469,7 +414,7 @@ static int performance_analyzer_check_degradation(
 }
 
 // Применение автоматических оптимизаций
-static int performance_analyzer_apply_optimizations(
+int performance_analyzer_apply_optimizations(
     const struct performance_metrics *current_metrics) {
     
     int optimizations_applied = 0;

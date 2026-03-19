@@ -22,7 +22,11 @@
 #define __STRUCTURED_LOGGER_H__
 
 #include <time.h>
-#include <sys/time.h>
+#ifdef _WIN32
+    #include <winsock2.h>
+#else
+    #include <sys/time.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {

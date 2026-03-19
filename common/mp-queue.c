@@ -32,8 +32,10 @@
 #include <time.h>
 #include <unistd.h>
 
+#ifdef __linux__
 #include <linux/futex.h>
 #include <sys/syscall.h>
+#endif
 
 #include "server-functions.h"
 #include "kprintf.h"
@@ -118,6 +120,7 @@ int get_this_thread_id (void) {
 
 /* custom semaphore implementation using futexes */
 
+#ifdef __linux__
 int mp_sem_post (mp_sem_t *sem) {
   __sync_fetch_and_add (&sem->value, 1);
   if (sem->waiting > 0) {
@@ -149,6 +152,36 @@ int mp_sem_wait (mp_sem_t *sem) {
     }
   }
 }
+#else
+/* Windows/Non-Linux fallback using pthread mutex/cond */
+static pthread_mutex_t mp_sem_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+int mp_sem_post (mp_sem_t *sem) {
+  pthread_mutex_lock(&mp_sem_mutex);
+  __sync_fetch_and_add (&sem->value, 1);
+  pthread_mutex_unlock(&mp_sem_mutex);
+  return 0;
+}
+
+int mp_sem_wait (mp_sem_t *sem) {
+  while (1) {
+    int v = sem->value;
+    if (v > 0) {
+      v = __sync_fetch_and_add (&sem->value, -1);
+      if (v > 0) {
+        return 0;
+      }
+      __sync_add_and_fetch (&sem->value, 1);
+    }
+    pthread_mutex_lock(&mp_sem_mutex);
+    if (sem->value > 0) {
+      pthread_mutex_unlock(&mp_sem_mutex);
+      continue;
+    }
+    pthread_mutex_unlock(&mp_sem_mutex);
+  }
+}
+#endif
 
 int mp_sem_trywait (mp_sem_t *sem) {
   int v = sem->value;
