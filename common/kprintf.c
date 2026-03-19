@@ -249,10 +249,16 @@ void kprintf (const char *format, ...) {
   const int old_errno = errno;
   struct tm t;
   struct timeval tv;
+  time_t tv_sec;
   char mp_kprintf_buf[PIPE_BUF];
 
-  if (gettimeofday (&tv, NULL) || !localtime_r ((const time_t*)&tv.tv_sec, &t)) {
+  if (gettimeofday (&tv, NULL)) {
     memset (&t, 0, sizeof (t));
+  } else {
+    tv_sec = tv.tv_sec;
+    if (!localtime_r (&tv_sec, &t)) {
+      memset (&t, 0, sizeof (t));
+    }
   }
 
   int n = snprintf (mp_kprintf_buf, sizeof (mp_kprintf_buf), "[%d][%4d-%02d-%02d %02d:%02d:%02d.%06d local] ", getpid (), t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec, (int) tv.tv_usec);
