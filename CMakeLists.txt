@@ -172,9 +172,13 @@ set(COMMON_SOURCES
     common/log-aggregator.h
     common/advanced-logger.c
     common/advanced-logger.h
+    common/common-stats.c
+    common/common-stats.h
     common/platform_network.c
     common/platform_network.h
     common/platform_compat.h
+    common/vlog.c
+    common/vlog.h
 )
 
 set(JOBS_SOURCES
@@ -187,10 +191,16 @@ set(CRYPTO_SOURCES
     crypto/aesni256.h
     crypto/aes-optimized.c
     crypto/aes-optimized.h
-    crypto/dh-optimized.c
-    crypto/dh-optimized.h
+    crypto/advanced-crypto-opt.c
+    crypto/advanced-crypto-opt.h
     crypto/crypto-optimizer.c
     crypto/crypto-optimizer.h
+    crypto/crypto-performance-optimizer.c
+    crypto/crypto-performance-optimizer.h
+    crypto/dh-optimized.c
+    crypto/dh-optimized.h
+    crypto/enhanced-crypto-optimizer.c
+    crypto/enhanced-crypto-optimizer.h
     crypto/vectorized-crypto.c
     crypto/vectorized-crypto.h
 )
@@ -447,6 +457,8 @@ set(PERF_MONITOR_SOURCES
 set(OBFUSCATION_SOURCES
     ml/anomaly-detector.c
     ml/anomaly-detector.h
+    ml/traffic-optimizer.c
+    ml/traffic-optimizer.h
     net/tls-emulator.c
     net/tls-emulator.h
     shadowsocks/shadowsocks-obfuscator.c
