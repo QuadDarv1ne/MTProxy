@@ -489,6 +489,7 @@ set(GENERAL_SOURCES
     general/config_manager.h
     general/protocol_manager.c
     general/protocol_manager.h
+    general/mtproxy-enhanced.h
 )
 
 set(INFRASTRUCTURE_SOURCES
