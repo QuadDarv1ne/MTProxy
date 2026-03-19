@@ -7,21 +7,83 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- English version of README (README_EN.md)
-- Docker support with Dockerfile and docker-compose.yml
-- GitHub Actions CI/CD pipeline
-- CONTRIBUTING.md with contribution guidelines
-- SECURITY.md with security policy and best practices
-- CHANGELOG.md for tracking changes
-- .env.example for Docker configuration
+### Added (Март 2026)
+
+#### Новые модули
+- **config-manager**: Расширенная система управления конфигурацией
+  - Callback'и для изменений конфигурации
+  - История изменений (до 1000 записей)
+  - JSON экспорт/импорт
+  - Горячая перезагрузка (hot-reload)
+  - Batch режим для массовых изменений
+  - Валидация параметров и зависимостей
+  - Версионирование конфигурации
+
+- **cache-manager**: Система кэширования
+  - 5 алгоритмов вытеснения (LRU, LFU, FIFO, TTL, ARC)
+  - Partitioned кэш для многопоточности
+  - TTL для записей
+  - Персистентность на диск
+  - Массовые операции (batch get/put/delete)
+  - Атомарные операции increment/decrement
+  - Предвыборка и прогрев кэша
+
+- **rate-limiter**: Система ограничения скорости
+  - 5 алгоритмов (Token Bucket, Sliding Window, Fixed Window, Leaky Bucket, Adaptive)
+  - Whitelist/Blacklist клиентов
+  - Circuit breaker для защиты
+  - Статистика и мониторинг
+  - Callback функции для событий
+
+- **error-handler**: Система обработки ошибок
+  - 12 категорий ошибок
+  - 100+ кодов ошибок MTProxy
+  - Стратегии восстановления (retry, fallback, restart, shutdown)
+  - Circuit breaker с exponential backoff
+  - Статистика ошибок
+  - Correlation ID для трассировки
+
+#### Утилиты
+- **admin-cli**: Утилита командной строки для администрирования
+  - 20+ команд (status, stats, config, cache, ratelimit, connections)
+  - Интерактивный режим
+  - История команд
+  - Автодополнение
+  - Поддержка JSON вывода
+
+- **monitor.sh**: Bash-скрипт мониторинга
+  - Проверка процесса и портов
+  - Мониторинг памяти и CPU
+  - Подсчёт соединений
+  - Алерты по email
+  - Непрерывный режим
+
+- **metrics_collector.py**: Python-скрипт сбора метрик
+  - Экспорт в Prometheus формат
+  - Экспорт в JSON
+  - Непрерывное наблюдение
+  - Проверка здоровья
+
+#### Документация
+- CONFIGURATION_ENHANCEMENTS_RU.md - Система конфигурации
+- CACHE_SYSTEM_RU.md - Система кэширования
+- IMPROVEMENTS_SUMMARY.md - Сводка улучшений
+- USAGE_EXAMPLES.md - Примеры использования
+- scripts/README.md - Документация скриптов
+
+#### Тесты
+- test_new_modules.c - Тесты для новых модулей
+  - 14 тестов покрывают cache-manager, rate-limiter, error-handler, config-manager
 
 ### Changed
-- Improved .gitignore to exclude build artifacts
-- Enhanced project documentation structure
+- README.md: Добавлен раздел "Новые возможности (Март 2026)"
+- CMakeLists.txt: Добавлены новые модули и утилиты
+- advanced-logger.h: Расширенные флаги и контексты трассировки
 
-### Fixed
-- Removed compiled .o files from repository root
+### Improved
+- Производительность: Partitioned кэш для многопоточных операций
+- Надёжность: Circuit breaker для защиты от каскадных сбоев
+- Удобство: Admin CLI для быстрого администрирования
 
 ## [1.0.0] - 2026-02-12
 
