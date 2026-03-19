@@ -152,50 +152,50 @@ static int cache_remove_entry_from_bucket(cache_manager_t *cache, cache_entry_t 
 // LRU eviction
 static int cache_evict_lru_internal(cache_manager_t *cache) {
     if (!cache || !cache->lru_tail) return -1;
-    
+
     cache_entry_t *entry = cache->lru_tail;
-    
+
     // Удаление из хэш-таблицы
     cache_remove_entry_from_bucket(cache, entry);
-    
+
     // Удаление из LRU списка
-    if (entry->prev) {
-        entry->prev->next = NULL;
+    if (entry->lru_prev) {
+        entry->lru_prev->lru_next = NULL;
     }
-    cache->lru_tail = entry->prev;
-    
+    cache->lru_tail = entry->lru_prev;
+
     if (!cache->lru_tail) {
         cache->lru_head = NULL;
     }
-    
+
     // Callback
     if (cache->on_eviction) {
         cache->on_eviction(entry->key, entry->data);
     }
-    
+
     cache->stats.evictions++;
     cache_free_entry(entry);
-    
+
     return 0;
 }
 
 // Перемещение записи в начало LRU списка
 static void cache_move_to_lru_head(cache_manager_t *cache, cache_entry_t *entry) {
     if (!cache || !entry) return;
-    
-    // Удаление из текущей позиции
-    if (entry->prev) entry->prev->next = entry->next;
-    if (entry->next) entry->next->prev = entry->prev;
-    
+
+    // Удаление из текущей позиции в LRU списке
+    if (entry->lru_prev) entry->lru_prev->lru_next = entry->lru_next;
+    if (entry->lru_next) entry->lru_next->lru_prev = entry->lru_prev;
+
     if (cache->lru_tail == entry) {
-        cache->lru_tail = entry->prev;
+        cache->lru_tail = entry->lru_prev;
     }
-    
-    // Добавление в начало
-    entry->prev = NULL;
-    entry->next = cache->lru_head;
+
+    // Добавление в начало LRU списка
+    entry->lru_prev = NULL;
+    entry->lru_next = cache->lru_head;
     if (cache->lru_head) {
-        cache->lru_head->prev = entry;
+        cache->lru_head->lru_prev = entry;
     }
     cache->lru_head = entry;
 }
@@ -420,12 +420,13 @@ cache_status_t cache_put_with_ttl(cache_manager_t *cache, const char *key,
     
     // Добавление в хэш-таблицу
     cache_add_entry_to_bucket(cache, entry);
-    
+
     // Добавление в LRU список
     if (cache->config.policy == CACHE_LRU) {
-        entry->next = cache->lru_head;
+        entry->lru_next = cache->lru_head;
+        entry->lru_prev = NULL;
         if (cache->lru_head) {
-            cache->lru_head->prev = entry;
+            cache->lru_head->lru_prev = entry;
         }
         cache->lru_head = entry;
         if (!cache->lru_tail) {
@@ -471,22 +472,24 @@ cache_status_t cache_delete(cache_manager_t *cache, const char *key) {
 #endif
         return CACHE_MISS;
     }
-    
-    // Удаление из хэш-таблицы
+
+    // Удаление из хэш-таблицы (включая связанный список бакета)
     cache_remove_entry_from_bucket(cache, entry);
-    
-    // Удаление из LRU списка
-    if (entry->prev) entry->prev->next = entry->next;
-    if (entry->next) entry->next->prev = entry->prev;
-    
-    if (cache->lru_head == entry) cache->lru_head = entry->next;
-    if (cache->lru_tail == entry) cache->lru_tail = entry->prev;
-    
+
+    // Обновление LRU списка (если запись была в нем)
+    if (cache->config.policy == CACHE_LRU) {
+        if (entry->lru_prev) entry->lru_prev->lru_next = entry->lru_next;
+        if (entry->lru_next) entry->lru_next->lru_prev = entry->lru_prev;
+
+        if (cache->lru_head == entry) cache->lru_head = entry->lru_next;
+        if (cache->lru_tail == entry) cache->lru_tail = entry->lru_prev;
+    }
+
     // Обновление статистики
     cache->stats.current_entries--;
     cache->stats.current_size_bytes -= entry->data_size;
     cache->stats.deletes++;
-    
+
     cache_free_entry(entry);
     
 #ifdef _WIN32

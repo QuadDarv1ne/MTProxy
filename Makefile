@@ -20,7 +20,7 @@ CINCLUDE = -iquote common -iquote .
 
 LIBLIST = ${LIB}/libkdb.a
 
-PROJECTS = common jobs mtproto net crypto engine system
+PROJECTS = common jobs mtproto net crypto engine system testing
 
 OBJDIRS := ${OBJ} $(addprefix ${OBJ}/,${PROJECTS}) ${EXE} ${LIB}
 DEPDIRS := ${DEP} $(addprefix ${DEP}/,${PROJECTS})
@@ -65,6 +65,9 @@ LIB_OBJS_NORMAL := \
 	${OBJ}/net/net-http-server.o \
 	${OBJ}/common/tl-parse.o ${OBJ}/common/common-stats.o \
 	${OBJ}/common/config-manager.o \
+	${OBJ}/common/cache-manager.o \
+	${OBJ}/common/rate-limiter.o \
+	${OBJ}/common/error-handler.o \
 	${OBJ}/common/runtime-tuner.o \
 	${OBJ}/common/structured-logger.o \
 	${OBJ}/common/log-aggregator.o \
@@ -105,6 +108,9 @@ ${ALLDIRS}:
 ${OBJECTS}: ${OBJ}/%.o: %.c | create_dirs_and_headers
 	${CC} ${CFLAGS} ${CINCLUDE} -c -MP -MD -MF ${DEP}/$*.d -MQ ${OBJ}/$*.o -o $@ $<
 
+${OBJ}/testing/test_new_modules.o: testing/test_new_modules.c | create_dirs_and_headers
+	${CC} ${CFLAGS} ${CINCLUDE} -c -MP -MD -MF ${DEP}/testing/test_new_modules.d -MQ ${OBJ}/testing/test_new_modules.o -o $@ $<
+
 ${LIB_OBJS_NORMAL}: ${OBJ}/%.o: %.c | create_dirs_and_headers
 	${CC} ${CFLAGS} -fpic ${CINCLUDE} -c -MP -MD -MF ${DEP}/$*.d -MQ ${OBJ}/$*.o -o $@ $<
 
@@ -113,8 +119,14 @@ ${EXELIST}: ${LIBLIST}
 ${EXE}/mtproto-proxy:	${OBJ}/mtproto/mtproto-proxy.o ${OBJ}/mtproto/mtproto-config.o ${OBJ}/net/net-tcp-rpc-ext-server.o
 	${CC} -o $@ $^ ${LIB}/libkdb.a ${LDFLAGS}
 
+${EXE}/test-new-modules: ${OBJ}/testing/test_new_modules.o ${LIB}/libkdb.a
+	${CC} -o $@ $^ ${LIB}/libkdb.a ${LDFLAGS}
+
 ${LIB}/libkdb.a: ${LIB_OBJS}
 	rm -f $@ && ar rcs $@ $^
+
+test: ${EXE}/test-new-modules
+	${EXE}/test-new-modules
 
 clean:
 	rm -rf ${OBJ} ${DEP} ${EXE} || true

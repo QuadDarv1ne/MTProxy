@@ -93,9 +93,11 @@ typedef struct cache_entry {
     uint32_t access_count;
     uint32_t frequency;  // Для LFU
     uint64_t hash;
-    struct cache_entry *next;
-    struct cache_entry *prev;
-    struct cache_entry *older;  // Для ARC
+    struct cache_entry *next;       // Для хэш-таблицы (бакет)
+    struct cache_entry *prev;       // Для хэш-таблицы (бакет)
+    struct cache_entry *lru_next;   // Для LRU списка
+    struct cache_entry *lru_prev;   // Для LRU списка
+    struct cache_entry *older;      // Для ARC
     struct cache_entry *newer;
 } cache_entry_t;
 
