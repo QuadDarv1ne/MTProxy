@@ -508,6 +508,10 @@ set(MTPROTO_SOURCES
     mtproto/mtproto-config.c
     mtproto/mtproto-config.h
     mtproto/mtproto-proxy.c
+    mtproto/mtproto-v3-adapter.c
+    mtproto/mtproto-v3-adapter.h
+    mtproto/mtproto-version-manager.c
+    mtproto/mtproto-version-manager.h
 )
 
 # Create a static library for common functionality
