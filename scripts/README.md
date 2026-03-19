@@ -1,155 +1,307 @@
 # MTProxy Scripts
 
-This directory contains utility scripts for managing MTProxy.
+## 📚 Обзор
 
-## Available Scripts
+Эта директория содержит утилиты и скрипты для администрирования и мониторинга MTProxy.
 
-### update-secrets.sh / update-secrets.bat
+## 🔧 Скрипты
 
-Automatically updates Telegram secrets and configuration files.
+### 1. monitor.sh - Скрипт мониторинга
 
-**Features:**
-- Downloads latest proxy-secret and proxy-multi.conf from Telegram
-- Creates backups before updating
-- Automatically restarts MTProxy service or Docker container
-- Cleans up old backups (keeps last 7 days)
-- Logs all operations
+Bash-скрипт для мониторинга состояния MTProxy сервера.
 
-**Usage:**
+**Использование:**
 
-Linux/macOS:
 ```bash
-# Make executable
-chmod +x scripts/update-secrets.sh
+# Показать статус
+./monitor.sh status
 
-# Run manually
-./scripts/update-secrets.sh
+# Выполнить проверку
+./monitor.sh check
 
-# Or with custom paths
-CONFIG_DIR=/custom/path ./scripts/update-secrets.sh
+# Непрерывный мониторинг
+./monitor.sh monitor
+
+# Показать соединения
+./monitor.sh connections
+
+# Помощь
+./monitor.sh help
 ```
 
-Windows:
-```cmd
-scripts\update-secrets.bat
-```
+**Переменные окружения:**
 
-**Automated Updates (Linux/macOS):**
+| Переменная | Описание | По умолчанию |
+|------------|----------|--------------|
+| `MTProxy_HOST` | Хост сервера | 127.0.0.1 |
+| `MTProxy_PORT` | Порт статистики | 8888 |
+| `CHECK_INTERVAL` | Интервал проверки (сек) | 60 |
+| `ALERT_EMAIL` | Email для алертов | - |
+| `LOG_FILE` | Путь к лог-файлу | /var/log/mtproxy-monitor.log |
 
-Add to crontab for daily updates:
+**Пример с переменными:**
+
 ```bash
-# Edit crontab
-crontab -e
-
-# Add this line to run daily at 3 AM
-0 3 * * * /path/to/MTProxy/scripts/update-secrets.sh
+MTProxy_HOST=192.168.1.100 \
+MTProxy_PORT=9999 \
+CHECK_INTERVAL=30 \
+./monitor.sh monitor
 ```
 
-**Automated Updates (Windows):**
+**Оповещения:**
 
-Use Task Scheduler:
-1. Open Task Scheduler
-2. Create Basic Task
-3. Set trigger: Daily at 3:00 AM
-4. Action: Start a program
-5. Program: `C:\path\to\MTProxy\scripts\update-secrets.bat`
-
-**Environment Variables:**
-
-- `CONFIG_DIR` - Directory for config files (default: `./config`)
-- `BACKUP_DIR` - Directory for backups (default: `./backups`)
-- `LOG_FILE` - Log file path (default: `./logs/update-secrets.log`)
-
-**Example with custom paths:**
-```bash
-CONFIG_DIR=/opt/mtproxy/config \
-BACKUP_DIR=/opt/mtproxy/backups \
-LOG_FILE=/var/log/mtproxy-update.log \
-./scripts/update-secrets.sh
-```
-
-## Logs
-
-All scripts log their operations to `logs/` directory:
-- `update-secrets.log` - Secret update operations
-
-View logs:
-```bash
-# Linux/macOS
-tail -f logs/update-secrets.log
-
-# Windows
-type logs\update-secrets.log
-```
-
-## Backups
-
-Backups are stored in `backups/` directory with timestamps:
-- `proxy-secret.YYYYMMDD_HHMMSS`
-- `proxy-multi.conf.YYYYMMDD_HHMMSS`
-
-Old backups (>7 days) are automatically cleaned up.
-
-## Troubleshooting
-
-### Script fails to download secrets
-
-**Check internet connection:**
-```bash
-curl -I https://core.telegram.org/getProxySecret
-```
-
-**Check firewall:**
-```bash
-# Allow HTTPS
-sudo ufw allow 443/tcp
-```
-
-### Permission denied
-
-**Linux/macOS:**
-```bash
-chmod +x scripts/update-secrets.sh
-```
-
-**Windows:**
-Run Command Prompt as Administrator
-
-### Service not restarting
-
-**Check service status:**
-```bash
-# Systemd
-systemctl status MTProxy.service
-
-# Docker
-docker-compose ps
-```
-
-**Manual restart:**
-```bash
-# Systemd
-sudo systemctl restart MTProxy.service
-
-# Docker
-docker-compose restart
-```
-
-## Contributing
-
-To add new scripts:
-1. Create script in `scripts/` directory
-2. Add documentation to this README
-3. Make executable (Linux/macOS): `chmod +x script.sh`
-4. Test thoroughly before committing
-
-## Security Notes
-
-- Scripts create backups before making changes
-- All config files have restricted permissions (600)
-- Logs may contain sensitive information - protect accordingly
-- Review scripts before running with elevated privileges
+Скрипт поддерживает отправку алертов через:
+- Email (требуется `mail` команда)
+- Telegram (требуется доработка)
+- Slack (требуется доработка)
 
 ---
 
-For more information, see the main [README.md](../README.md)
+### 2. metrics_collector.py - Сборщик метрик
+
+Python-скрипт для сбора и экспорта метрик MTProxy.
+
+**Требования:**
+- Python 3.6+
+- Стандартная библиотека (нет внешних зависимостей)
+
+**Использование:**
+
+```bash
+# Показать статус
+python3 metrics_collector.py status
+
+# Показать метрики (текст)
+python3 metrics_collector.py metrics
+
+# Показать метрики (JSON)
+python3 metrics_collector.py metrics --format json
+
+# Показать метрики (Prometheus)
+python3 metrics_collector.py metrics --format prometheus
+
+# Проверка здоровья
+python3 metrics_collector.py health
+
+# Непрерывное наблюдение
+python3 metrics_collector.py watch --interval 5
+
+# Экспорт метрик
+python3 metrics_collector.py export --format json --output metrics.json
+```
+
+**Параметры:**
+
+| Параметр | Описание | По умолчанию |
+|----------|----------|--------------|
+| `--host` | Хост сервера | 127.0.0.1 |
+| `--port` | Порт статистики | 8888 |
+| `--timeout` | Таймаут запроса (сек) | 5 |
+
+**Примеры:**
+
+```bash
+# Подключение к удаленному серверу
+python3 metrics_collector.py --host 192.168.1.100 --port 9999 status
+
+# Экспорт в Prometheus формат для Grafana
+python3 metrics_collector.py export --format prometheus > /var/lib/prometheus/mtproxy.metrics
+
+# Мониторинг с интервалом 10 секунд
+python3 metrics_collector.py watch --interval 10 --format json
+```
+
+---
+
+### 3. update-secrets.sh - Обновление секретов
+
+Скрипт для обновления конфигурации и секретов от Telegram.
+
+**Использование:**
+
+```bash
+# Обновить секреты
+./update-secrets.sh
+
+# Обновить только конфигурацию
+./update-secrets.sh --config-only
+
+# Обновить только секреты
+./update-secrets.sh --secrets-only
+```
+
+**Автоматизация (cron):**
+
+```bash
+# Обновлять каждый день в 3:00
+0 3 * * * /path/to/MTProxy/scripts/update-secrets.sh
+```
+
+---
+
+### 4. update-secrets.bat - Обновление секретов (Windows)
+
+Аналог update-secrets.sh для Windows.
+
+**Использование:**
+
+```batch
+update-secrets.bat
+```
+
+---
+
+### 5. build_windows.bat - Сборка на Windows
+
+Скрипт для сборки MTProxy на Windows.
+
+**Требования:**
+- MinGW или Visual Studio
+- OpenSSL для Windows
+- zlib для Windows
+
+**Использование:**
+
+```batch
+build_windows.bat
+```
+
+---
+
+## 🔗 Интеграция
+
+### Systemd сервис для мониторинга
+
+Создайте файл `/etc/systemd/system/mtproxy-monitor.service`:
+
+```ini
+[Unit]
+Description=MTProxy Monitor
+After=network.target mtproxy.service
+
+[Service]
+Type=simple
+ExecStart=/path/to/MTProxy/scripts/monitor.sh monitor
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Активация:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable mtproxy-monitor
+sudo systemctl start mtproxy-monitor
+```
+
+---
+
+### Grafana Dashboard
+
+Импортируйте дашборд из `scripts/grafana-dashboard.json` (если доступен).
+
+**Настройка:**
+
+1. Добавьте Prometheus data source
+2. Импортируйте дашборд
+3. Настройте алерты
+
+---
+
+### Prometheus Configuration
+
+Добавьте в `prometheus.yml`:
+
+```yaml
+scrape_configs:
+  - job_name: 'mtproxy'
+    static_configs:
+      - targets: ['localhost:8888']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+```
+
+---
+
+## 📊 Метрики
+
+Скрипт `metrics_collector.py` собирает следующие метрики:
+
+### Общие метрики
+- `mtproxy_up` - Статус сервера (1=OK, 0=DOWN)
+- `mtproxy_uptime_seconds` - Время работы сервера
+- `mtproxy_connections_active` - Активные соединения
+- `mtproxy_connections_total` - Всего соединений
+
+### Метрики производительности
+- `mtproxy_cpu_usage_percent` - Использование CPU
+- `mtproxy_memory_usage_bytes` - Использование памяти
+- `mtproxy_requests_per_second` - Запросов в секунду
+
+### Метрики кэша
+- `mtproxy_cache_entries` - Количество записей в кэше
+- `mtproxy_cache_hits_total` - Всего попаданий в кэш
+- `mtproxy_cache_misses_total` - Всего промахов кэша
+- `mtproxy_cache_hit_rate` - Процент попаданий
+
+### Метрики rate limiting
+- `mtproxy_ratelimit_requests_total` - Всего запросов
+- `mtproxy_ratelimit_rejections_total` - Отклонено по лимиту
+- `mtproxy_ratelimit_active_limits` - Активные лимиты
+
+---
+
+## 🛠️ Troubleshooting
+
+### monitor.sh не работает
+
+1. Проверьте права на выполнение:
+   ```bash
+   chmod +x monitor.sh
+   ```
+
+2. Проверьте доступность команд:
+   ```bash
+   which nc ss curl
+   ```
+
+3. Проверьте логи:
+   ```bash
+   tail -f /var/log/mtproxy-monitor.log
+   ```
+
+### metrics_collector.py выдает ошибку
+
+1. Проверьте версию Python:
+   ```bash
+   python3 --version
+   ```
+
+2. Проверьте доступность порта:
+   ```bash
+   curl http://127.0.0.1:8888/stats
+   ```
+
+3. Запустите с отладкой:
+   ```bash
+   python3 -v metrics_collector.py status
+   ```
+
+---
+
+## 📝 Лицензия
+
+Скрипты распространяются под той же лицензией, что и MTProxy.
+
+---
+
+## 🤝 Contributing
+
+Вносите изменения через pull requests в ветку `dev`.
+
+---
+
+*Последнее обновление: Март 2026*
