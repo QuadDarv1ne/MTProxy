@@ -23,6 +23,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <time.h>
 #include <sys/time.h>
 #include <pthread.h>
@@ -35,28 +36,6 @@
 // Глобальная статистика
 struct network_profiler_stats profiler_stats = {0};
 
-// Connection profiling data
-struct connection_profile {
-    int connection_id;
-    unsigned int client_ip;
-    unsigned short client_port;
-    unsigned int server_ip;
-    unsigned short server_port;
-    time_t connect_time;
-    time_t last_activity;
-    unsigned long long bytes_sent;
-    unsigned long long bytes_received;
-    unsigned long long packets_sent;
-    unsigned long long packets_received;
-    unsigned long long latency_sum_us;
-    unsigned long long latency_samples;
-    unsigned long long max_latency_us;
-    unsigned long long min_latency_us;
-    enum connection_state state;
-    int is_anomalous;
-    int performance_score; // 0-100
-};
-
 // Network anomaly detection
 struct anomaly_detector {
     double baseline_latency_ms;
@@ -67,17 +46,6 @@ struct anomaly_detector {
     double current_packet_loss_rate;
     int anomaly_threshold;
     time_t last_update;
-};
-
-// Profiling configuration
-struct profiler_config {
-    int enable_latency_profiling;
-    int enable_throughput_profiling;
-    int enable_anomaly_detection;
-    int sampling_rate; // 1/N packets sampled
-    int alert_threshold_ms;
-    int performance_window_seconds;
-    unsigned long long max_profile_entries;
 };
 
 static struct profiler_config global_profiler_config = {
@@ -96,14 +64,7 @@ static struct connection_profile connection_profiles[MAX_CONNECTION_PROFILES];
 static int profile_count = 0;
 static pthread_mutex_t profile_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-// Latency measurement structure
-struct latency_sample {
-    unsigned long long timestamp_us;
-    unsigned long long latency_us;
-    int connection_id;
-    enum packet_type type;
-};
-
+// Latency measurement data (internal)
 #define LATENCY_HISTORY_SIZE 10000
 static struct latency_sample latency_history[LATENCY_HISTORY_SIZE];
 static int latency_history_index = 0;
@@ -266,15 +227,14 @@ int network_profiler_measure_latency(
     
     // Store latency sample
     pthread_mutex_lock(&latency_mutex);
-    
+
     struct latency_sample *sample = &latency_history[latency_history_index];
-    sample->timestamp_us = receive_time_us;
+    sample->timestamp = time(NULL);
     sample->latency_us = latency_us;
-    sample->connection_id = connection_id;
-    sample->type = type;
-    
+    sample->packet_type = (int)type;
+
     latency_history_index = (latency_history_index + 1) % LATENCY_HISTORY_SIZE;
-    
+
     pthread_mutex_unlock(&latency_mutex);
     
     // Update global statistics

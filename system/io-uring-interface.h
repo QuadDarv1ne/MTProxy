@@ -7,6 +7,7 @@
 #define _IO_URING_INTERFACE_H_
 
 #include <stdint.h>
+#include <stddef.h>
 
 // Типы операций io_uring
 typedef enum {

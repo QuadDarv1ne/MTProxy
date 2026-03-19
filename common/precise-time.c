@@ -28,6 +28,7 @@
 #endif
 
 #include "precise-time.h"
+__thread int now;
 __thread double precise_now;
 __thread long long precise_now_rdtsc;
 long long precise_time;

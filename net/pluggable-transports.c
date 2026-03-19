@@ -37,20 +37,6 @@ struct pt_stats pt_statistics = {0};
 #define MAX_TRANSPORTS 32
 #define MAX_PLUGINS 16
 
-// Transport plugin interface
-struct transport_plugin {
-    char name[64];
-    enum transport_type type;
-    transport_init_func init;
-    transport_cleanup_func cleanup;
-    transport_send_func send;
-    transport_receive_func receive;
-    transport_configure_func configure;
-    void *plugin_data;
-    int is_loaded;
-    int priority;
-};
-
 // Transport registry
 static struct transport_plugin transport_registry[MAX_TRANSPORTS];
 static int registered_transports = 0;

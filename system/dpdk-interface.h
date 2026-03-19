@@ -7,6 +7,7 @@
 #define _DPDK_INTERFACE_H_
 
 #include <stdint.h>
+#include <stddef.h>
 
 // Статус DPDK
 typedef enum {

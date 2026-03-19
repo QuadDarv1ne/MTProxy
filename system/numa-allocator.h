@@ -7,6 +7,7 @@
 #define _NUMA_ALLOCATOR_H_
 
 #include <stdint.h>
+#include <stddef.h>
 
 // Типы памяти NUMA
 typedef enum {

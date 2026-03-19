@@ -22,6 +22,7 @@
 #define __SHADOWSOCKS_ADVANCED_H__
 
 #include <time.h>
+#include "net/pluggable-transports.h"  // Include for enum transport_type
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,14 +40,7 @@ enum obfs_method {
     OBFS_CUSTOM_PATTERN
 };
 
-// Pluggable transports
-enum transport_type {
-    TRANSPORT_TCP = 0,
-    TRANSPORT_UDP,
-    TRANSPORT_WEBSOCKET,
-    TRANSPORT_QUIC,
-    TRANSPORT_HTTP2
-};
+// Pluggable transports - enum defined in pluggable-transports.h
 
 // Forward declaration
 struct ss_advanced_context;

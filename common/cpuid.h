@@ -32,7 +32,7 @@ typedef float v4sf __attribute__ ((vector_size (16)));
 
 typedef struct {
   int magic;
-  int ebx, ecx, edx;
+  int eax, ebx, ecx, edx;
 } kdb_cpuid_t;
 
 kdb_cpuid_t *kdb_cpuid (void);

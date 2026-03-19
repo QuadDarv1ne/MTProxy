@@ -69,6 +69,7 @@ LIB_OBJS_NORMAL := \
 	${OBJ}/common/structured-logger.o \
 	${OBJ}/common/log-aggregator.o \
 	${OBJ}/common/advanced-logger.o \
+	${OBJ}/common/vlog.o \
 	${OBJ}/engine/engine.o ${OBJ}/engine/engine-signals.o \
 	${OBJ}/engine/engine-net.o \
 	${OBJ}/engine/engine-rpc.o \
@@ -82,6 +83,7 @@ LIB_OBJS_NORMAL := \
 	${OBJ}/security/security-manager.o ${OBJ}/security/ddos-protection.o ${OBJ}/security/cert-pinning.o ${OBJ}/security/security-utils.o \
 	${OBJ}/system/numa-allocator.o ${OBJ}/system/io-uring-interface.o ${OBJ}/system/dpdk-interface.o ${OBJ}/system/advanced-optimizer.o \
 	${OBJ}/ml/anomaly-detector.o ${OBJ}/net/tls-emulator.o ${OBJ}/shadowsocks/shadowsocks-obfuscator.o \
+	${OBJ}/vv/vv-tree.o \
 
 LIB_OBJS := ${LIB_OBJS_NORMAL}
 

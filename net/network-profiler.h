@@ -163,6 +163,13 @@ int network_profiler_get_anomalous_connections(
 // Сброс статистики
 void network_profiler_reset_stats(void);
 
+// Latency sample structure
+struct latency_sample {
+    unsigned long long latency_us;
+    time_t timestamp;
+    int packet_type;
+};
+
 // Настройка profiler конфигурации
 int network_profiler_set_config(const struct profiler_config *config);
 int network_profiler_get_config(struct profiler_config *config);
@@ -170,8 +177,8 @@ int network_profiler_get_config(struct profiler_config *config);
 // Расширенные функции профилирования
 int network_profiler_enable_tracing(int connection_id);
 int network_profiler_disable_tracing(int connection_id);
-int network_profiler_get_connection_history(int connection_id, 
-                                          struct latency_sample *samples, 
+int network_profiler_get_connection_history(int connection_id,
+                                          struct latency_sample *samples,
                                           int max_samples);
 
 #ifdef __cplusplus

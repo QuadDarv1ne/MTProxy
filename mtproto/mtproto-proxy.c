@@ -33,7 +33,8 @@
 #include "../common/platform_network.h"
 
 #ifdef _WIN32
-#error "mtproto-proxy.c requires Unix-like system (Linux/macOS). Windows is not supported."
+// Windows POSIX compatibility layer
+#include "../common/posix-compat-windows.h"
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>
@@ -416,7 +417,11 @@ struct worker_stats {
 
 struct worker_stats *WStats, SumStats;
 int worker_id, workers, slave_mode, parent_pid;
-int pids[MAX_WORKERS];
+#ifdef _WIN32
+int pids[MAX_WORKERS];  // Windows: not used (single-worker mode)
+#else
+pid_t pids[MAX_WORKERS];  // Unix: process IDs
+#endif
 
 long long get_queries;
 int pending_http_queries;
@@ -1979,6 +1984,33 @@ void init_ct_server_mtfront (void) {
  *
  */
 
+#ifdef _WIN32
+// Windows stubs for process management (single-worker mode)
+static void check_children_dead (void) {
+  // No-op on Windows - single worker mode
+}
+
+static void kill_children (int signal) {
+  // No-op on Windows - single worker mode
+  (void)signal;
+}
+
+void on_child_termination (void) {
+  // No-op on Windows
+}
+
+void check_children_status (void) {
+  // No-op on Windows - single worker mode
+  // Check parent process instead
+  if (slave_mode) {
+    if (getppid () != parent_pid) {
+      kprintf ("Parent %d is changed to %d, aborting\n", parent_pid, getppid ());
+      exit (EXIT_FAILURE);
+    }
+  }
+}
+#else
+// Unix/Linux implementation
 static void check_children_dead (void) {
   int i, j;
   for (j = 0; j < 11; j++) {
@@ -2070,6 +2102,7 @@ void check_children_status (void) {
     }
   }
 }
+#endif
 
 void check_special_connections_overflow (void) {
   if (max_special_connections && !slave_mode) {
@@ -2114,6 +2147,18 @@ void mtfront_pre_loop (void) {
         listening_connection_job_t LC = Events[http_sfd[i]].data;
         assert (LC);
         CONN_INFO(LC)->window_clamp = window_clamp;
+#ifdef _WIN32
+        // TCP_WINDOW_CLAMP not available on Windows - use SO_SNDBUF as alternative
+        if (setsockopt (http_sfd[i], SOL_SOCKET, SO_SNDBUF, (char *)&window_clamp, sizeof(window_clamp)) < 0) {
+          // Using structured logging for window clamp error message
+          log_field_t fields[] = {
+            vlog_field_str("event", "window_clamp_error"),
+            vlog_field_int("socket_fd", http_sfd[i]),
+            vlog_field_int("window_size", window_clamp)
+          };
+          vlog_with_fields(LOG_LEVEL_ERROR, "network", "Error setting send buffer size for socket", fields, 3);
+        }
+#else
         if (setsockopt (http_sfd[i], IPPROTO_TCP, TCP_WINDOW_CLAMP, &window_clamp, 4) < 0) {
           // Using structured logging for window clamp error message
           log_field_t fields[] = {
@@ -2123,6 +2168,7 @@ void mtfront_pre_loop (void) {
           };
           vlog_with_fields(LOG_LEVEL_ERROR, "network", "Error setting window size for socket", fields, 3);
         }
+#endif
       }
     }
     // create_all_outbound_connections ();
@@ -2134,10 +2180,15 @@ void precise_cron (void) {
 }
 
 void mtfront_sigusr1_handler (void) {
+#ifdef _WIN32
+  // SIGUSR1 not supported on Windows - reopen logs directly
+  reopen_logs_ext (slave_mode);
+#else
   reopen_logs_ext (slave_mode);
   if (workers) {
     kill_children (SIGUSR1);
   }
+#endif
 }
 
 /*
@@ -2333,6 +2384,14 @@ void mtfront_pre_init (void) {
   }
 
   if (workers) {
+#ifdef _WIN32
+    // Windows doesn't support fork() - use single worker mode
+    vlog_with_fields(LOG_LEVEL_WARNING, "worker_manager", 
+                     "Multi-worker mode not supported on Windows - using single worker mode", NULL, 0);
+    workers = 0;
+    worker_id = 0;
+    WStats = NULL;
+#else
     if (!kdb_hosts_loaded) {
       kdb_load_hosts ();
     }
@@ -2362,6 +2421,7 @@ void mtfront_pre_init (void) {
         pids[i] = pid;
       }
     }
+#endif
   }
 }
 
@@ -2415,8 +2475,14 @@ server_functions_t mtproto_front_functions = {
 };
 
 int main (int argc, char *argv[]) {
+#ifdef _WIN32
+  // Windows doesn't support Unix signals - skip signal handlers
+  // Initialize Windows networking
+  windows_posix_init();
+#else
   mtproto_front_functions.allowed_signals |= SIG2INT (SIGCHLD);
   mtproto_front_functions.signal_handlers[SIGCHLD] = on_child_termination;
   mtproto_front_functions.signal_handlers[SIGUSR1] = mtfront_sigusr1_handler;
+#endif
   return default_main (&mtproto_front_functions, argc, argv);
 }

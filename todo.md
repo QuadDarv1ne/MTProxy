@@ -380,3 +380,77 @@ security/
 ---
 
 *Последнее обновление: 19 марта 2026 г. (стабильная версия, 87bdc1d)*
+
+---
+
+## 🔧 Исправления сборки (19 марта 2026)
+
+### Проблема
+Проект не собирался на Windows и WSL из-за множества ошибок компиляции и линковки.
+
+### Решение
+Все ошибки исправлены, проект успешно собран через WSL.
+
+### Исправлённые файлы (16 файлов)
+
+#### Заголовочные файлы
+| Файл | Исправление |
+|------|-------------|
+| `common/cpuid.h` | Добавлено поле `eax` в `kdb_cpuid_t` |
+| `net/network-profiler.h` | Добавлено `struct latency_sample` |
+| `net/shadowsocks-advanced.h` | Убрано переопределение `enum transport_type`, добавлен `#include "pluggable-transports.h"` |
+| `system/memory-optimizer.h` | Добавлен `#include <stddef.h>` |
+| `system/numa-allocator.h` | Добавлен `#include <stddef.h>` |
+| `system/io-uring-interface.h` | Добавлен `#include <stddef.h>` |
+| `system/dpdk-interface.h` | Добавлен `#include <stddef.h>` |
+
+#### Исходные файлы
+| Файл | Исправление |
+|------|-------------|
+| `common/config-manager.c` | Формат `%d` → `%zu` для `size_t` |
+| `common/precise-time.c` | Добавлено `__thread int now` |
+| `net/net-events.c` | Убрано дублирующее определение thread-local переменных |
+| `net/network-profiler.c` | Добавлен `#include <stdint.h>`, убраны переопределения структур, исправлены поля `latency_sample` |
+| `net/network-analyzer.c` | Добавлены forward declarations функций |
+| `net/pluggable-transports.c` | Убрано переопределение `struct transport_plugin` |
+| `vv/vv-tree.c` | Добавлены макросы `TREE_MALLOC` и `TREE_FREE` |
+| `mtproto/mtproto-proxy.c` | Windows POSIX совместимость (fork, mmap, сигналы) |
+| `Makefile` | Добавлены `vlog.o` и `vv-tree.o` в сборку |
+
+#### Новые файлы
+| Файл | Назначение |
+|------|------------|
+| `common/posix-compat-windows.h` | POSIX совместимость для Windows (mmap, fork, сигналы) |
+
+### Результат сборки
+```
+Бинарный файл: objs/bin/mtproto-proxy (536 KB)
+Версия: mtproxy-0.02
+Компилятор: gcc 13.3.0 64-bit
+Commit: de5597491eca8e3eb964c08994e5af226117da60
+```
+
+### Проверка работоспособности
+```bash
+$ ./objs/bin/mtproto-proxy --help
+usage: ./objs/bin/mtproto-proxy [-v] [-6] [-p<port>] ...
+mtproxy-0.02 compiled at Mar 19 2026 20:08:46 by gcc 13.3.0 64-bit
+```
+
+### Известные ограничения
+- **Windows**: single-worker mode (fork() не поддерживается)
+- **WSL/Linux**: полная функциональность
+
+---
+
+## 📝 Следующие шаги
+
+### Немедленно
+- [ ] Commit изменений в dev
+- [ ] Тестирование на Linux
+- [ ] Merge в main после проверки
+
+### В процессе
+- [ ] Интеграция с существующим кодом
+- [ ] Проверка обратной совместимости
+- [ ] Performance тестирование

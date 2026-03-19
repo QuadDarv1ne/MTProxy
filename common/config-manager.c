@@ -172,8 +172,8 @@ int config_manager_init(const char *config_file_path) {
     batch_state.batch_changes = calloc(batch_state.batch_changes_capacity,
                                       sizeof(struct config_change_entry));
 
-    vkprintf(1, "Configuration manager initialized with %d builtin sections\n",
-             BUILTIN_SECTION_COUNT);
+    vkprintf(1, "Configuration manager initialized with %zu builtin sections\n",
+             (size_t)BUILTIN_SECTION_COUNT);
 
     return 0;
 }

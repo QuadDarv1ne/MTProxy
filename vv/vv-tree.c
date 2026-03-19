@@ -21,7 +21,16 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <assert.h>
-      
+
+// Default memory allocation macros for vv-tree
+#ifndef TREE_MALLOC
+#define TREE_MALLOC(x) malloc(x)
+#endif
+
+#ifndef TREE_FREE
+#define TREE_FREE(x) free(x)
+#endif
+
 extern long long total_vv_tree_nodes;
 
 #define SUFFIX2(a,b) a ## b

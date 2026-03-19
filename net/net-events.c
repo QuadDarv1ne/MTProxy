@@ -51,6 +51,9 @@
 /*
  * generic events (epoll-based) machinery
  */
+
+// Note: now, precise_now, precise_now_rdtsc are defined in precise-time.c
+
 double tot_idle_time, a_idle_time, a_idle_quotient;
 
 volatile int main_thread_interrupt_status;

@@ -7,6 +7,7 @@
 #define _MEMORY_OPTIMIZER_H_
 
 #include <stdint.h>
+#include <stddef.h>
 
 // Стратегии выделения памяти
 typedef enum {

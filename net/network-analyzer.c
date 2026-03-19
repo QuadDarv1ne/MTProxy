@@ -78,6 +78,15 @@ static const struct performance_thresholds {
     .max_memory_usage_percent = 85.0
 };
 
+// Forward declarations
+int performance_analyzer_check_thresholds(const struct performance_metrics *metrics);
+int performance_analyzer_generate_alert(enum alert_type type, enum alert_severity severity,
+                                                const char *message, int connection_id,
+                                                double current_value, double threshold_value);
+int performance_analyzer_update_baseline(const struct performance_metrics *metrics);
+int performance_analyzer_check_degradation(const struct performance_metrics *metrics);
+int performance_analyzer_apply_optimizations(const struct performance_metrics *metrics);
+
 // Инициализация performance analyzer
 int performance_analyzer_init(void) {
     pthread_mutex_init(&metrics_mutex, NULL);
@@ -143,10 +152,10 @@ int performance_analyzer_collect_metrics(
 // Проверка критических порогов
 int performance_analyzer_check_thresholds(
     const struct performance_metrics *metrics) {
-    
+
     int alert_generated = 0;
-    time_t now = time(NULL);
-    
+    (void)time(NULL); // Reserved for future use
+
     // Проверка latency
     if (metrics->current_latency_ms > critical_thresholds.max_latency_ms) {
         performance_analyzer_generate_alert(ALERT_TYPE_HIGH_LATENCY,
