@@ -159,13 +159,38 @@ int runtime_tuner_register_parameter(
     new_param->last_tuned = time(NULL);
     new_param->tuning_attempts = 0;
     new_param->performance_impact = 0.0;
-    new_param->current_value_ptr = NULL; // Будет установлен позже
-    
+    new_param->current_value_ptr = NULL;
+
     // Получение текущего значения из config manager
-    // TODO: Интеграция с config manager
-    new_param->current_value = min_value;
-    new_param->baseline_value = min_value;
-    new_param->optimal_value = min_value;
+    struct config_parameter config_info;
+    char config_section[64] = "runtime";
+    char config_value[256] = {0};
+    
+    // Пытаемся получить значение из config manager
+    if (config_manager_get_parameter(config_section, name, config_value, sizeof(config_value)) == 0) {
+        // Успешно получили значение из конфига
+        switch (type) {
+            case CONFIG_TYPE_INT:
+            case CONFIG_TYPE_BOOL:
+                new_param->current_value = (double)atoi(config_value);
+                break;
+            case CONFIG_TYPE_LONG:
+                new_param->current_value = (double)atol(config_value);
+                break;
+            case CONFIG_TYPE_DOUBLE:
+                new_param->current_value = atof(config_value);
+                break;
+            default:
+                new_param->current_value = min_value;
+                break;
+        }
+    } else {
+        // Config manager не доступен или параметр не найден - используем min_value
+        new_param->current_value = min_value;
+    }
+    
+    new_param->baseline_value = new_param->current_value;
+    new_param->optimal_value = new_param->current_value;
     
     global_tuner_ctx.param_count++;
     pthread_mutex_unlock(&global_tuner_ctx.tuner_mutex);
@@ -395,34 +420,67 @@ static int runtime_tuner_try_parameter_change(
 static int runtime_tuner_apply_parameter_change(
     struct tuning_parameter *param,
     double new_value) {
-    
-    // TODO: Интеграция с соответствующими subsystems
+
+    // Интеграция с соответствующими subsystems через config manager
     // Например, для network.buffer_size нужно обновить буферы сети
+    char config_section[64] = "runtime";
+    char config_value[64];
     
+    // Форматируем значение для config manager
     switch (param->type) {
-        case CONFIG_TYPE_INT: {
-            int int_val = (int)new_value;
-            // config_manager_set_parameter("network", param->name, &int_val, sizeof(int));
+        case CONFIG_TYPE_INT:
+        case CONFIG_TYPE_BOOL:
+            snprintf(config_value, sizeof(config_value), "%d", (int)new_value);
             break;
-        }
-        case CONFIG_TYPE_DOUBLE: {
-            // config_manager_set_parameter("network", param->name, &new_value, sizeof(double));
+        case CONFIG_TYPE_LONG:
+            snprintf(config_value, sizeof(config_value), "%ld", (long)new_value);
             break;
-        }
+        case CONFIG_TYPE_DOUBLE:
+            snprintf(config_value, sizeof(config_value), "%.6f", new_value);
+            break;
         default:
             return 0;
     }
     
+    // Обновляем значение в config manager
+    if (config_manager_set_parameter_string(config_section, param->name, config_value) == 0) {
+        vkprintf(3, "Config updated: %s.%s = %s\n", config_section, param->name, config_value);
+    }
+
     param->current_value = new_value;
     return 1;
 }
 
 // Откат изменений параметра
 static int runtime_tuner_rollback_parameter(struct tuning_parameter *param) {
-    // Восстанавливаем предыдущее значение
-    // TODO: Реализовать механизм сохранения предыдущих значений
+    // Восстанавливаем предыдущее значение через baseline
+    double previous_value = param->baseline_value;
     
-    vkprintf(2, "Rolling back parameter: %s\n", param->name);
+    // Форматируем и применяем предыдущее значение
+    char config_section[64] = "runtime";
+    char config_value[64];
+    
+    switch (param->type) {
+        case CONFIG_TYPE_INT:
+        case CONFIG_TYPE_BOOL:
+            snprintf(config_value, sizeof(config_value), "%d", (int)previous_value);
+            break;
+        case CONFIG_TYPE_LONG:
+            snprintf(config_value, sizeof(config_value), "%ld", (long)previous_value);
+            break;
+        case CONFIG_TYPE_DOUBLE:
+            snprintf(config_value, sizeof(config_value), "%.6f", previous_value);
+            break;
+        default:
+            return 0;
+    }
+    
+    // Восстанавливаем значение в config manager
+    if (config_manager_set_parameter_string(config_section, param->name, config_value) == 0) {
+        param->current_value = previous_value;
+        vkprintf(2, "Rollback: %s = %.2f (baseline)\n", param->name, previous_value);
+    }
+    
     return 1;
 }
 

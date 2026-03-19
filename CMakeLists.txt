@@ -293,6 +293,74 @@ set(SYSTEM_SOURCES
     system/threat-detector.h
     system/auto-scaler.c
     system/auto-scaler.h
+    system/adaptive-tuning.c
+    system/adaptive-tuning.h
+    system/advanced-memory-management.c
+    system/advanced-memory-management.h
+    system/advanced-optimizer.c
+    system/advanced-optimizer.h
+    system/advanced-predictive-analytics.c
+    system/advanced-predictive-analytics.h
+    system/component-integration.c
+    system/component-integration.h
+    system/compression-optimizer.c
+    system/compression-optimizer.h
+    system/dynamic-resource-allocator.c
+    system/dynamic-resource-allocator.h
+    system/enhanced-memory-optimizer.c
+    system/enhanced-memory-optimizer.h
+    system/failure-predictor.c
+    system/failure-predictor.h
+    system/intelligent-auto-tuning.c
+    system/intelligent-auto-tuning.h
+    system/intelligent-optimization-integrator.c
+    system/intelligent-optimization-integrator.h
+    system/intelligent-workload-distributor.c
+    system/intelligent-workload-distributor.h
+    system/memory-optimizer.c
+    system/memory-optimizer.h
+    system/memory-pool-optimizer.c
+    system/memory-pool-optimizer.h
+    system/memory-pool.c
+    system/memory-pool.h
+    system/ml-performance-predictor.c
+    system/ml-performance-predictor.h
+    system/modular-architecture.c
+    system/modular-architecture.h
+    system/numa-allocator.c
+    system/numa-allocator.h
+    system/numa-aware-allocator.c
+    system/numa-aware-allocator.h
+    system/performance-forecasting-engine.c
+    system/performance-forecasting-engine.h
+    system/plugin-interface.c
+    system/plugin-interface.h
+    system/predictive-optimizer.c
+    system/predictive-optimizer.h
+    system/proactive-allocator.c
+    system/proactive-allocator.h
+    system/self-healing.c
+    system/self-healing.h
+    system/unified-api.c
+    system/unified-api.h
+    system/config/advanced-systems-defaults.c
+    system/config/advanced-systems-defaults.h
+    system/config/unified-config-manager.c
+    system/config/unified-config-manager.h
+    system/diagnostic/advanced-diagnostic-system.c
+    system/diagnostic/advanced-diagnostic-system.h
+    system/integration/mtproxy-integration-layer.c
+    system/integration/mtproxy-integration-layer.h
+    system/integration/system-integration-coordinator.c
+    system/integration/system-integration-coordinator.h
+    system/monitoring/real-time-monitoring-dashboard.c
+    system/monitoring/real-time-monitoring-dashboard.h
+    system/monitoring/system-health-monitor.c
+    system/monitoring/system-health-monitor.h
+    system/optimization/performance-correlation-engine.c
+    system/optimization/performance-correlation-engine.h
+    system/optimization/resource-optimization-manager.c
+    system/optimization/resource-optimization-manager.h
 )
 
 set(ADVANCED_OPTIMIZATION_SOURCES
@@ -304,6 +372,8 @@ set(ADVANCED_OPTIMIZATION_SOURCES
     system/dpdk-interface.h
     system/advanced-optimizer.c
     system/advanced-optimizer.h
+    system/debugging/intelligent-debugging-framework.c
+    system/debugging/intelligent-debugging-framework.h
 )
 
 set(PERF_MONITOR_SOURCES

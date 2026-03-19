@@ -14,11 +14,11 @@
     You should have received a copy of the GNU Lesser General Public License
     along with Mtproto-proxy Library.  If not, see <http://www.gnu.org/licenses/>.
     
-    Copyright 2015-2016 Telegram Messenger Inc             
-              2015-2016 Vitaly Valtman     
+    Copyright 2015-2016 Telegram Messenger Inc
+              2015-2016 Vitaly Valtman
 */
 
-
+#include <stddef.h>
 #include <assert.h>
       
 extern long long total_vv_tree_nodes;
