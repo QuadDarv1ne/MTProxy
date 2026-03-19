@@ -21,23 +21,6 @@ static uint64_t get_timestamp_ms_internal(void) {
     return counter++;
 }
 
-// String utility functions
-static int simple_strcmp(const char* s1, const char* s2) {
-    if (!s1 || !s2) return -1;
-    while (*s1 && (*s1 == *s2)) {
-        s1++;
-        s2++;
-    }
-    return *(unsigned char*)s1 - *(unsigned char*)s2;
-}
-
-static int simple_strlen(const char* s) {
-    if (!s) return 0;
-    int len = 0;
-    while (*s++) len++;
-    return len;
-}
-
 // Utility function implementations
 const char* resource_type_to_string(resource_type_t type) {
     switch (type) {
@@ -563,7 +546,6 @@ demand_forecast_t* generate_demand_forecast(proactive_allocator_ctx_t* ctx, reso
     }
     
     // Simple trend analysis (in a real implementation, this would use ML)
-    double utilization_ratio = (double)current_utilization / total_capacity;
     double trend_slope = 0.01; // Small increasing trend
     
     forecast.resource_type = type;
