@@ -3,6 +3,9 @@
  * Implements true NUMA topology awareness with intelligent allocation policies
  */
 
+#include <stddef.h>
+#include <stdlib.h>
+
 #ifndef NULL
 #define NULL ((void*)0)
 #endif

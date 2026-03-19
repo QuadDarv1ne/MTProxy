@@ -341,10 +341,14 @@ void memory_deallocate(memory_manager_t *manager, void *ptr) {
     if (manager->config.enable_double_free_detection) {
         // TODO: Реализовать проверку на повторное освобождение
     }
-    
+
     // Получение размера для статистики
+#ifdef _WIN32
+    size_t size = _msize(ptr);
+#else
     size_t size = malloc_usable_size(ptr);
-    
+#endif
+
     free(ptr);
     
     // Обновление статистики

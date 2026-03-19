@@ -6,6 +6,11 @@
 
 #include "enhanced-memory-optimizer.h"
 
+// Forward declarations
+static void* enhanced_memory_optimizer_fragmented_alloc(enhanced_memory_optimizer_t *optimizer, size_t size);
+static void enhanced_memory_optimizer_track_fragmentation(enhanced_memory_optimizer_t *optimizer,
+                                                        void *ptr, size_t size);
+
 // Global enhanced memory optimizer instance
 static enhanced_memory_optimizer_t *g_enhanced_mem_optimizer = NULL;
 

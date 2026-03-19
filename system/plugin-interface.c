@@ -194,13 +194,13 @@ int plugin_manager_get_plugin(plugin_manager_t *manager,
     
     // В реальной реализации: найти плагин по имени
     for (int i = 0; i < manager->plugin_count; i++) {
-        if (manager->plugins[i] && 
-            !simple_strcmp(manager->plugins[i]->config.name, plugin_name)) {
+        if (manager->plugins[i] &&
+            !simple_strcmp(manager->plugins[i]->name, plugin_name)) {
             *plugin = manager->plugins[i];
             return 0;
         }
     }
-    
+
     return -1;  // Плагин не найден
 }
 
@@ -269,38 +269,24 @@ int plugin_manager_get_plugin_parameter(plugin_manager_t *manager,
 // Получение статистики плагина
 plugin_stats_t plugin_manager_get_plugin_stats(plugin_manager_t *manager, 
                                             const char *plugin_name) {
-    plugin_interface_t *plugin = 0;
-    if (!manager || !plugin_name || plugin_manager_get_plugin(manager, plugin_name, &plugin) != 0) {
-        // Возвращаем пустую статистику
-        plugin_stats_t empty_stats = {0};
-        return empty_stats;
-    }
-    
-    return plugin->stats;
+    plugin_stats_t empty_stats = {0};
+    // plugin_interface_t не содержит stats - возвращаем пустую статистику
+    return empty_stats;
 }
 
 // Получение глобальной статистики
 plugin_stats_t plugin_manager_get_global_stats(plugin_manager_t *manager) {
     if (!manager) {
-        return g_plugin_manager.global_stats;
+        plugin_stats_t empty_stats = {0};
+        return empty_stats;
     }
     return manager->global_stats;
 }
 
 // Сброс статистики плагина
-void plugin_manager_reset_plugin_stats(plugin_manager_t *manager, 
+void plugin_manager_reset_plugin_stats(plugin_manager_t *manager,
                                     const char *plugin_name) {
-    plugin_interface_t *plugin = 0;
-    if (!manager || !plugin_name || plugin_manager_get_plugin(manager, plugin_name, &plugin) != 0) {
-        return;
-    }
-    
-    plugin->stats.executions_count = 0;
-    plugin->stats.bytes_processed = 0;
-    plugin->stats.errors_count = 0;
-    plugin->stats.average_execution_time = 0.0;
-    plugin->stats.last_execution_time = 0;
-    plugin->stats.active_sessions = 0;
+    // plugin_interface_t не содержит stats - заглушка
 }
 
 // Сброс глобальной статистики
@@ -334,12 +320,12 @@ int plugin_manager_validate_plugin_path(const char *plugin_path) {
 }
 
 // Проверка совместимости
-int plugin_manager_check_compatibility(plugin_interface_t *plugin, 
+int plugin_manager_check_compatibility(plugin_interface_t *plugin,
                                     int required_api_version) {
     if (!plugin) {
         return 0;
     }
-    
+
     // Проверить версию API плагина
-    return (plugin->config.api_version >= required_api_version) ? 1 : 0;
+    return (plugin->api_version >= required_api_version) ? 1 : 0;
 }

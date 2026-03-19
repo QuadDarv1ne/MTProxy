@@ -4,6 +4,8 @@
  */
 
 #include "failure-predictor.h"
+#include <stdlib.h>
+#include <string.h>
 
 // Global context and callbacks
 static failure_predictor_ctx_t* g_failure_ctx = NULL;

@@ -4,6 +4,7 @@
 #include <stdio.h>
 #ifdef _WIN32
     #include <windows.h>
+    #include <psapi.h>
 #else
     #include <sys/time.h>
     #include <pthread.h>

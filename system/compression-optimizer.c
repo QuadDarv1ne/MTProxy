@@ -4,6 +4,8 @@
  */
 
 #include "compression-optimizer.h"
+#include <stdlib.h>
+#include <string.h>
 
 // Global context and callbacks
 static compression_optimizer_ctx_t* g_compression_ctx = NULL;

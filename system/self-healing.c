@@ -4,6 +4,8 @@
  */
 
 #include "self-healing.h"
+#include <stdlib.h>
+#include <string.h>
 
 // Global context and callbacks
 static self_healing_ctx_t* g_healing_ctx = NULL;

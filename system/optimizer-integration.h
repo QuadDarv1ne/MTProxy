@@ -17,6 +17,6 @@ int update_optimizer_integration(void);
 void cleanup_optimizer_integration(void);
 
 // Function to get current optimization status
-perf_metrics_t get_optimizer_status(void);
+performance_optimizer_stats_t get_optimizer_status(void);
 
 #endif

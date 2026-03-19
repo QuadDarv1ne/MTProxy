@@ -31,10 +31,17 @@
 #include <time.h>
 #include "../common/platform_network.h"
 #include <fcntl.h>
+
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <windows.h>
+#else
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#endif
 
 #include "md5.h"
 #include "resolver.h"
@@ -181,7 +188,11 @@ conn_target_job_t *cfg_parse_server_port (struct mf_config *MC, int flags) {
 
   default_cfg_ct.min_connections = MC->min_connections;
   default_cfg_ct.max_connections = MC->max_connections;
+#ifdef _WIN32
+  default_cfg_ct.reconnect_timeout = 1.0 + 0.1 * ((double)rand() / RAND_MAX);
+#else
   default_cfg_ct.reconnect_timeout = 1.0 + 0.1 * drand48 ();
+#endif
 
   if ((flags & 1)) {
     int was_created = -1;
