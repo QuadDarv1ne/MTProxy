@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.20)
 project(MTProxy VERSION 1.0.0 LANGUAGES C)
 
 # Set C standard
@@ -15,6 +15,12 @@ elseif(UNIX)
     message(STATUS "Detected Unix/Linux platform")
     set(PLATFORM_LIBS m rt pthread)
 endif()
+
+# Find required packages
+find_package(Git QUIET)
+find_package(OpenSSL REQUIRED)
+find_package(ZLIB REQUIRED)
+find_package(Threads REQUIRED)
 
 # Compiler-specific options
 if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
@@ -528,7 +534,14 @@ add_executable(mtproto-proxy
 )
 
 # Link libraries
-target_link_libraries(mtproto-proxy kdb_common ${PLATFORM_LIBS} crypto z pthread)
+target_link_libraries(mtproto-proxy 
+    kdb_common 
+    ${PLATFORM_LIBS}
+    OpenSSL::SSL
+    OpenSSL::Crypto
+    ZLIB::ZLIB
+    Threads::Threads
+)
 
 # Set output directory
 set_target_properties(mtproto-proxy PROPERTIES
