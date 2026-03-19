@@ -101,10 +101,12 @@ typedef struct {
 } memory_arena_t;
 
 // Контекст менеджера памяти
+#define MANAGER_MAX_FREED_BLOCKS 256
+
 typedef struct {
     // Конфигурация
     memory_manager_config_t config;
-    
+
     // Аллокаторы
     struct {
         memory_pool_t *pools;
@@ -113,16 +115,16 @@ typedef struct {
         int arena_count;
         void *standard_heap;
     } allocators;
-    
+
     // Статистика
     memory_stats_t global_stats;
     memory_stats_t *per_thread_stats;
     int thread_count;
-    
+
     // Синхронизация
     void *global_mutex;
     void **thread_mutexes;
-    
+
     // Профилирование
     struct {
         unsigned long long *allocation_timestamps;
@@ -131,7 +133,12 @@ typedef struct {
         size_t sample_count;
         size_t max_samples;
     } profiler;
-    
+
+    // Отслеживание double free
+    void *freed_blocks[MANAGER_MAX_FREED_BLOCKS];
+    size_t freed_blocks_count;
+    size_t freed_blocks_tail;
+
     // Состояние
     int is_initialized;
     int is_running;

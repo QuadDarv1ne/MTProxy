@@ -141,7 +141,11 @@ memory_manager_t* memory_manager_init(const memory_manager_config_t *config) {
         free(manager);
         return NULL;
     }
-    
+
+    // Инициализация отслеживания double free
+    manager->freed_blocks_count = 0;
+    manager->freed_blocks_tail = 0;
+
     // Инициализация стандартного хипа
     manager->allocators.standard_heap = platform_allocate_pages(manager->config.initial_heap_size);
     if (!manager->allocators.standard_heap) {
@@ -336,10 +340,22 @@ void memory_deallocate(memory_manager_t *manager, void *ptr) {
     double start_time = memory_get_current_time_us();
     
     platform_lock_mutex(manager->global_mutex);
-    
-    // Проверка на double free
+
+    // Проверка на double free через поиск в списке освобождённых блоков
     if (manager->config.enable_double_free_detection) {
-        // TODO: Реализовать проверку на повторное освобождение
+        for (size_t i = 0; i < manager->freed_blocks_count; i++) {
+            if (manager->freed_blocks[i] == ptr) {
+                vkprintf(0, "Double free detected at %p\n", ptr);
+                platform_unlock_mutex(manager->global_mutex);
+                return;
+            }
+        }
+        // Добавляем в список освобождённых (кольцевой буфер)
+        manager->freed_blocks[manager->freed_blocks_tail] = ptr;
+        manager->freed_blocks_tail = (manager->freed_blocks_tail + 1) % MANAGER_MAX_FREED_BLOCKS;
+        if (manager->freed_blocks_count < MANAGER_MAX_FREED_BLOCKS) {
+            manager->freed_blocks_count++;
+        }
     }
 
     // Получение размера для статистики
