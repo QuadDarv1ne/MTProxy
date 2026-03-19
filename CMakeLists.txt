@@ -185,6 +185,8 @@ set(COMMON_SOURCES
     common/platform_compat.h
     common/vlog.c
     common/vlog.h
+    common/cache-manager.c
+    common/cache-manager.h
 )
 
 set(JOBS_SOURCES

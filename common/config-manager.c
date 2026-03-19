@@ -26,6 +26,8 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <time.h>
+#include <errno.h>
 
 #include "common/config-manager.h"
 #include "common/kprintf.h"
@@ -36,6 +38,51 @@ static struct config_manager_stats config_stats = {0};
 
 /* Global configuration context */
 static struct config_context global_config_ctx = {0};
+
+/* Batch mode state */
+static struct {
+    int is_batch_mode;
+    int batch_changes_count;
+    struct config_change_entry *batch_changes;
+    int batch_changes_capacity;
+} batch_state = {0};
+
+/* Simple JSON parser helpers */
+static int skip_whitespace(const char *json, int pos) {
+    while (json[pos] == ' ' || json[pos] == '\t' || json[pos] == '\n' || json[pos] == '\r') {
+        pos++;
+    }
+    return pos;
+}
+
+static int parse_json_string(const char *json, int *pos, char *out, int max_len) {
+    int p = *pos;
+    if (json[p] != '"') return -1;
+    p++;
+    
+    int i = 0;
+    while (json[p] != '"' && json[p] != '\0' && i < max_len - 1) {
+        if (json[p] == '\\' && json[p + 1] != '\0') {
+            p++;
+            switch (json[p]) {
+                case 'n': out[i++] = '\n'; break;
+                case 't': out[i++] = '\t'; break;
+                case 'r': out[i++] = '\r'; break;
+                case '\\': out[i++] = '\\'; break;
+                case '"': out[i++] = '"'; break;
+                default: out[i++] = json[p]; break;
+            }
+        } else {
+            out[i++] = json[p];
+        }
+        p++;
+    }
+    out[i] = '\0';
+    
+    if (json[p] == '"') p++;
+    *pos = p;
+    return 0;
+}
 
 /* Built-in configuration sections */
 static const struct builtin_config_section {
@@ -64,41 +111,70 @@ int config_manager_init(const char *config_file_path) {
     if (global_config_ctx.sections) {
         return 0; // Уже инициализирован
     }
-    
+
     pthread_mutex_init(&global_config_ctx.config_mutex, NULL);
-    
+
     // Инициализация секций
     global_config_ctx.section_capacity = BUILTIN_SECTION_COUNT + 10;
-    global_config_ctx.sections = calloc(global_config_ctx.section_capacity, 
+    global_config_ctx.sections = calloc(global_config_ctx.section_capacity,
                                        sizeof(struct config_section));
     if (!global_config_ctx.sections) {
         return -1;
     }
-    
+
     // Создание builtin секций
     for (int i = 0; i < BUILTIN_SECTION_COUNT; i++) {
-        strncpy(global_config_ctx.sections[i].name, 
-                builtin_sections[i].name, 
+        strncpy(global_config_ctx.sections[i].name,
+                builtin_sections[i].name,
                 sizeof(global_config_ctx.sections[i].name) - 1);
         global_config_ctx.section_count++;
     }
-    
+
     // Установка пути к конфигу
     if (config_file_path) {
-        strncpy(global_config_ctx.config_file_path, 
-                config_file_path, 
+        strncpy(global_config_ctx.config_file_path,
+                config_file_path,
                 sizeof(global_config_ctx.config_file_path) - 1);
     } else {
         strcpy(global_config_ctx.config_file_path, "/etc/mtproxy.conf");
     }
-    
+
     global_config_ctx.auto_reload_enabled = 1;
     global_config_ctx.validation_enabled = 1;
     global_config_ctx.reload_thread_running = 0;
     
-    vkprintf(1, "Configuration manager initialized with %d builtin sections\n", 
-             BUILTIN_SECTION_COUNT);
+    // Инициализация расширенных полей
+    global_config_ctx.config_version = 1;
+    global_config_ctx.json_pretty_print = 1;
+    global_config_ctx.case_sensitive_keys = 0;
+    global_config_ctx.last_error[0] = '\0';
     
+    // Инициализация истории изменений
+    global_config_ctx.change_history = malloc(sizeof(struct config_change_history));
+    if (global_config_ctx.change_history) {
+        global_config_ctx.change_history->max_entries = 1000;
+        global_config_ctx.change_history->entries = calloc(global_config_ctx.change_history->max_entries,
+                                                          sizeof(struct config_change_entry));
+        global_config_ctx.change_history->entry_count = 0;
+        global_config_ctx.change_history->current_index = 0;
+    }
+    
+    // Инициализация глобальных callback'ов
+    global_config_ctx.max_global_callbacks = 32;
+    global_config_ctx.global_callbacks = calloc(global_config_ctx.max_global_callbacks,
+                                               sizeof(struct config_callback_entry));
+    global_config_ctx.global_callback_count = 0;
+    
+    // Инициализация batch состояния
+    batch_state.is_batch_mode = 0;
+    batch_state.batch_changes_count = 0;
+    batch_state.batch_changes_capacity = 256;
+    batch_state.batch_changes = calloc(batch_state.batch_changes_capacity,
+                                      sizeof(struct config_change_entry));
+
+    vkprintf(1, "Configuration manager initialized with %d builtin sections\n",
+             BUILTIN_SECTION_COUNT);
+
     return 0;
 }
 
@@ -478,24 +554,444 @@ void config_manager_print_stats(void) {
 // Очистка configuration manager
 void config_manager_cleanup(void) {
     pthread_mutex_lock(&global_config_ctx.config_mutex);
-    
+
     // Очистка секций
     for (int i = 0; i < global_config_ctx.section_count; i++) {
         struct config_section *section = &global_config_ctx.sections[i];
         if (section->parameters) {
             free(section->parameters);
         }
+        if (section->callbacks) {
+            free(section->callbacks);
+        }
     }
-    
+
     if (global_config_ctx.sections) {
         free(global_config_ctx.sections);
     }
     
+    // Очистка истории изменений
+    if (global_config_ctx.change_history) {
+        if (global_config_ctx.change_history->entries) {
+            free(global_config_ctx.change_history->entries);
+        }
+        free(global_config_ctx.change_history);
+    }
+    
+    // Очистка глобальных callback'ов
+    if (global_config_ctx.global_callbacks) {
+        free(global_config_ctx.global_callbacks);
+    }
+    
+    // Очистка batch состояния
+    if (batch_state.batch_changes) {
+        free(batch_state.batch_changes);
+    }
+
     pthread_mutex_unlock(&global_config_ctx.config_mutex);
     pthread_mutex_destroy(&global_config_ctx.config_mutex);
-    
+
     memset(&config_stats, 0, sizeof(config_stats));
     memset(&global_config_ctx, 0, sizeof(global_config_ctx));
-    
+    memset(&batch_state, 0, sizeof(batch_state));
+
     vkprintf(1, "Configuration manager cleaned up\n");
+}
+
+// Регистрация callback'а для изменений конфигурации
+int config_manager_register_callback(const char *section_name,
+                                    const char *param_name,
+                                    config_change_callback_t callback,
+                                    void *user_data) {
+    if (!section_name || !callback) {
+        return -1;
+    }
+    
+    pthread_mutex_lock(&global_config_ctx.config_mutex);
+    
+    struct config_section *section = config_manager_find_section(section_name);
+    if (!section) {
+        pthread_mutex_unlock(&global_config_ctx.config_mutex);
+        return -1;
+    }
+    
+    // Расширение массива callback'ов если нужно
+    if (section->callback_count >= section->max_callbacks) {
+        int new_capacity = section->max_callbacks == 0 ? 8 : section->max_callbacks * 2;
+        struct config_callback_entry *new_callbacks = realloc(section->callbacks,
+                                                             new_capacity * sizeof(struct config_callback_entry));
+        if (!new_callbacks) {
+            pthread_mutex_unlock(&global_config_ctx.config_mutex);
+            return -1;
+        }
+        section->callbacks = new_callbacks;
+        section->max_callbacks = new_capacity;
+    }
+    
+    // Добавление callback'а
+    struct config_callback_entry *entry = &section->callbacks[section->callback_count];
+    entry->callback = callback;
+    entry->user_data = user_data;
+    entry->is_active = 1;
+    section->callback_count++;
+    
+    pthread_mutex_unlock(&global_config_ctx.config_mutex);
+    return 0;
+}
+
+// Удаление callback'а
+int config_manager_unregister_callback(const char *section_name,
+                                       const char *param_name,
+                                       config_change_callback_t callback) {
+    if (!section_name || !callback) {
+        return -1;
+    }
+    
+    pthread_mutex_lock(&global_config_ctx.config_mutex);
+    
+    struct config_section *section = config_manager_find_section(section_name);
+    if (!section) {
+        pthread_mutex_unlock(&global_config_ctx.config_mutex);
+        return -1;
+    }
+    
+    // Поиск и деактивация callback'а
+    for (int i = 0; i < section->callback_count; i++) {
+        if (section->callbacks[i].callback == callback && section->callbacks[i].is_active) {
+            section->callbacks[i].is_active = 0;
+            pthread_mutex_unlock(&global_config_ctx.config_mutex);
+            return 0;
+        }
+    }
+    
+    pthread_mutex_unlock(&global_config_ctx.config_mutex);
+    return -1; // Callback не найден
+}
+
+// Уведомление об изменении конфигурации
+int config_manager_notify_change(const char *section_name,
+                                const char *param_name,
+                                enum config_change_event event) {
+    pthread_mutex_lock(&global_config_ctx.config_mutex);
+    
+    struct config_section *section = config_manager_find_section(section_name);
+    if (!section) {
+        pthread_mutex_unlock(&global_config_ctx.config_mutex);
+        return -1;
+    }
+    
+    // Вызов глобальных callback'ов
+    for (int i = 0; i < global_config_ctx.global_callback_count; i++) {
+        if (global_config_ctx.global_callbacks[i].is_active) {
+            global_config_ctx.global_callbacks[i].callback(section_name, param_name, event,
+                                                          global_config_ctx.global_callbacks[i].user_data);
+        }
+    }
+    
+    // Вызов callback'ов секции
+    for (int i = 0; i < section->callback_count; i++) {
+        if (section->callbacks[i].is_active) {
+            section->callbacks[i].callback(section_name, param_name, event,
+                                          section->callbacks[i].user_data);
+        }
+    }
+    
+    pthread_mutex_unlock(&global_config_ctx.config_mutex);
+    return 0;
+}
+
+// Добавление записи в историю изменений
+static void config_manager_add_history_entry(const char *section,
+                                            const char *param,
+                                            const char *old_val,
+                                            const char *new_val,
+                                            const char *changed_by,
+                                            enum config_change_event event) {
+    if (!global_config_ctx.change_history || !global_config_ctx.change_history->entries) {
+        return;
+    }
+    
+    struct config_change_history *history = global_config_ctx.change_history;
+    struct config_change_entry *entry = &history->entries[history->current_index];
+    
+    entry->timestamp = time(NULL);
+    strncpy(entry->section, section, sizeof(entry->section) - 1);
+    strncpy(entry->parameter, param, sizeof(entry->parameter) - 1);
+    strncpy(entry->old_value, old_val, sizeof(entry->old_value) - 1);
+    strncpy(entry->new_value, new_val, sizeof(entry->new_value) - 1);
+    strncpy(entry->changed_by, changed_by ? changed_by : "system", sizeof(entry->changed_by) - 1);
+    entry->event_type = event;
+    
+    history->current_index = (history->current_index + 1) % history->max_entries;
+    if (history->entry_count < history->max_entries) {
+        history->entry_count++;
+    }
+}
+
+// Получение истории изменений
+int config_manager_get_change_history(struct config_change_entry *entries,
+                                     int max_entries,
+                                     time_t from_time,
+                                     time_t to_time) {
+    if (!entries || !global_config_ctx.change_history) {
+        return -1;
+    }
+    
+    pthread_mutex_lock(&global_config_ctx.config_mutex);
+    
+    struct config_change_history *history = global_config_ctx.change_history;
+    int count = 0;
+    
+    // Итерация по истории (от новых к старым)
+    int start_idx = (history->current_index - 1 + history->max_entries) % history->max_entries;
+    for (int i = 0; i < history->entry_count && count < max_entries; i++) {
+        int idx = (start_idx - i + history->max_entries) % history->max_entries;
+        struct config_change_entry *entry = &history->entries[idx];
+        
+        if (entry->timestamp >= from_time && entry->timestamp <= to_time) {
+            entries[count++] = *entry;
+        }
+    }
+    
+    pthread_mutex_unlock(&global_config_ctx.config_mutex);
+    return count;
+}
+
+// Очистка истории изменений
+int config_manager_clear_change_history(void) {
+    if (!global_config_ctx.change_history) {
+        return -1;
+    }
+    
+    pthread_mutex_lock(&global_config_ctx.config_mutex);
+    
+    if (global_config_ctx.change_history->entries) {
+        memset(global_config_ctx.change_history->entries, 0,
+              global_config_ctx.change_history->max_entries * sizeof(struct config_change_entry));
+    }
+    global_config_ctx.change_history->entry_count = 0;
+    global_config_ctx.change_history->current_index = 0;
+    
+    pthread_mutex_unlock(&global_config_ctx.config_mutex);
+    return 0;
+}
+
+// Получение количества изменений
+int config_manager_get_change_count(time_t from_time, time_t to_time) {
+    if (!global_config_ctx.change_history) {
+        return 0;
+    }
+    
+    pthread_mutex_lock(&global_config_ctx.config_mutex);
+    
+    int count = 0;
+    struct config_change_history *history = global_config_ctx.change_history;
+    
+    for (int i = 0; i < history->entry_count; i++) {
+        if (history->entries[i].timestamp >= from_time &&
+            history->entries[i].timestamp <= to_time) {
+            count++;
+        }
+    }
+    
+    pthread_mutex_unlock(&global_config_ctx.config_mutex);
+    return count;
+}
+
+// JSON экспорт конфигурации
+int config_manager_export_to_json(const char *filename, int include_sensitive) {
+    if (!filename) {
+        return -1;
+    }
+    
+    FILE *file = fopen(filename, "w");
+    if (!file) {
+        snprintf(global_config_ctx.last_error, sizeof(global_config_ctx.last_error),
+                "Cannot open file for writing: %s", filename);
+        return -1;
+    }
+    
+    pthread_mutex_lock(&global_config_ctx.config_mutex);
+    
+    const char *indent = global_config_ctx.json_pretty_print ? "  " : "";
+    int brace_count = 0;
+    
+    fprintf(file, "{\n");
+    brace_count++;
+    
+    // Экспорт по секциям
+    for (int i = 0; i < global_config_ctx.section_count; i++) {
+        struct config_section *section = &global_config_ctx.sections[i];
+        
+        if (i > 0) {
+            fprintf(file, ",\n");
+        }
+        
+        fprintf(file, "%s\"%s\": {\n", indent, section->name);
+        
+        // Экспорт параметров секции
+        int param_written = 0;
+        for (int j = 0; j < section->param_count; j++) {
+            struct config_parameter *param = &section->parameters[j];
+            
+            // Пропуск sensitive параметров если нужно
+            if (!include_sensitive && param->is_sensitive) {
+                continue;
+            }
+            
+            if (param_written > 0) {
+                fprintf(file, ",\n");
+            }
+            
+            fprintf(file, "%s%s\"%s\": ", indent, indent, param->name);
+            
+            // Вывод значения в зависимости от типа
+            switch (param->type) {
+                case CONFIG_TYPE_INT: {
+                    int val = *(int*)param->value_ptr;
+                    fprintf(file, "%d", val);
+                    break;
+                }
+                case CONFIG_TYPE_LONG: {
+                    long long val = *(long long*)param->value_ptr;
+                    fprintf(file, "%lld", val);
+                    break;
+                }
+                case CONFIG_TYPE_DOUBLE: {
+                    double val = *(double*)param->value_ptr;
+                    fprintf(file, "%.6f", val);
+                    break;
+                }
+                case CONFIG_TYPE_BOOL: {
+                    int val = *(int*)param->value_ptr;
+                    fprintf(file, "%s", val ? "true" : "false");
+                    break;
+                }
+                case CONFIG_TYPE_STRING:
+                default: {
+                    fprintf(file, "\"%s\"", (const char*)param->value_ptr);
+                    break;
+                }
+            }
+            
+            param_written++;
+        }
+        
+        fprintf(file, "\n%s}", indent);
+    }
+    
+    fprintf(file, "\n}\n");
+    
+    pthread_mutex_unlock(&global_config_ctx.config_mutex);
+    fclose(file);
+    
+    vkprintf(2, "Configuration exported to JSON: %s\n", filename);
+    return 0;
+}
+
+// Получение версии конфигурации
+int config_manager_get_config_version(void) {
+    return global_config_ctx.config_version;
+}
+
+// Получение последней ошибки
+const char* config_manager_get_last_error(void) {
+    return global_config_ctx.last_error;
+}
+
+// Очистка последней ошибки
+void config_manager_clear_last_error(void) {
+    global_config_ctx.last_error[0] = '\0';
+}
+
+// Горячая перезагрузка конфигурации
+int config_manager_hot_reload(const char *new_config_path) {
+    const char *path = new_config_path ? new_config_path : global_config_ctx.config_file_path;
+    
+    vkprintf(1, "Hot-reloading configuration from: %s\n", path);
+    
+    // Сохранение текущего состояния
+    int old_version = global_config_ctx.config_version;
+    
+    // Загрузка новой конфигурации
+    if (config_manager_load_from_file(path) != 0) {
+        snprintf(global_config_ctx.last_error, sizeof(global_config_ctx.last_error),
+                "Failed to load configuration from: %s", path);
+        return -1;
+    }
+    
+    global_config_ctx.config_version++;
+    
+    // Уведомление об изменении
+    config_manager_notify_change("system", "config_reload", CONFIG_EVENT_RELOADED);
+    
+    // Добавление записи в историю
+    config_manager_add_history_entry("system", "config_reload", 
+                                    "old_version", "new_version",
+                                    "hot_reload", CONFIG_EVENT_RELOADED);
+    
+    vkprintf(1, "Configuration hot-reloaded: version %d -> %d\n", 
+            old_version, global_config_ctx.config_version);
+    
+    return 0;
+}
+
+// Проверка необходимости перезагрузки
+int config_manager_is_reload_needed(void) {
+    struct stat st;
+    if (stat(global_config_ctx.config_file_path, &st) != 0) {
+        return 0;
+    }
+    
+    return st.st_mtime > global_config_ctx.last_file_modified;
+}
+
+// Массовые операции - начало batch режима
+int config_manager_begin_batch(void) {
+    if (batch_state.is_batch_mode) {
+        return -1; // Уже в batch режиме
+    }
+    
+    batch_state.is_batch_mode = 1;
+    batch_state.batch_changes_count = 0;
+    
+    vkprintf(2, "Batch mode started\n");
+    return 0;
+}
+
+// Массовые операции - завершение batch режима
+int config_manager_commit_batch(void) {
+    if (!batch_state.is_batch_mode) {
+        return -1;
+    }
+    
+    // Вызов callback'ов для всех изменений в batch
+    for (int i = 0; i < batch_state.batch_changes_count; i++) {
+        struct config_change_entry *entry = &batch_state.batch_changes[i];
+        config_manager_notify_change(entry->section, entry->parameter, entry->event_type);
+    }
+    
+    batch_state.is_batch_mode = 0;
+    batch_state.batch_changes_count = 0;
+    
+    vkprintf(2, "Batch mode committed (%d changes)\n", batch_state.batch_changes_count);
+    return 0;
+}
+
+// Массовые операции - откат batch режима
+int config_manager_rollback_batch(void) {
+    if (!batch_state.is_batch_mode) {
+        return -1;
+    }
+    
+    batch_state.batch_changes_count = 0;
+    batch_state.is_batch_mode = 0;
+    
+    vkprintf(2, "Batch mode rolled back\n");
+    return 0;
+}
+
+// Проверка batch режима
+int config_manager_is_batch_mode(void) {
+    return batch_state.is_batch_mode;
 }
