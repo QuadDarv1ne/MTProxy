@@ -317,6 +317,8 @@ set(SECURITY_SOURCES
     security/security-patch-example.h
     security/threat-intelligence-system.c
     security/threat-intelligence-system.h
+    security_enhanced/security-enhanced.c
+    security_enhanced/security-enhanced.h
     common/mtproxy-fixes-simple.h
 )
 
