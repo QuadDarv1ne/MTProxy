@@ -19,6 +19,7 @@
 */
 
 #include <stddef.h>
+#include <stdlib.h>
 #include <assert.h>
       
 extern long long total_vv_tree_nodes;
@@ -566,11 +567,11 @@ TREE_PREFIX int SUFFIX(tree_count_,TREE_NAME) (TREE_NODE_TYPE *T) {
 
 
 TREE_PREFIX TREE_NODE_TYPE *SUFFIX (tree_alloc_, TREE_NAME) (X_TYPE x, Y_TYPE y) {
-  TREE_NODE_TYPE *T = 
+  TREE_NODE_TYPE *T;
   #ifndef TREE_MALLOC
-    zmalloc0 (sizeof (*T));
+    T = calloc (1, sizeof (*T));
   #else
-    calloc (sizeof (*T), 1);
+    T = TREE_MALLOC (sizeof (*T));
   #endif
   T->x = x;
   T->y = y;
@@ -599,9 +600,9 @@ TREE_PREFIX void SUFFIX (tree_free_, TREE_NAME) (TREE_NODE_TYPE *T) {
     TREE_DECREF (T->x);
   #endif
   #ifndef TREE_MALLOC
-    zfree (T, sizeof (*T));
-  #else
     free (T);
+  #else
+    TREE_FREE (T);
   #endif
   __sync_fetch_and_add (&total_vv_tree_nodes, -1);
 }

@@ -4,6 +4,7 @@
 #include <time.h>
 #ifdef _WIN32
     #include <windows.h>
+    #include <malloc.h>
 #else
     #include <sys/time.h>
 #endif
@@ -102,8 +103,13 @@ crypto_optimizer_t* crypto_optimizer_init(void) {
     // Инициализация векторизованных буферов
     optimizer->vector_buffers.alignment = 32; // 32-byte alignment for AVX
     optimizer->vector_buffers.buffer_size = 4096;
+#ifdef _WIN32
+    optimizer->vector_buffers.aligned_input = _aligned_malloc(4096, 32);
+    optimizer->vector_buffers.aligned_output = _aligned_malloc(4096, 32);
+#else
     optimizer->vector_buffers.aligned_input = aligned_alloc(32, 4096);
     optimizer->vector_buffers.aligned_output = aligned_alloc(32, 4096);
+#endif
     
     optimizer->is_initialized = 1;
     return optimizer;
@@ -373,11 +379,16 @@ void crypto_optimizer_cleanup(crypto_optimizer_t *optimizer) {
     free(optimizer->batch_processor.input_buffers);
     free(optimizer->batch_processor.output_buffers);
     free(optimizer->batch_processor.buffer_sizes);
-    
+
     // Очистка векторизованных буферов
+#ifdef _WIN32
+    _aligned_free(optimizer->vector_buffers.aligned_input);
+    _aligned_free(optimizer->vector_buffers.aligned_output);
+#else
     free(optimizer->vector_buffers.aligned_input);
     free(optimizer->vector_buffers.aligned_output);
-    
+#endif
+
     free(optimizer);
 }
 

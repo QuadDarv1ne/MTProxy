@@ -7,11 +7,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <windows.h>
+#else
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#endif
 
 #include "modular-security.h"
 
@@ -541,9 +548,13 @@ static int is_suspicious_pattern(const void *data, size_t size) {
 // Конвертация IP в uint32
 uint32_t security_ip_to_uint32(const char *ip_str) {
     if (!ip_str) return 0;
-    
+
     struct in_addr addr;
+#ifdef _WIN32
+    if (inet_pton(AF_INET, ip_str, &addr.s_addr) == 1) {
+#else
     if (inet_aton(ip_str, &addr)) {
+#endif
         return ntohl(addr.s_addr);
     }
     return 0;

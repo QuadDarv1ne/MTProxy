@@ -30,14 +30,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <unistd.h>
 #include "../common/platform_network.h"
+
+#ifdef _WIN32
+#error "mtproto-proxy.c requires Unix-like system (Linux/macOS). Windows is not supported."
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <windows.h>
+#else
+#include <unistd.h>
 #include <netinet/tcp.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/mman.h>
 #include <netdb.h>
+#endif
+
 #include <ctype.h>
 #include <openssl/rand.h>
 #include <openssl/rsa.h>

@@ -4,6 +4,8 @@
  */
 
 #include "proactive-allocator.h"
+#include <stdlib.h>
+#include <string.h>
 
 // Global context and callbacks
 static proactive_allocator_ctx_t* g_allocator_ctx = NULL;

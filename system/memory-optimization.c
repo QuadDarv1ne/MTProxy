@@ -24,9 +24,14 @@
 #include <string.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <errno.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <unistd.h>
 #include <sys/mman.h>
-#include <errno.h>
+#endif
 
 #include "memory-optimization.h"
 
@@ -394,15 +399,24 @@ int expand_pool(memory_pool_t *pool) {
     if (new_pool_size > global_pool_config.max_pool_size) {
         return 0;
     }
-    
+
     // Allocate new memory
-    void *new_memory = mmap(NULL, POOL_EXPANSION_SIZE, 
-                           PROT_READ | PROT_WRITE, 
+#ifdef _WIN32
+    void *new_memory = VirtualAlloc(NULL, POOL_EXPANSION_SIZE,
+                                   MEM_COMMIT | MEM_RESERVE,
+                                   PAGE_READWRITE);
+    if (!new_memory) {
+        return 0;
+    }
+#else
+    void *new_memory = mmap(NULL, POOL_EXPANSION_SIZE,
+                           PROT_READ | PROT_WRITE,
                            MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    
+
     if (new_memory == MAP_FAILED) {
         return 0;
     }
+#endif
     
     // Add new blocks to free list
     size_t blocks_added = POOL_EXPANSION_SIZE / pool->block_size;
@@ -512,12 +526,16 @@ void cleanup_memory_optimization() {
     }
     
     pthread_mutex_lock(&manager_mutex);
-    
+
     // Free all pool memory
     for (int i = 0; i < global_memory_manager->pool_count; i++) {
         memory_pool_t *pool = &global_memory_manager->pools[i];
         if (pool->pool_start) {
+#ifdef _WIN32
+            VirtualFree(pool->pool_start, 0, MEM_RELEASE);
+#else
             munmap(pool->pool_start, pool->pool_size);
+#endif
         }
         pthread_mutex_destroy(&pool->pool_mutex);
     }

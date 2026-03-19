@@ -32,13 +32,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <unistd.h>
 #include <malloc.h>
 #include <math.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
 #ifdef __linux__
 #include <sys/syscall.h>
 #include <linux/futex.h>
+#endif
 #endif
 
 #include "common/proc-stat.h"
@@ -197,7 +201,7 @@ MODULE_STAT_FUNCTION
     tot_cpu_load_rs += jb_cpu_load_rs[i];
     tot_cpu_load_rt += jb_cpu_load_rt[i];
 
-    #define max(a,b) (a) > (b) ? (a) : (b)
+    #define max(a,b) ((a) > (b) ? (a) : (b))
     max_cpu_load_u = max (max_cpu_load_u, jb_cpu_load_u[i]);
     max_cpu_load_s = max (max_cpu_load_s, jb_cpu_load_s[i]);
     max_cpu_load_t = max (max_cpu_load_t, jb_cpu_load_t[i]);
@@ -207,8 +211,13 @@ MODULE_STAT_FUNCTION
     #undef max
   }
 
-  const double m_clk_to_hs = 100.0 / sysconf (_SC_CLK_TCK); /* hundredth of a second */
-  const double m_clk_to_ts = 0.1 * m_clk_to_hs;             /* tenth of a second */
+#ifdef _WIN32
+  const double m_clk_to_hs = 100.0 / CLOCKS_PER_SEC;
+  const double m_clk_to_ts = 0.1 * m_clk_to_hs;
+#else
+  const double m_clk_to_hs = 100.0 / sysconf (_SC_CLK_TCK);
+  const double m_clk_to_ts = 0.1 * m_clk_to_hs;
+#endif
   
   for (j = 0; j < 6; j++) {
     double *b = NULL;
@@ -414,11 +423,10 @@ struct mp_queue MainJobQueue __attribute__((aligned(128)));
 static struct thread_callback *jobs_cb_list;
 
 void init_main_pthread_id (void) {
-  pthread_t self = pthread_self ();
   if (main_pthread_id_initialized) {
-    assert (pthread_equal (main_pthread_id, self));
+    assert (pthread_equal (main_pthread_id, pthread_self ()));
   } else {
-    main_pthread_id = self;
+    main_pthread_id = pthread_self ();
     main_pthread_id_initialized = 1;
   }
 }
@@ -474,10 +482,14 @@ int create_job_thread_ex (int thread_class, void *(*thread_work)(void *)) {
   JT->id = i;
   assert (JT->job_queue);
 
+#ifdef _WIN32
+  srand ((unsigned int)(rdtsc () ^ rand ()));
+#else
 #ifdef __linux__
   srand48_r (rdtsc () ^ lrand48 (), &JT->rand_data);
 #else
   srand (rdtsc () ^ lrand48 ());
+#endif
 #endif
 
 
@@ -739,13 +751,13 @@ int unlock_job (JOB_REF_ARG (job)) {
         
         struct job_subclass *JSC = &JC->subclasses->subclasses[cur_subclass];
         __sync_fetch_and_add (&JSC->total_jobs, 1);
-        
+
         vkprintf (JOBS_DEBUG, "RESCHEDULED JOB %p, type %p, flags %08x, refcnt %d -> Queue %d subclass %d\n", job, job->j_execute, job->j_flags, job->j_refcnt, req_class, cur_subclass);
         mpq_push_w (JSC->job_queue, PTR_MOVE (job), 0);
 
         struct mp_queue *JQ = JC->job_queue;
         assert (JQ);
-        mpq_push_w (JQ, (void *)(long)(cur_subclass + JOB_SUBCLASS_OFFSET), 0);
+        mpq_push_w (JQ, (void *)(uintptr_t)(cur_subclass + JOB_SUBCLASS_OFFSET), 0);
       }
       return 1;
     } else {
@@ -776,7 +788,9 @@ void job_send_signals (JOB_REF_ARG (job), int sigset) {
   } else {
     if (job->j_flags & JF_SIGINT) {
       assert (job->j_thread);
+#ifndef _WIN32
       pthread_kill (job->j_thread->pthread_id, SIGRTMAX - 7);
+#endif
     }
     job_decref (JOB_REF_PASS (job));
   }
@@ -886,6 +900,10 @@ static void job_interrupt_signal_handler (const int sig) {
 }
 
 static void set_job_interrupt_signal_handler (void) {
+#ifdef _WIN32
+  /* Windows doesn't support POSIX signals like Unix */
+  return;
+#else
   struct sigaction act;
   sigemptyset (&act.sa_mask);
   act.sa_flags = 0;
@@ -895,6 +913,7 @@ static void set_job_interrupt_signal_handler (void) {
     kwrite (2, "failed sigaction\n", 17);
     _exit (EXIT_FAILURE);
   }
+#endif
 }
 
 void *job_thread_ex (void *arg, void (*work_one)(void *, int)) {
@@ -904,7 +923,11 @@ void *job_thread_ex (void *arg, void (*work_one)(void *, int)) {
   assert (!(JT->thread_class & ~JC_MASK));
 
   get_this_thread_id ();
+#ifdef _WIN32
+  JT->thread_system_id = GetCurrentThreadId ();
+#else
   JT->thread_system_id = syscall (SYS_gettid);
+#endif
 
   set_job_interrupt_signal_handler ();
 
@@ -1029,7 +1052,7 @@ static void process_one_sublist (unsigned long id, int class) {
 }
 
 static void process_one_sublist_gw (void *x, int class) {
-  process_one_sublist ((long)x, class);
+  process_one_sublist ((intptr_t)x, class);
 }
 
 static void process_one_job_gw (void *x, int class) {
