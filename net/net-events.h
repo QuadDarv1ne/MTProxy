@@ -24,7 +24,18 @@
 
 #pragma once
 
-#include <netinet/in.h>
+#ifdef _WIN32
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
+    #include <stdint.h>
+    typedef int socklen_t;
+    #ifndef in_addr_t
+        typedef uint32_t in_addr_t;
+    #endif
+#else
+    #include <netinet/in.h>
+    #include <sys/epoll.h>
+#endif
 
 #ifndef EPOLLRDHUP
 #define EPOLLRDHUP 0x2000

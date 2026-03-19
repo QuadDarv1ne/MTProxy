@@ -30,16 +30,6 @@
 #include "common/kprintf.h"
 #include "common/common-stats.h"
 
-// Статистика для DH оптимизации
-struct dh_optimized_stats {
-    long long precomputed_values_used;
-    long long fast_path_operations;
-    long long fallback_operations;
-    long long total_dh_generations;
-    long long cached_results_used;
-    long long montgomery_reductions;
-};
-
 static struct dh_optimized_stats dh_stats = {0};
 
 // Кэш предвычисленных DH значений

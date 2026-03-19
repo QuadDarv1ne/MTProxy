@@ -21,7 +21,12 @@
 #pragma once
 
 #include <stdio.h>
-#include <arpa/inet.h>
+#ifdef _WIN32
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
+#else
+    #include <arpa/inet.h>
+#endif
 
 #define PID_PRINT_STR "[" IP_PRINT_STR ":%d:%d:%d]"
 #define IP_PRINT_STR "%d.%d.%d.%d"

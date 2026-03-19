@@ -32,22 +32,27 @@
 
 #define _GNU_SOURCE 1
 
-#include <arpa/inet.h>
+#ifdef _WIN32
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
+#else
+    #include <arpa/inet.h>
+    #include <netinet/in.h>
+    #include <pwd.h>
+    #include <grp.h>
+    #include <sys/resource.h>
+    #include <sys/wait.h>
+#endif
+
 #include <assert.h>
 #include <errno.h>
-#include <execinfo.h>
 #include <fcntl.h>
 #include <getopt.h>
-#include <grp.h>
-#include <netinet/in.h>
-#include <pwd.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/resource.h>
-#include <sys/wait.h>
 #include <unistd.h>
 #include <pthread.h>
 
