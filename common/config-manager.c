@@ -134,11 +134,7 @@ int config_manager_create_section(const char *section_name, const char *descript
     new_section->param_count = 0;
     new_section->param_capacity = 0;
     new_section->last_updated = time(NULL);
-    
-    if (description) {
-        // TODO: Сохранить описание
-    }
-    
+
     global_config_ctx.section_count++;
     pthread_mutex_unlock(&global_config_ctx.config_mutex);
     

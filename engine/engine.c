@@ -557,7 +557,6 @@ static void check_server_functions (void) /* {{{ */ {
   int i;
   for (i = 1; i <= 64; i++) {
     if (F->allowed_signals & SIG2INT (i)) {
-      //fix log spamming hack for image-engine: 
       ksignal (i, i == SIGCHLD ? quiet_signal_handler : default_signal_handler);
     }
   }

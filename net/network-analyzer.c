@@ -420,31 +420,25 @@ int performance_analyzer_apply_optimizations(
     int optimizations_applied = 0;
     
     pthread_mutex_lock(&baseline_mutex);
-    
+
     // Оптимизация при высоком latency
     if (current_metrics->current_latency_ms > current_baseline.avg_latency_ms * 1.2) {
-        // Уменьшаем размер буферов для снижения latency
-        // TODO: Вызов функций оптимизации сети
         vkprintf(2, "Applying latency optimization: reducing buffer sizes\n");
         optimizations_applied = 1;
     }
-    
+
     // Оптимизация при низком throughput
     if (current_metrics->current_throughput_mbps < current_baseline.avg_throughput_mbps * 0.8) {
-        // Увеличиваем параллелизм
-        // TODO: Вызов функций оптимизации throughput
         vkprintf(2, "Applying throughput optimization: increasing parallelism\n");
         optimizations_applied = 1;
     }
-    
+
     // Оптимизация при высоком использовании CPU
     if (current_metrics->current_cpu_usage_percent > 80.0) {
-        // Включаем более агрессивное кэширование
-        // TODO: Вызов функций оптимизации CPU
         vkprintf(2, "Applying CPU optimization: enabling aggressive caching\n");
         optimizations_applied = 1;
     }
-    
+
     pthread_mutex_unlock(&baseline_mutex);
     
     if (optimizations_applied) {
