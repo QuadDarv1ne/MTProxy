@@ -228,6 +228,12 @@ git checkout master && git merge dev && git push origin master
 - [ ] Собрать test-new-modules — ⏳ несовпадение структур
 - [x] Собрать mtproxy-admin — ✅ собран (bin/mtproxy-admin.exe)
 
+### Следующие шаги
+1. [ ] Исправить test_new_modules.c: `enable_locking` → актуальное поле
+2. [ ] Исправить mtproto-proxy.c: SIGCHLD/SIGUSR1 → Windows аналоги
+3. [ ] Запустить тесты для cache-manager, rate-limiter, error-handler
+4. [ ] Проверить mtproxy-admin.exe в работе
+
 ### Код — исправлено
 - [x] cache-manager.c: Windows mutex, crc32_fast → crc32_partial
 - [x] rate-limiter.c: Windows mutex, crc32_fast → crc32_partial
