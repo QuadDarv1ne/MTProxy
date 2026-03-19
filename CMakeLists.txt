@@ -364,14 +364,10 @@ set(SYSTEM_SOURCES
 )
 
 set(ADVANCED_OPTIMIZATION_SOURCES
-    system/numa-allocator.c
-    system/numa-allocator.h
     system/io-uring-interface.c
     system/io-uring-interface.h
     system/dpdk-interface.c
     system/dpdk-interface.h
-    system/advanced-optimizer.c
-    system/advanced-optimizer.h
     system/debugging/intelligent-debugging-framework.c
     system/debugging/intelligent-debugging-framework.h
 )
