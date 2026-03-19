@@ -4,6 +4,10 @@
  */
 
 #include "crypto-optimizer.h"
+#include "enhanced-crypto-optimizer.h"
+#include "common/kprintf.h"
+#include <string.h>
+#include <stdio.h>
 
 // Simple time function for simulation
 static double get_current_time_ms(void) {
@@ -39,55 +43,56 @@ int crypto_optimizer_measure_performance(crypto_optimizer_t *optimizer,
 }
 
 // Get performance recommendations
-// Stub - crypto_perf_recommendations_t not defined
-#if 0
 void crypto_optimizer_get_recommendations(crypto_optimizer_t *optimizer,
                                         crypto_perf_recommendations_t *recommendations) {
     if (!optimizer || !recommendations) {
         return;
     }
-    
+
     // Zero initialize recommendations
-    char *rec_ptr = (char*)recommendations;
-    for (int i = 0; i < sizeof(crypto_perf_recommendations_t); i++) {
-        rec_ptr[i] = 0;
-    }
-    
+    memset(recommendations, 0, sizeof(crypto_perf_recommendations_t));
+
     // Simple recommendation logic based on batch size as performance indicator
     int operation_count = optimizer->batch_size;
     double avg_time = 1.0; // Simulated average time
-    
+    (void)avg_time; // unused for now
+
     recommendations->recommended_optimization = CRYPTO_OPT_NONE;
     recommendations->confidence_level = 0;
     recommendations->estimated_improvement_percent = 0;
-    
+
     if (operation_count > 100) {
         // High usage - recommend optimization
         recommendations->recommended_optimization = CRYPTO_OPT_BATCH;
         recommendations->confidence_level = 80;
         recommendations->estimated_improvement_percent = 40;
-        recommendations->recommendation_flags = 1; // RECOMMEND_FLAG_BENCHMARK_NEEDED
+        recommendations->recommendation_flags = RECOMMEND_FLAG_BENCHMARK_NEEDED;
+        snprintf(recommendations->recommendation_text, sizeof(recommendations->recommendation_text),
+                "High load detected: batch optimization recommended (%d ops)", operation_count);
     } else if (operation_count > 50) {
         // Moderate usage - maintain current
         recommendations->recommended_optimization = optimizer->active_optimization;
         recommendations->confidence_level = 70;
         recommendations->estimated_improvement_percent = 20;
-        recommendations->recommendation_flags = 2; // RECOMMEND_FLAG_MAINTAIN_CURRENT
+        recommendations->recommendation_flags = RECOMMEND_FLAG_MAINTAIN_CURRENT;
+        snprintf(recommendations->recommendation_text, sizeof(recommendations->recommendation_text),
+                "Moderate load: current optimization adequate (%d ops)", operation_count);
     } else {
         // Low usage - current settings fine
         recommendations->recommended_optimization = optimizer->active_optimization;
         recommendations->confidence_level = 90;
         recommendations->estimated_improvement_percent = 5;
-        recommendations->recommendation_flags = 2; // RECOMMEND_FLAG_MAINTAIN_CURRENT
+        recommendations->recommendation_flags = RECOMMEND_FLAG_MAINTAIN_CURRENT;
+        snprintf(recommendations->recommendation_text, sizeof(recommendations->recommendation_text),
+                "Low load: no optimization needed (%d ops)", operation_count);
     }
-    
-    // Set recommendation text
+
+    // Set recommendation text for specific optimizations
     if (recommendations->recommended_optimization == CRYPTO_OPT_AES_NI) {
         snprintf(recommendations->recommendation_text, sizeof(recommendations->recommendation_text),
                 "AES-NI acceleration recommended");
     }
 }
-#endif // 0 - stub function
 
 // Predict future performance
 double crypto_optimizer_predict_performance(crypto_optimizer_t *optimizer, 
@@ -156,10 +161,18 @@ int crypto_optimizer_auto_tune(crypto_optimizer_t *optimizer) {
         return -1;
     }
 
-    // Simple auto-tuning logic
-    // TODO: Implement crypto_perf_recommendations_t structure
-    // crypto_perf_recommendations_t recommendations;
-    // crypto_optimizer_get_recommendations(optimizer, &recommendations);
+    // Get performance recommendations
+    crypto_perf_recommendations_t recommendations;
+    crypto_optimizer_get_recommendations(optimizer, &recommendations);
+
+    // Apply recommended optimization
+    if (recommendations.recommended_optimization != optimizer->active_optimization) {
+        optimizer->active_optimization = recommendations.recommended_optimization;
+        vkprintf(1, "Auto-tune: applied %s (confidence: %d%%, improvement: %d%%)\n",
+                recommendations.recommendation_text,
+                recommendations.confidence_level,
+                recommendations.estimated_improvement_percent);
+    }
 
     return 0; // Success
 }

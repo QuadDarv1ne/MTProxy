@@ -218,6 +218,7 @@ set(CRYPTO_SOURCES
     crypto/dh-optimized.c
     crypto/dh-optimized.h
     crypto/enhanced-crypto-optimizer.c
+    crypto/enhanced-crypto-optimizer.h
     crypto/vectorized-crypto.c
     crypto/vectorized-crypto.h
 )
