@@ -403,7 +403,7 @@ void parse_option_internal (const char *name, int arg, int *var, int val, unsign
 }
 
 void parse_option_ex (const char *name, int arg, int *var, int val, unsigned flags, int (*func)(int), const char *help, ...) {
-  char *h;
+  char *h = NULL;
   va_list ap;
   va_start (ap, help);
   assert (vasprintf (&h, help, ap) >= 0);
@@ -413,7 +413,7 @@ void parse_option_ex (const char *name, int arg, int *var, int val, unsigned fla
 }
 
 void parse_option (const char *name, int arg, int *var, int val, const char *help, ...) {
-  char *h;
+  char *h = NULL;
   va_list ap;
   va_start (ap, help);
   assert (vasprintf (&h, help, ap) >= 0);

@@ -328,8 +328,7 @@ static int kdb_load_hosts_internal (void) {
 
   memset (Hosts_new.htable, 0, sizeof (void *) * Hosts_new.hsize);
 
-  int res = parse_hosts (&Hosts_new, data, 1);
-  assert (res == ans);
+  assert (parse_hosts (&Hosts_new, data, 1) == ans);
 
   free (data);
   return Hosts_new.hosts_loaded = 1;

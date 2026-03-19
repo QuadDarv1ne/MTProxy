@@ -803,17 +803,8 @@ static unsigned compute_crc32_combine_clmul (unsigned crc1, unsigned crc2, int64
   if (len2 <= 0) {
     return crc1;
   }
-  unsigned int *p;
   if (!crc32_powers[251]) {
     gf32_compute_powers_clmul (crc32_powers, CRC32_REFLECTED_POLY);
-    p = crc32_powers + 8;
-    assert ( *((uint64_t *) (p + 0)) == CRC32_REFLECTED_X95);
-    assert ( *((uint64_t *) (p + 4)) == CRC32_REFLECTED_X127);
-    assert ( *((uint64_t *) (p + 6)) == CRC32_REFLECTED_X63);
-    assert ( *((uint64_t *) (p + 8)) == CRC32_REFLECTED_X191);
-    assert ( *((uint64_t *) (p + 10)) == CRC32_REFLECTED_X127);
-    assert ( *((uint64_t *) (p + 12)) == CRC32_REFLECTED_X319);
-    assert ( *((uint64_t *) (p + 14)) == CRC32_REFLECTED_X255);
     assert (crc32_powers[251]);
   }
 

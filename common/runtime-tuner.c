@@ -162,7 +162,6 @@ int runtime_tuner_register_parameter(
     new_param->current_value_ptr = NULL;
 
     // Получение текущего значения из config manager
-    struct config_parameter config_info;
     char config_section[64] = "runtime";
     char config_value[256] = {0};
     
