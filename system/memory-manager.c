@@ -4,6 +4,7 @@
 #include <stdio.h>
 #ifdef _WIN32
     #include <windows.h>
+    #include <malloc.h>
 #else
     #include <sys/mman.h>
     #include <unistd.h>
@@ -202,17 +203,30 @@ void* memory_allocate(memory_manager_t *manager, size_t size) {
         case ALLOCATOR_TYPE_STANDARD:
             ptr = malloc(size);
             break;
-            
+
         case ALLOCATOR_TYPE_POOL:
-            // TODO: Реализация пулов
-            ptr = malloc(size);
+            // Аллокация из пула для фиксированных размеров
+            if (manager->allocators.pools && manager->allocators.pool_count > 0) {
+                // Используем первый доступный пул (в production нужен подбор по размеру)
+                memory_pool_t *pool = &manager->allocators.pools[0];
+                ptr = memory_pool_allocate(pool);
+            } else {
+                // Fallback на malloc если пулы не инициализированы
+                ptr = malloc(size);
+            }
             break;
-            
+
         case ALLOCATOR_TYPE_ARENA:
-            // TODO: Реализация arena
-            ptr = malloc(size);
+            // Аллокация из arena для быстрых операций без фрагментации
+            if (manager->allocators.arenas && manager->allocators.arena_count > 0) {
+                memory_arena_t *arena = &manager->allocators.arenas[0];
+                ptr = memory_arena_allocate(arena, size);
+            } else {
+                // Fallback на malloc если арены не инициализированы
+                ptr = malloc(size);
+            }
             break;
-            
+
         default:
             ptr = malloc(size);
             break;
@@ -270,19 +284,23 @@ void* memory_reallocate(memory_manager_t *manager, void *ptr, size_t new_size) {
     if (!ptr) {
         return memory_allocate(manager, new_size);
     }
-    
+
     if (new_size == 0) {
         memory_deallocate(manager, ptr);
         return NULL;
     }
-    
-    // Получение текущего размера (приблизительно)
-    size_t old_size = malloc_usable_size(ptr);
-    
+
     platform_lock_mutex(manager->global_mutex);
-    
+
+    // Получение текущего размера
+#ifdef _WIN32
+    size_t old_size = _msize(ptr);
+#else
+    size_t old_size = malloc_usable_size(ptr);
+#endif
+
     void *new_ptr = realloc(ptr, new_size);
-    
+
     if (new_ptr) {
         // Обновление статистики
         if (new_size > old_size) {
@@ -290,19 +308,19 @@ void* memory_reallocate(memory_manager_t *manager, void *ptr, size_t new_size) {
         } else {
             manager->global_stats.current_allocated_bytes -= (old_size - new_size);
         }
-        
+
         if (manager->global_stats.current_allocated_bytes > manager->global_stats.peak_allocated_bytes) {
             manager->global_stats.peak_allocated_bytes = manager->global_stats.current_allocated_bytes;
         }
-        
+
         manager->global_stats.total_allocation_count++;
     } else {
         manager->global_stats.failed_allocation_count++;
         manager->error_counter++;
     }
-    
+
     platform_unlock_mutex(manager->global_mutex);
-    
+
     return new_ptr;
 }
 
@@ -539,10 +557,23 @@ void memory_manager_cleanup(memory_manager_t *manager) {
     
     // Очистка мьютексов
     platform_destroy_mutex(manager->global_mutex);
-    
-    // Очистка пулов и arena
-    // TODO: Реализовать очистку пулов и arena
-    
+
+    // Очистка пулов
+    if (manager->allocators.pools) {
+        for (int i = 0; i < manager->allocators.pool_count; i++) {
+            memory_pool_destroy(&manager->allocators.pools[i]);
+        }
+        free(manager->allocators.pools);
+    }
+
+    // Очистка арен
+    if (manager->allocators.arenas) {
+        for (int i = 0; i < manager->allocators.arena_count; i++) {
+            memory_arena_destroy(&manager->allocators.arenas[i]);
+        }
+        free(manager->allocators.arenas);
+    }
+
     free(manager);
 }
 
