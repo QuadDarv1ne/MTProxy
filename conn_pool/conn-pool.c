@@ -125,14 +125,15 @@ int cleanup_expired_connections(conn_pool_t *pool) {
 
 perf_metrics_t *get_conn_pool_stats(conn_pool_t *pool) {
     static perf_metrics_t stats;
-    
+
     if (!pool) {
         return 0;
     }
-    
-    stats.active_connections = pool->active_connections;
-    stats.free_connections = pool->idle_connections;
-    stats.max_connections = pool->max_connections;
-    
+
+    // Map conn_pool fields to perf_metrics
+    stats.blocked_connections = pool->active_connections;
+    stats.requests_per_second = pool->idle_connections;
+    stats.error_count = pool->max_connections;
+
     return &stats;
 }

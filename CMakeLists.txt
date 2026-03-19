@@ -11,6 +11,14 @@ if(WIN32)
     add_definitions(-D_WIN32)
     set(PLATFORM_LIBS ws2_32 pthread)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_WIN32_WINNT=0x0600")
+    
+    # Auto-detect MSYS2/UCRT64 paths
+    if(EXISTS "C:/msys64/ucrt64")
+        set(CMAKE_PREFIX_PATH "C:/msys64/ucrt64" ${CMAKE_PREFIX_PATH})
+        set(OPENSSL_ROOT_DIR "C:/msys64/ucrt64" CACHE PATH "OpenSSL install path" FORCE)
+        set(ZLIB_ROOT_DIR "C:/msys64/ucrt64" CACHE PATH "ZLIB install path" FORCE)
+        message(STATUS "MSYS2/UCRT64 detected: C:/msys64/ucrt64")
+    endif()
 elseif(UNIX)
     message(STATUS "Detected Unix/Linux platform")
     set(PLATFORM_LIBS m rt pthread)
@@ -207,12 +215,9 @@ set(CRYPTO_SOURCES
     crypto/advanced-crypto-opt.h
     crypto/crypto-optimizer.c
     crypto/crypto-optimizer.h
-    crypto/crypto-performance-optimizer.c
-    crypto/crypto-performance-optimizer.h
     crypto/dh-optimized.c
     crypto/dh-optimized.h
     crypto/enhanced-crypto-optimizer.c
-    crypto/enhanced-crypto-optimizer.h
     crypto/vectorized-crypto.c
     crypto/vectorized-crypto.h
 )
@@ -232,7 +237,6 @@ set(NET_SOURCES
     net/adaptive-protocol-manager.c
     net/adaptive-protocol-manager.h
     net/advanced-connection-pool.c
-    net/advanced-connection-pool.h
     net/advanced-network.c
     net/advanced-network.h
     net/async-network-optimizer.c
@@ -242,13 +246,10 @@ set(NET_SOURCES
     net/multiproto-manager.c
     net/multiproto-manager.h
     net/net-buffer-manager.c
-    net/net-buffer-manager.h
     net/net-connections-pool.c
     net/net-connections-pool.h
     net/net-enhanced-networking.c
-    net/net-enhanced-networking.h
     net/net-event-handler.c
-    net/net-event-handler.h
     net/net-performance-manager.c
     net/net-performance-manager.h
     net/net-quic-connections.c
@@ -325,8 +326,6 @@ set(SECURITY_SOURCES
     security/behavioral-anomaly-detection.h
     security/security-enhancements.c
     security/security-enhancements.h
-    security/security-patch-example.c
-    security/security-patch-example.h
     security/threat-intelligence-system.c
     security/threat-intelligence-system.h
     security_enhanced/security-enhanced.c
@@ -493,22 +492,12 @@ set(CONN_POOL_SOURCES
     conn_pool/conn-pool.c
     conn_pool/conn-pool.h
     conn_pool/simple-advanced-connection-optimizer.c
-    conn_pool/simple-advanced-connection-optimizer.h
 )
 
 set(GENERAL_SOURCES
-    general/config_manager.c
-    general/config_manager.h
-    general/protocol_manager.c
-    general/protocol_manager.h
-    general/mtproxy-enhanced.h
 )
 
 set(INFRASTRUCTURE_SOURCES
-    infrastructure/advanced-load-balancer.c
-    infrastructure/advanced-load-balancer.h
-    infrastructure/auto-scaling.c
-    infrastructure/auto-scaling.h
     infrastructure/load-balancer.c
     infrastructure/load-balancer.h
 )

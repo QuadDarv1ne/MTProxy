@@ -8,8 +8,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <pthread.h>
 #include <time.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <pthread.h>
+#endif
 
 #include "common/rate-limiter.h"
 #include "common/kprintf.h"
@@ -18,7 +23,7 @@
 // Хэш-функция для ключа
 static uint64_t rate_limit_hash(const char *key) {
     if (!key) return 0;
-    return crc32_fast(key, strlen(key));
+    return crc32_partial(key, strlen(key), -1) ^ -1;
 }
 
 // Создание новой записи
@@ -870,12 +875,12 @@ void rate_limiter_cleanup(rate_limiter_t *limiter) {
     // Освобождение блокировки
 #ifdef _WIN32
     if (limiter->mutex) {
-        DeleteCriticalSection((CRITICAL_SECTION*)limiter->mutex);
+        DeleteCriticalSection((CRITICAL_SECTION*)(limiter->mutex));
         free(limiter->mutex);
     }
 #else
     if (limiter->mutex) {
-        pthread_mutex_destroy((pthread_mutex_t*)limiter->mutex);
+        pthread_mutex_destroy((pthread_mutex_t*)(limiter->mutex));
         free(limiter->mutex);
     }
 #endif

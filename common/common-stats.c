@@ -30,8 +30,12 @@
 #include <ctype.h>
 #include <assert.h>
 #include <errno.h>
-#include <unistd.h>
 #include <fcntl.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 #include "kprintf.h"
 #include "precise-time.h"
 #include "server-functions.h"
@@ -70,7 +74,13 @@ static int read_whole_file (char *filename, void *output, int olen) {
 static int parse_statm (const char *buf, long long *a, int m) {
   static long long page_size = -1;
   if (page_size < 0) {
+#ifdef _WIN32
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    page_size = si.dwPageSize;
+#else
     page_size = sysconf (_SC_PAGESIZE);
+#endif
     assert (page_size > 0);
   }
   int i;
@@ -322,7 +332,12 @@ double sb_sum_f (void **base, int len, int offset) {
 
 void sbp_print_date (stats_buffer_t *sb, const char *key, time_t unix_time) {
   struct tm b;
+#ifdef _WIN32
+  errno_t err = gmtime_s (&b, &unix_time);
+  struct tm *t = (err == 0) ? &b : NULL;
+#else
   struct tm *t = gmtime_r (&unix_time, &b);
+#endif
   if (t) {
     char s[256];
     size_t l = strftime (s, sizeof (s), "%c", t);

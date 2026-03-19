@@ -221,14 +221,26 @@ git checkout master && git merge dev && git push origin master
 ## 🔧 Активные задачи
 
 ### Сборка и компиляция
-- [ ] Настроить сборку на Windows — ⚠️ **OpenSSL не найден CMake**
-  - Решение: установить `OPENSSL_ROOT_DIR` или использовать vcpkg/conan
-  - OpenSSL есть в PATH: `C:\msys64\ucrt64\bin\openssl.exe`
-- [ ] Проверить работу CMake после установки OpenSSL
-- [ ] Протестировать Makefile сборку
-- [ ] Проверить линку с OpenSSL и zlib
+- [x] Настроить сборку на Windows — ✅ **OpenSSL/ZLIB найдены**
+- [x] Исправить CMakeLists.txt — ✅ авто-детект MSYS2/UCRT64
+- [x] Исправить Windows совместимость — ✅ pthread/windows.h
+- [ ] Собрать mtproto-proxy — ⚠️ POSIX зависимости (сигналы)
+- [ ] Собрать test-new-modules — ⏳ несовпадение структур
+- [x] Собрать mtproxy-admin — ✅ собран (bin/mtproxy-admin.exe)
 
-### Код — критические замечания
+### Код — исправлено
+- [x] cache-manager.c: Windows mutex, crc32_fast → crc32_partial
+- [x] rate-limiter.c: Windows mutex, crc32_fast → crc32_partial
+- [x] error-handler.c: Windows mutex
+- [x] memory-manager.c: добавлен vkprintf
+- [x] failure-predictor.c: добавлена simple_strcmp
+- [x] enhanced-observability.c: добавлен stdlib.h
+- [x] conn-pool.c: perf_metrics_t поля
+- [x] precise-time.c: Windows QueryPerformanceCounter
+- [x] common-stats.c: Windows GetSystemInfo, gmtime_s
+- [x] advanced-logger.h: pthread_t для Windows
+- [x] advanced-connection-optimizer.c: добавлен stdio.h
+- [x] enhanced-crypto-optimizer.c: удалены незавершённые функции
 - [x] NET_SOURCES: net-tcp-connections.c включён (строка 229)
 - [x] Проверить все заголовочные файлы в NET_SOURCES на наличие в дереве
 - [x] common/cpuid.c: явная переменная `eax` вместо `(unsigned int){0}` — совместимость

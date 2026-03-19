@@ -10,6 +10,12 @@
 #include <stdio.h>
 #include <time.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <pthread.h>
+#endif
+
 #include "common/error-handler.h"
 #include "common/kprintf.h"
 
@@ -130,12 +136,12 @@ void error_handler_cleanup(error_handler_context_t *ctx) {
     // Освобождение блокировки
 #ifdef _WIN32
     if (ctx->mutex) {
-        DeleteCriticalSection((CRITICAL_SECTION*)ctx->mutex);
+        DeleteCriticalSection((CRITICAL_SECTION*)(ctx->mutex));
         free(ctx->mutex);
     }
 #else
     if (ctx->mutex) {
-        pthread_mutex_destroy((pthread_mutex_t*)ctx->mutex);
+        pthread_mutex_destroy((pthread_mutex_t*)(ctx->mutex));
         free(ctx->mutex);
     }
 #endif

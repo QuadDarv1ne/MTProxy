@@ -7,6 +7,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Simple utility functions
+static int simple_strcmp(const char *str1, const char *str2) {
+    while (*str1 && (*str1 == *str2)) {
+        str1++;
+        str2++;
+    }
+    return *(unsigned char*)str1 - *(unsigned char*)str2;
+}
+
 // Global context and callbacks
 static failure_predictor_ctx_t* g_failure_ctx = NULL;
 static failure_prediction_callback_t g_prediction_callback = NULL;

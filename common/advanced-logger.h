@@ -6,6 +6,13 @@
 #include <time.h>
 #include <stdarg.h>
 
+#ifdef _WIN32
+#include <windows.h>
+typedef HANDLE pthread_t;
+#else
+#include <pthread.h>
+#endif
+
 // Уровни логирования
 typedef enum {
     LOG_LEVEL_OFF = 0,

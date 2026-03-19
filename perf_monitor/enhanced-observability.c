@@ -4,6 +4,8 @@
  */
 
 #include "enhanced-observability.h"
+#include <stdlib.h>
+#include <string.h>
 
 // Global context and callbacks
 static observability_ctx_t* g_observability_ctx = NULL;

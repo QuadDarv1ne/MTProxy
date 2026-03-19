@@ -8,9 +8,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <pthread.h>
 #include <time.h>
 #include <errno.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <pthread.h>
+#endif
 
 #include "common/cache-manager.h"
 #include "common/kprintf.h"
@@ -614,28 +619,28 @@ void cache_manager_cleanup(cache_manager_t *cache) {
             }
 #ifdef _WIN32
             if (cache->partitions[i].mutex) {
-                DeleteCriticalSection((CRITICAL_SECTION*)cache->partitions[i].mutex);
+                DeleteCriticalSection((CRITICAL_SECTION*)(cache->partitions[i].mutex));
                 free(cache->partitions[i].mutex);
             }
 #else
             if (cache->partitions[i].mutex) {
-                pthread_mutex_destroy((pthread_mutex_t*)cache->partitions[i].mutex);
+                pthread_mutex_destroy((pthread_mutex_t*)(cache->partitions[i].mutex));
                 free(cache->partitions[i].mutex);
             }
 #endif
         }
         free(cache->partitions);
     }
-    
+
     // Освобождение глобальной блокировки
 #ifdef _WIN32
     if (cache->global_mutex) {
-        DeleteCriticalSection((CRITICAL_SECTION*)cache->global_mutex);
+        DeleteCriticalSection((CRITICAL_SECTION*)(cache->global_mutex));
         free(cache->global_mutex);
     }
 #else
     if (cache->global_mutex) {
-        pthread_mutex_destroy((pthread_mutex_t*)cache->global_mutex);
+        pthread_mutex_destroy((pthread_mutex_t*)(cache->global_mutex));
         free(cache->global_mutex);
     }
 #endif
@@ -691,10 +696,10 @@ char* cache_generate_key(const char *prefix, const void *data, size_t size) {
     
     char *key = malloc(256);
     if (!key) return NULL;
-    
-    uint32_t crc = crc32_fast(data, size);
+
+    uint32_t crc = crc32_partial(data, size, -1) ^ -1;
     snprintf(key, 256, "%s_%08X", prefix, crc);
-    
+
     return key;
 }
 

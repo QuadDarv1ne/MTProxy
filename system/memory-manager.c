@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "common/kprintf.h"
 #ifdef _WIN32
     #include <windows.h>
     #include <malloc.h>
