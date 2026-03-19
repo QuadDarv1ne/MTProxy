@@ -220,8 +220,10 @@ git push origin main
 ## 🔧 Активные задачи
 
 ### Сборка и компиляция
-- [x] Настроить сборку на Windows (требуется компилятор C / MinGW) — OpenSSL найден в PATH
-- [ ] Проверить работу CMake после слияния — ⚠️ требуется OPENSSL_ROOT_DIR
+- [ ] Настроить сборку на Windows — ⚠️ **OpenSSL не найден CMake**
+  - Решение: установить `OPENSSL_ROOT_DIR` или использовать vcpkg/conan
+  - OpenSSL есть в PATH: `C:\msys64\ucrt64\bin\openssl.exe`
+- [ ] Проверить работу CMake после установки OpenSSL
 - [ ] Протестировать Makefile сборку
 - [ ] Проверить линку с OpenSSL и zlib
 
