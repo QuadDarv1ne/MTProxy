@@ -471,6 +471,38 @@ set(VV_SOURCES
     vv/vv-io.h
 )
 
+set(CONN_POOL_SOURCES
+    conn_pool/adaptive-connection-pool.c
+    conn_pool/adaptive-connection-pool.h
+    conn_pool/advanced-connection-optimizer.c
+    conn_pool/advanced-connection-optimizer.h
+    conn_pool/conn-pool.c
+    conn_pool/conn-pool.h
+    conn_pool/simple-advanced-connection-optimizer.c
+    conn_pool/simple-advanced-connection-optimizer.h
+)
+
+set(GENERAL_SOURCES
+    general/config_manager.c
+    general/config_manager.h
+    general/protocol_manager.c
+    general/protocol_manager.h
+)
+
+set(INFRASTRUCTURE_SOURCES
+    infrastructure/advanced-load-balancer.c
+    infrastructure/advanced-load-balancer.h
+    infrastructure/auto-scaling.c
+    infrastructure/auto-scaling.h
+    infrastructure/load-balancer.c
+    infrastructure/load-balancer.h
+)
+
+set(THREAD_SYSTEM_SOURCES
+    thread_system/thread-system.c
+    thread_system/thread-system.h
+)
+
 set(MTPROTO_SOURCES
     mtproto/mtproto-common.h
     mtproto/mtproto-config.c
@@ -479,7 +511,7 @@ set(MTPROTO_SOURCES
 )
 
 # Create a static library for common functionality
-add_library(kdb_common STATIC ${COMMON_SOURCES} ${JOBS_SOURCES} ${CRYPTO_SOURCES} ${VV_SOURCES} ${SYSTEM_SOURCES} ${SECURITY_SOURCES} ${ADVANCED_OPTIMIZATION_SOURCES} ${OBFUSCATION_SOURCES} ${PERF_MONITOR_SOURCES})
+add_library(kdb_common STATIC ${COMMON_SOURCES} ${JOBS_SOURCES} ${CRYPTO_SOURCES} ${VV_SOURCES} ${CONN_POOL_SOURCES} ${GENERAL_SOURCES} ${INFRASTRUCTURE_SOURCES} ${THREAD_SYSTEM_SOURCES} ${SYSTEM_SOURCES} ${SECURITY_SOURCES} ${ADVANCED_OPTIMIZATION_SOURCES} ${OBFUSCATION_SOURCES} ${PERF_MONITOR_SOURCES})
 
 # Target for the main mtproto-proxy executable
 add_executable(mtproto-proxy
