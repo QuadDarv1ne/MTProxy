@@ -237,6 +237,7 @@ git checkout master && git merge dev && git push origin master
 ### Фокус на качестве
 - ✅ Сборка работает (mtproxy-admin.exe)
 - ✅ 14 файлов исправлено для Windows
+- ✅ Ветки синхронизированы (dev = master)
 - ⏳ Тесты требуют обновления структур
 - ⏳ mtproto-proxy требует Windows совместимости
 
