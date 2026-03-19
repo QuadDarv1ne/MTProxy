@@ -82,6 +82,9 @@ struct config_context {
     time_t last_file_modified;
     int auto_reload_enabled;
     int validation_enabled;
+    pthread_mutex_t config_mutex;
+    pthread_t reload_thread;
+    int reload_thread_running;
 };
 
 // Инициализация configuration manager

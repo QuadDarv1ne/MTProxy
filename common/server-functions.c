@@ -42,18 +42,21 @@
     #include <grp.h>
     #include <sys/resource.h>
     #include <sys/wait.h>
+    #include <signal.h>
+    #include <execinfo.h>
 #endif
 
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
-#include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #include <pthread.h>
 
 #include "common/kprintf.h"
@@ -78,6 +81,7 @@ int start_time;
 int daemonize = 0;
 const char *username, *progname, *groupname;
 
+#ifndef _WIN32
 int change_user_group (const char *username, const char *groupname) {
   struct passwd *pw;
   /* lose root privileges if we have them */
@@ -116,7 +120,12 @@ int change_user_group (const char *username, const char *groupname) {
   }
   return 0;
 }
+#else
+/* Windows stub */
+int change_user_group (const char *username, const char *groupname) { (void)username; (void)groupname; return 0; }
+#endif
 
+#ifndef _WIN32
 int change_user (const char *username) {
   struct passwd *pw;
   /* lose root privileges if we have them */
@@ -149,7 +158,7 @@ int change_user (const char *username) {
 
 int raise_file_rlimit (int maxfiles) {
   struct rlimit rlim;
-  
+
   if (getrlimit(RLIMIT_NOFILE, &rlim) != 0) {
     kprintf ("failed to getrlimit number of files\n");
     return -1;
@@ -165,6 +174,11 @@ int raise_file_rlimit (int maxfiles) {
   }
   return 0;
 }
+#else
+/* Windows stubs */
+int change_user (const char *username) { (void)username; return 0; }
+int raise_file_rlimit (int maxfiles) { (void)maxfiles; return 0; }
+#endif
 
 
 const char *get_version_string (void) __attribute__ ((weak));
@@ -172,6 +186,7 @@ const char *get_version_string (void) {
   return "unknown compiled at " __DATE__ " " __TIME__ " by gcc " __VERSION__;
 }
 
+#ifndef _WIN32
 void print_backtrace (void) {
   void *buffer[64];
   int nptrs = backtrace (buffer, 64);
@@ -184,6 +199,13 @@ void print_backtrace (void) {
     kwrite (2, "\n", 1);
   }
 }
+#else
+void print_backtrace (void) {
+  kwrite (2, "\n------- Stack Backtrace -------\n", 33);
+  kwrite (2, "Backtrace not available on Windows\n", 35);
+  kwrite (2, "-------------------------------\n", 32);
+}
+#endif
 
 pthread_t debug_main_pthread_id;
 
@@ -193,6 +215,7 @@ void kill_main (void) {
   }
 }
 
+#ifndef _WIN32
 //can be called inside signal handler
 void ksignal (int sig, void (*handler) (int)) {
   struct sigaction act;
@@ -217,6 +240,11 @@ void ksignal_ex (int sig, void (*handler) (int, siginfo_t *, void *)) {
     _exit (EXIT_FAILURE);
   }
 }
+#else
+/* Windows stub */
+void ksignal (int sig, void (*handler) (int)) { (void)sig; (void)handler; }
+void ksignal_ex (int sig, void (*handler) (int, void *, void *)) { (void)sig; (void)handler; }
+#endif
 
 void queries_log_store (void *N, int limit, int max_size, int max_entry_size, int plain) __attribute__ ((weak));
 void queries_log_store (void *N, int limit, int max_size, int max_entry_size, int plain) {}
@@ -224,13 +252,14 @@ void queries_log_store (void *N, int limit, int max_size, int max_entry_size, in
 void engine_set_terminal_attributes (void) __attribute__ ((weak));
 void engine_set_terminal_attributes (void) {}
 
+#ifndef _WIN32
 void extended_debug_handler (int sig, siginfo_t *info, void *cont) {
   ksignal (sig, SIG_DFL);
-  
+
   print_backtrace ();
-    
+
   kill_main ();
-  
+
   _exit (EXIT_FAILURE);
 }
 
@@ -241,6 +270,12 @@ void set_debug_handlers (void) {
   ksignal_ex (SIGBUS, extended_debug_handler);
   debug_main_pthread_id = pthread_self ();
 }
+#else
+/* Windows stubs */
+void set_debug_handlers (void) {
+  debug_main_pthread_id = pthread_self ();
+}
+#endif
 
 void usage (void) __attribute ((weak));
 
@@ -615,10 +650,12 @@ int builtin_parse_option (int val) {
       }
       break;
     case 202:
+#ifndef _WIN32
       errno = 0;
       if (nice (atoi (optarg)) == -1 && errno) {
         perror ("nice");
       }
+#endif
       break;
     case 208:
       max_allocated_buffer_bytes = parse_memory_limit (optarg);
