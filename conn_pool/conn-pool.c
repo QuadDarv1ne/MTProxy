@@ -4,83 +4,135 @@
  */
 
 #include "conn-pool.h"
+#include <stdlib.h>
 
-/*
- * Инициализирует пул соединений
- * @param max_conn: максимальное количество соединений в пуле
- * @param timeout: время жизни неиспользуемого соединения (в секундах)
- * @return: указатель на пул соединений или NULL в случае ошибки
- */
 conn_pool_t *init_conn_pool(int max_conn, long timeout) {
-    // Заглушка для будущей реализации
-    // В реальной реализации инициализируем структуры пула соединений
-    return 0; // Возвращаем NULL-подобное значение
+    if (max_conn <= 0 || timeout <= 0) {
+        return 0;
+    }
+    
+    conn_pool_t *pool = (conn_pool_t *)calloc(1, sizeof(conn_pool_t));
+    if (!pool) {
+        return 0;
+    }
+    
+    pool->max_connections = max_conn;
+    pool->timeout = timeout;
+    pool->active_connections = 0;
+    pool->idle_connections = 0;
+    pool->connections = 0;
+    pool->available = 0;
+    
+    return pool;
 }
 
-/*
- * Получает соединение из пула
- * @param pool: указатель на пул соединений
- * @return: указатель на соединение или NULL в случае ошибки
- */
 connection_t *get_connection(conn_pool_t *pool) {
-    // Заглушка для будущей реализации
-    // В реальной реализации возвращаем доступное соединение из пула
-    return 0; // Возвращаем NULL-подобное значение
+    if (!pool) {
+        return 0;
+    }
+    
+    // Сначала пробуем взять из доступных
+    if (pool->available) {
+        connection_t *conn = pool->available;
+        pool->available = conn->next;
+        conn->next = 0;
+        conn->status = CONN_ACTIVE;
+        pool->idle_connections--;
+        pool->active_connections++;
+        return conn;
+    }
+    
+    // Создаём новое соединение
+    connection_t *conn = (connection_t *)calloc(1, sizeof(connection_t));
+    if (!conn) {
+        return 0;
+    }
+    
+    conn->socket_fd = 0;
+    conn->status = CONN_ACTIVE;
+    conn->next = 0;
+    pool->active_connections++;
+    
+    return conn;
 }
 
-/*
- * Возвращает соединение обратно в пул
- * @param pool: указатель на пул соединений
- * @param conn: указатель на соединение для возврата
- * @return: 0 в случае успеха, -1 в случае ошибки
- */
 int return_connection(conn_pool_t *pool, connection_t *conn) {
-    // Заглушка для будущей реализации
-    // В реальной реализации возвращаем соединение в пул для повторного использования
+    if (!pool || !conn) {
+        return -1;
+    }
+    
+    conn->status = CONN_IDLE;
+    conn->next = pool->available;
+    pool->available = conn;
+    pool->active_connections--;
+    pool->idle_connections++;
+    
     return 0;
 }
 
-/*
- * Закрывает и удаляет соединение
- * @param pool: указатель на пул соединений
- * @param conn: указатель на соединение для закрытия
- * @return: 0 в случае успеха, -1 в случае ошибки
- */
 int close_connection(conn_pool_t *pool, connection_t *conn) {
-    // Заглушка для будущей реализации
-    // В реальной реализации закрываем и удаляем соединение
+    if (!pool || !conn) {
+        return -1;
+    }
+    
+    conn->status = CONN_CLOSED;
+    if (pool->active_connections > 0) {
+        pool->active_connections--;
+    }
+    free(conn);
+    
     return 0;
 }
 
-/*
- * Освобождает все соединения в пуле
- * @param pool: указатель на пул соединений
- * @return: 0 в случае успеха, -1 в случае ошибки
- */
 int cleanup_conn_pool(conn_pool_t *pool) {
-    // Заглушка для будущей реализации
-    // В реальной реализации освобождаем все соединения в пуле
+    if (!pool) {
+        return -1;
+    }
+    
+    // Освобождаем все соединения
+    connection_t *curr = pool->connections;
+    while (curr) {
+        connection_t *next = curr->next;
+        free(curr);
+        curr = next;
+    }
+    
+    // Освобождаем доступные
+    curr = pool->available;
+    while (curr) {
+        connection_t *next = curr->next;
+        free(curr);
+        curr = next;
+    }
+    
+    pool->active_connections = 0;
+    pool->idle_connections = 0;
+    pool->connections = 0;
+    pool->available = 0;
+    free(pool);
+    
     return 0;
 }
 
-/*
- * Проверяет и очищает просроченные соединения
- * @param pool: указатель на пул соединений
- * @return: количество очищенных соединений
- */
 int cleanup_expired_connections(conn_pool_t *pool) {
-    // Заглушка для будущей реализации
-    // В реальной реализации проверяем и очищаем просроченные соединения
+    if (!pool) {
+        return 0;
+    }
+    
+    // В реальной реализации здесь была бы проверка времени жизни
     return 0;
 }
 
-/*
- * Получает статистику пула соединений
- * @param pool: указатель на пул соединений
- * @return: структура с информацией о состоянии пула
- */
 perf_metrics_t *get_conn_pool_stats(conn_pool_t *pool) {
-    // Заглушка для будущей реализации
-    // В реальной реализации собираем и возвращаем статистику пула
-    return 0; // Возвращаем NULL-подобное значение
+    static perf_metrics_t stats;
+    
+    if (!pool) {
+        return 0;
+    }
+    
+    stats.active_connections = pool->active_connections;
+    stats.free_connections = pool->idle_connections;
+    stats.max_connections = pool->max_connections;
+    
+    return &stats;
 }
