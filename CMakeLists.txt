@@ -5,6 +5,10 @@ project(MTProxy VERSION 1.0.0 LANGUAGES C)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+# CMake cache optimization
+set(CMAKE_CACHE_MAX_SIZE 50 CACHE STRING "Maximum size of the CMake cache")
+set(CMAKE_SUPPRESS_REGENERATION ON CACHE BOOL "Suppress automatic regeneration of build system")
+
 # Platform detection
 if(WIN32)
     message(STATUS "Detected Windows platform")
@@ -44,9 +48,24 @@ if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
     
     # Profile-guided optimization support
     option(ENABLE_PGO "Enable Profile-Guided Optimization" OFF)
-    if(ENABLE_PGO)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-generate")
-        message(STATUS "PGO enabled - building with profiling instrumentation")
+    option(USE_PGO_PROFILE "Use existing PGO profile for optimization" OFF)
+    
+    if(ENABLE_PGO AND NOT USE_PGO_PROFILE)
+        # First pass: generate profiling data
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-generate=${CMAKE_BINARY_DIR}/pgo-data")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-generate=${CMAKE_BINARY_DIR}/pgo-data")
+        message(STATUS "PGO enabled (generate phase) - building with profiling instrumentation")
+        message(STATUS "After building, run the binary with typical workload, then rebuild with USE_PGO_PROFILE=ON")
+    elseif(USE_PGO_PROFILE)
+        # Second pass: use profiling data
+        if(EXISTS "${CMAKE_BINARY_DIR}/pgo-data")
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-use=${CMAKE_BINARY_DIR}/pgo-data")
+            set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-use=${CMAKE_BINARY_DIR}/pgo-data")
+            message(STATUS "PGO enabled (use phase) - optimizing with profiling data")
+        else()
+            message(WARNING "USE_PGO_PROFILE=ON but no profile data found at ${CMAKE_BINARY_DIR}/pgo-data")
+            message(WARNING "First build with ENABLE_PGO=ON, run the binary, then rebuild with USE_PGO_PROFILE=ON")
+        endif()
     endif()
     
     # Link-time optimization
@@ -84,6 +103,16 @@ if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
     # Enable link-time garbage collection
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffunction-sections -fdata-sections")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--gc-sections")
+
+    # CMake caching for faster reconfiguration
+    option(ENABLE_CCACHE "Enable ccache for faster rebuilds" ON)
+    if(ENABLE_CCACHE)
+        find_program(CCACHE_PROGRAM ccache)
+        if(CCACHE_PROGRAM)
+            set(CMAKE_C_COMPILER_LAUNCHER "${CCACHE_PROGRAM}" CACHE STRING "Ccache executable")
+            message(STATUS "Ccache enabled: ${CCACHE_PROGRAM}")
+        endif()
+    endif()
     
     # Static linking options
     option(STATIC_LINKING "Enable static linking" OFF)
@@ -145,6 +174,12 @@ else()
 endif()
 
 add_definitions(-DCOMMIT="${GIT_COMMIT_HASH}")
+
+# Precompiled headers for faster builds
+option(ENABLE_PCH "Enable precompiled headers" ON)
+if(ENABLE_PCH AND CMAKE_C_COMPILER_ID STREQUAL "GNU")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Winvalid-pch")
+endif()
 
 # Include directories
 include_directories(${PROJECT_SOURCE_DIR})
@@ -544,6 +579,13 @@ target_link_libraries(mtproto-proxy
     ZLIB::ZLIB
     Threads::Threads
 )
+
+# Parallel link optimization
+include(ProcessorCount)
+ProcessorCount(NPROC)
+if(NPROC GREATER 0)
+    set(CMAKE_BUILD_PARALLEL_LEVEL ${NPROC} CACHE STRING "Build parallel level" FORCE)
+endif()
 
 # Set output directory
 set_target_properties(mtproto-proxy PROPERTIES
