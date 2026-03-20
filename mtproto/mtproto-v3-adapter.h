@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <time.h>
 
 #ifndef __SIZE_TYPE__
 #define __SIZE_TYPE__ unsigned long
@@ -17,11 +18,6 @@
 #ifndef _SIZE_T
 #define _SIZE_T
 typedef __SIZE_TYPE__ size_t;
-#endif
-
-#ifndef _TIME_T
-#define _TIME_T
-typedef long time_t;
 #endif
 
 #ifdef __cplusplus
@@ -52,6 +48,10 @@ typedef struct {
     uint32_t extra_flags;           /* Дополнительные флаги для новых версий */
     uint64_t connection_id;         /* Уникальный ID соединения */
 } mtproto_connection_info_t;
+
+/* Вспомогательные функции */
+int validate_key_strength(const unsigned char *key, int key_length);
+int compute_pfs_key(mtproto_connection_info_t *conn, const unsigned char *client_key);
 
 /* Результат определения версии */
 typedef enum {

@@ -38,10 +38,15 @@
 #include <signal.h>
 #include <assert.h>
 #include <sys/time.h>
-#include <sys/resource.h>
-#include <sys/wait.h>
 #include <time.h>
 #include <fcntl.h>
+
+#ifdef _WIN32
+#include "../common/posix-compat-windows.h"
+#else
+#include <sys/resource.h>
+#include <sys/wait.h>
+#endif
 
 #include "common/common-stats.h"
 #include "common/kprintf.h"

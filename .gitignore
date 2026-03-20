@@ -2,6 +2,7 @@
 build/
 objs/
 dep/
+build-windows-x64/
 
 # Build logs
 build.log

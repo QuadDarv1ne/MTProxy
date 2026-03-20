@@ -7,6 +7,7 @@
 
 #include "mtproto-version-manager.h"
 #include "mtproto-v3-adapter.h"
+#include <time.h>
 
 #ifndef __SIZE_TYPE__
 #define __SIZE_TYPE__ unsigned long
@@ -17,30 +18,18 @@
 typedef __SIZE_TYPE__ size_t;
 #endif
 
-#ifndef _TIME_T
-#define _TIME_T
-typedef long time_t;
-#endif
-
 // Define basic functions if not available
 #ifndef __STRING_H_
 #define __STRING_H_
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 void *memset(void *s, int c, size_t n);
 void *memcpy(void *dest, const void *src, size_t n);
 int memcmp(const void *s1, const void *s2, size_t n);
 int strcmp(const char *s1, const char *s2);
 
-#ifdef __cplusplus
-}
 #endif
 
-#endif
-
+/* Вспомогательные функции */
 /* Проверка, поддерживается ли данная версия */
 static int is_supported_version(mtproto_version_t version) {
     return (version == MTPROTO_VERSION_2_0 || 

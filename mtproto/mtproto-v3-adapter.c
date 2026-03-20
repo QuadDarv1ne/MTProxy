@@ -16,28 +16,13 @@
 typedef __SIZE_TYPE__ size_t;
 #endif
 
-#ifndef _TIME_T
-#define _TIME_T
-typedef long time_t;
-#endif
-
-// Define basic functions if not available
-#ifndef __STRING_H_
-#define __STRING_H_
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+// Forward declarations for helper functions
+int validate_key_strength(const unsigned char *key, int key_length);
+int compute_pfs_key(mtproto_connection_info_t *conn, const unsigned char *client_key);
 
 void *memset(void *s, int c, size_t n);
 void *memcpy(void *dest, const void *src, size_t n);
 int memcmp(const void *s1, const void *s2, size_t n);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif
 
 /* Проверка, поддерживается ли данная версия */
 static int is_supported_version(mtproto_version_t version) {
@@ -294,38 +279,38 @@ void mtproto_free_connection(mtproto_connection_info_t *conn) {
 
 // Вспомогательные функции для v3
 
-static int validate_key_strength(const unsigned char *key, int key_length) {
+int validate_key_strength(const unsigned char *key, int key_length) {
     if (!key || key_length < 16) {
         return -1;
     }
-    
+
     // Проверка на слабые ключи
     unsigned char first_byte = key[0];
     int is_weak = 1;
-    
+
     for (int i = 1; i < key_length; i++) {
         if (key[i] != first_byte) {
             is_weak = 0;
             break;
         }
     }
-    
+
     if (is_weak) {
         return -1; // Слабый ключ
     }
-    
+
     return 0; // Ключ прошел проверку
 }
 
-static int compute_pfs_key(mtproto_connection_info_t *conn, const unsigned char *client_key) {
+int compute_pfs_key(mtproto_connection_info_t *conn, const unsigned char *client_key) {
     if (!conn || !client_key) {
         return -1;
     }
-    
+
     // Простое XOR комбинирование для демонстрации
     for (int i = 0; i < 32; i++) {
         conn->tmp_aes_key[i] ^= client_key[i % 16];
     }
-    
+
     return 0;
 }

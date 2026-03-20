@@ -25,7 +25,13 @@
     Copyright 2015-2016 Telegram Messenger Inc             
               2015-2016 Vitaliy Valtman
 */
+
+#ifdef _WIN32
+#include "../common/posix-compat-windows.h"
+#else
 #include <arpa/inet.h>
+#endif
+
 #include <stdarg.h>
 #include <unistd.h>
 #include <fcntl.h>

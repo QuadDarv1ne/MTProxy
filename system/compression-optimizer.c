@@ -7,10 +7,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Forward declarations
-static double calculate_entropy(const uint8_t* data, size_t data_size);
-static double calculate_redundancy(const uint8_t* data, size_t data_size);
-static data_analysis_result_t analyze_data_compressibility(const uint8_t* data, size_t data_size);
+// Forward declarations (matching header - non-static)
+double calculate_entropy(const uint8_t* data, size_t data_size);
+double calculate_redundancy(const uint8_t* data, size_t data_size);
+data_analysis_result_t analyze_data_compressibility(const uint8_t* data, size_t data_size);
 
 // Global context and callbacks
 static compression_optimizer_ctx_t* g_compression_ctx = NULL;

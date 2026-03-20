@@ -2004,7 +2004,7 @@ void check_children_status (void) {
   // Check parent process instead
   if (slave_mode) {
     if (getppid () != parent_pid) {
-      kprintf ("Parent %d is changed to %d, aborting\n", parent_pid, getppid ());
+      kprintf ("Parent %lld is changed to %lld, aborting\n", (long long)parent_pid, (long long)getppid ());
       exit (EXIT_FAILURE);
     }
   }
