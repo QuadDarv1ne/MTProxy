@@ -714,8 +714,22 @@ set_target_properties(cache-performance-test PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# Rate limiter high-load test executable (Q2 2026)
+add_executable(rate-limiter-highload-test
+    testing/rate_limiter_highload_test.c
+)
+
+target_link_libraries(rate-limiter-highload-test
+    kdb_common
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(rate-limiter-highload-test PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # Installation rules
-install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-ffi-api test-performance test-admin-cli-integration cache-performance-test
+install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-ffi-api test-performance test-admin-cli-integration cache-performance-test rate-limiter-highload-test
     RUNTIME DESTINATION bin
 )
 
