@@ -18,6 +18,12 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CACHE_MAX_SIZE 50 CACHE STRING "Maximum size of the CMake cache")
 set(CMAKE_SUPPRESS_REGENERATION ON CACHE BOOL "Suppress automatic regeneration of build system")
 
+# Build cache optimization for faster rebuilds
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdiagnostics-color=always")
+if(CMAKE_GENERATOR STREQUAL "Ninja")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdiagnostics-color=always")
+endif()
+
 # Platform detection
 if(WIN32)
     message(STATUS "Detected Windows platform")
@@ -43,6 +49,16 @@ find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(Threads REQUIRED)
 
+# Cache compiler checks to speed up reconfiguration
+set(CMAKE_C_COMPILER_LAUNCHER "" CACHE STRING "C compiler launcher")
+if(CMAKE_GENERATOR STREQUAL "Ninja")
+    find_program(CCACHE_FOUND ccache)
+    if(CCACHE_FOUND)
+        set(CMAKE_C_COMPILER_LAUNCHER ccache CACHE STRING "C compiler launcher" FORCE)
+        message(STATUS "Using ccache for faster compilation: ${CCACHE_FOUND}")
+    endif()
+endif()
+
 # Compiler-specific options
 if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
     # Base optimization flags (single definition)
@@ -57,6 +73,10 @@ if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
     # Profile-guided optimization support
     option(ENABLE_PGO "Enable Profile-Guided Optimization" OFF)
     option(USE_PGO_PROFILE "Use existing PGO profile for optimization" OFF)
+    
+    # Build optimization level
+    set(BUILD_OPTIMIZATION_LEVEL "O3" CACHE STRING "Optimization level: O0, O1, O2, O3, Os, Oz")
+    set_property(CACHE BUILD_OPTIMIZATION_LEVEL PROPERTY STRINGS O0 O1 O2 O3 Os Oz)
 
     if(ENABLE_PGO AND NOT USE_PGO_PROFILE)
         # First pass: generate profiling data
@@ -666,8 +686,22 @@ set_target_properties(test-performance PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# Admin CLI integration test executable
+add_executable(test-admin-cli-integration
+    testing/test_admin_cli_integration.c
+)
+
+target_link_libraries(test-admin-cli-integration
+    kdb_common
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-admin-cli-integration PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # Installation rules
-install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-ffi-api test-performance
+install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-ffi-api test-performance test-admin-cli-integration
     RUNTIME DESTINATION bin
 )
 
