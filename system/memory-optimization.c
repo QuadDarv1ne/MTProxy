@@ -611,31 +611,31 @@ void print_detailed_memory_stats() {
     }
     
     memory_stats_t stats = get_memory_stats();
-    
+
     printf("\n=== Detailed Memory Statistics ===\n");
     printf("Pool Operations:\n");
-    printf("  Allocations: %llu\n", stats.pool_allocations);
-    printf("  Frees: %llu\n", stats.pool_frees);
-    printf("  Reallocations: %llu\n", stats.pool_reallocations);
-    printf("  Pool Allocated: %llu bytes\n", stats.pool_allocated);
-    
+    printf("  Allocations: %lu\n", (unsigned long)stats.pool_allocations);
+    printf("  Frees: %lu\n", (unsigned long)stats.pool_frees);
+    printf("  Reallocations: %lu\n", (unsigned long)stats.pool_reallocations);
+    printf("  Pool Allocated: %lu bytes\n", (unsigned long)stats.pool_allocated);
+
     printf("\nSystem Operations:\n");
-    printf("  Allocations: %llu\n", stats.system_allocations);
-    printf("  Frees: %llu\n", stats.system_frees);
-    printf("  Reallocations: %llu\n", stats.system_reallocations);
-    printf("  System Allocated: %llu bytes\n", stats.system_allocated);
-    
+    printf("  Allocations: %lu\n", (unsigned long)stats.system_allocations);
+    printf("  Frees: %lu\n", (unsigned long)stats.system_frees);
+    printf("  Reallocations: %lu\n", (unsigned long)stats.system_reallocations);
+    printf("  System Allocated: %lu bytes\n", (unsigned long)stats.system_allocated);
+
     printf("\nGC Operations:\n");
-    printf("  GC Runs: %llu\n", stats.gc_runs);
-    printf("  Pool Expansions: %llu\n", stats.pool_expansions);
-    printf("  Pool Shrinks: %llu\n", stats.pool_shrinks);
-    
+    printf("  GC Runs: %lu\n", (unsigned long)stats.gc_runs);
+    printf("  Pool Expansions: %lu\n", (unsigned long)stats.pool_expansions);
+    printf("  Pool Shrinks: %lu\n", (unsigned long)stats.pool_shrinks);
+
     printf("\nAdvanced Statistics:\n");
-    printf("  Cache Hits: %llu\n", stats.cache_hits);
-    printf("  Cache Misses: %llu\n", stats.cache_misses);
-    printf("  Memory Pressure Events: %llu\n", stats.memory_pressure_events);
-    printf("  Allocation Failures: %llu\n", stats.allocation_failures);
-    printf("  Fragmentation Events: %llu\n", stats.fragmentation_events);
+    printf("  Cache Hits: %lu\n", (unsigned long)stats.cache_hits);
+    printf("  Cache Misses: %lu\n", (unsigned long)stats.cache_misses);
+    printf("  Memory Pressure Events: %lu\n", (unsigned long)stats.memory_pressure_events);
+    printf("  Allocation Failures: %lu\n", (unsigned long)stats.allocation_failures);
+    printf("  Fragmentation Events: %lu\n", (unsigned long)stats.fragmentation_events);
     printf("  Average Allocation Time: %.2f ms\n", stats.average_allocation_time);
     printf("  Peak Memory Usage: %zu bytes\n", stats.peak_memory_usage);
     printf("  Current Memory Usage: %zu bytes\n", stats.current_memory_usage);

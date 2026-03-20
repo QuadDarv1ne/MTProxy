@@ -10,6 +10,7 @@
     #include <sys/mman.h>
     #include <unistd.h>
     #include <pthread.h>
+    #include <malloc.h>  // for malloc_usable_size
 #endif
 
 // Глобальный менеджер памяти

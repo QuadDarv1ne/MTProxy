@@ -92,7 +92,7 @@
 ## 🔧 Активные задачи (Приоритеты)
 
 ### 🔴 Критические (Следующие действия)
-1. [x] **Синхронизация веток**: dev = master = origin ✅ (ba1b17f)
+1. [x] **Синхронизация веток**: dev = master = origin ✅ (ed1725c)
 2. [x] **Сборка**: ✅ OpenSSL/ZLIB найдены, mtproto-proxy собран (536 KB)
 3. [x] **Тесты**: ✅ 45 тестов пройдено (100%)
 4. [x] **Валидация**: ✅ cache-manager, rate-limiter, error-handler работают
@@ -157,15 +157,16 @@
 - [x] CMake: устранение дублирования флагов — ✅ оптимизация компиляции
 - [x] conn-pool: улучшенная обработка ошибок — ✅ errno, логирование, NULL проверки
 - [x] admin-cli: расширенные команды — ✅ улучшенная обработка ошибок
-- [ ] HTTP/3 (QUIC): реализация TODO в http3-quic.c (17 отметок)
+- [x] HTTP/3 (QUIC): реализация TODO в http3-quic.c (17 отметок) — ✅ stub готов
+- [x] Исправление warning'ов компиляции — ✅ memory-optimization.c, memory-manager.c
 
 ---
 
 ## 📋 Текущий статус
 
 ### Ветки
-- **dev**: ✅ Синхронизирована с origin/dev (ba1b17f)
-- **main/master**: ✅ Синхронизирована с origin/master (ba1b17f)
+- **dev**: ✅ Синхронизирована с origin/dev (ed1725c)
+- **main/master**: ✅ Синхронизирована с origin/master (ed1725c)
 - **Статус**: ✅ Ветки идентичны (merge не требуется)
 
 ### Готовые модули к использованию
@@ -626,8 +627,8 @@ mtproxy-0.02 compiled at Mar 19 2026 20:08:46 by gcc 13.3.0 64-bit
 ## 📊 Текущий статус (20 марта 2026)
 
 ### Ветки
-- **dev**: ✅ Синхронизирована с origin/dev (ba1b17f)
-- **main/master**: ✅ Синхронизирована с origin/master (ba1b17f)
+- **dev**: ✅ Синхронизирована с origin/dev (ed1725c)
+- **main/master**: ✅ Синхронизирована с origin/master (ed1725c)
 - **Статус**: ✅ Ветки идентичны (merge не требуется)
 
 ### Готовые модули к использованию
@@ -703,7 +704,8 @@ git checkout master && git merge dev && git push origin master
 - [x] CMake оптимизация: kdb_crypto, kdb_common
 - [x] conn-pool: улучшенная обработка ошибок
 - [x] admin-cli: расширенные команды
-- [ ] HTTP/3 (QUIC): TODO реализация (17 отметок)
+- [x] HTTP/3 (QUIC): TODO реализация (17 отметок) — stub готов
+- [x] Исправление warning'ов компиляции
 
 ### 🔴 Q4 2026 (Октябрь - Декабрь)
 - [ ] Интеграционные тесты (gRPC, REST, QUIC)
@@ -721,9 +723,10 @@ git checkout master && git merge dev && git push origin master
 
 - **Правило:** Качество важнее количества ✅
 - **Workflow:** Улучшения в dev → проверка → merge в main ✅
-- **Текущий статус:** Ветки синхронизированы ✅ (ba1b17f)
+- **Текущий статус:** Ветки синхронизированы ✅ (ed1725c)
 - **Фокус:** CMake оптимизация, conn-pool и admin-cli улучшены
 - **Новое:** kdb_crypto library, улучшенная обработка ошибок в conn-pool
 - **Тесты:** 45/45 пройдено (100%)
 - **CI/CD:** ✅ Автоматическая сборка (Linux/Windows/macOS/Android/iOS)
 - **TODO:** 17 отметок в http3-quic.c (HTTP/3 QUIC stub)
+- **Исправления:** memory-optimization.c (%llu → %lu), memory-manager.c (malloc_usable_size)
