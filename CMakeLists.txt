@@ -700,8 +700,22 @@ set_target_properties(test-admin-cli-integration PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# Cache performance test executable (Q2 2026)
+add_executable(cache-performance-test
+    testing/cache_performance_test.c
+)
+
+target_link_libraries(cache-performance-test
+    kdb_common
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(cache-performance-test PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # Installation rules
-install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-ffi-api test-performance test-admin-cli-integration
+install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-ffi-api test-performance test-admin-cli-integration cache-performance-test
     RUNTIME DESTINATION bin
 )
 

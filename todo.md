@@ -244,7 +244,7 @@ git checkout master && git merge dev && git push origin master
 
 ### 🔴 Q2 2026 (Апрель - Июнь)
 - [ ] Интеграционные тесты (admin-cli, monitor.sh, metrics_collector)
-- [ ] Кэш performance тесты (100K+ операций)
+- [✓] Кэш performance тесты (100K+ операций) — ✅ test создан (cache_performance_test.c)
 - [ ] Rate-limiter high-load тесты (1000+ клиентов)
 - [ ] API Reference документация
 - [ ] Deployment Guide
