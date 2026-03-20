@@ -92,7 +92,7 @@
 ## 🔧 Активные задачи (Приоритеты)
 
 ### 🔴 Критические (Следующие действия)
-1. [x] **Синхронизация веток**: dev = master = origin ✅ (2b9dc44)
+1. [x] **Синхронизация веток**: dev = master = origin ✅ (287cfb3)
 2. [x] **Сборка**: ✅ OpenSSL/ZLIB найдены, mtproto-proxy собран (536 KB)
 3. [x] **Тесты**: ✅ 45 тестов пройдено (100%)
 4. [x] **Валидация**: ✅ cache-manager, rate-limiter, error-handler работают
@@ -145,7 +145,7 @@
 
 ### Известные ограничения
 - Windows: только single-worker mode
-- HTTP/3 (QUIC): stub-реализация (19 TODO в http3-quic.c)
+- HTTP/3 (QUIC): stub-реализация (17 TODO в http3-quic.c)
 - Документация API: gRPC + REST готовы
 
 ### Технические долги
@@ -157,15 +157,15 @@
 - [x] CMake: устранение дублирования флагов — ✅ оптимизация компиляции
 - [x] conn-pool: улучшенная обработка ошибок — ✅ errno, логирование, NULL проверки
 - [x] admin-cli: расширенные команды — ✅ улучшенная обработка ошибок
-- [ ] HTTP/3 (QUIC): реализация TODO в http3-quic.c (19 отметок)
+- [ ] HTTP/3 (QUIC): реализация TODO в http3-quic.c (17 отметок)
 
 ---
 
 ## 📋 Текущий статус
 
 ### Ветки
-- **dev**: ✅ Синхронизирована с origin/dev (2b9dc44)
-- **main/master**: ✅ Синхронизирована с origin/master (2b9dc44)
+- **dev**: ✅ Синхронизирована с origin/dev (287cfb3)
+- **main/master**: ✅ Синхронизирована с origin/master (287cfb3)
 - **Статус**: ✅ Ветки идентичны (merge не требуется)
 
 ### Готовые модули к использованию
@@ -196,8 +196,8 @@
 
 | Метрика | Значение |
 |---------|----------|
-| **Коммитов (Март)** | 32+ |
-| **Новых файлов** | 42+ |
+| **Коммитов (Март)** | 33+ |
+| **Новых файлов** | 43+ |
 | **Строк кода** | ~10500+ |
 | **Новых модулей** | 11 |
 | **Утилит** | 3 |
@@ -208,7 +208,7 @@
 | **Всего C-файлов** | 185+ |
 | **Mobile app** | Flutter/Dart (40+ файлов) |
 | **CI/CD** | ✅ GitHub Actions (5 платформ) |
-| **TODO/FIXME** | 19 (http3-quic.c stub) |
+| **TODO/FIXME** | 17 (http3-quic.c stub) |
 
 ---
 
@@ -626,8 +626,8 @@ mtproxy-0.02 compiled at Mar 19 2026 20:08:46 by gcc 13.3.0 64-bit
 ## 📊 Текущий статус (20 марта 2026)
 
 ### Ветки
-- **dev**: ✅ Синхронизирована с origin/dev (2b9dc44)
-- **main/master**: ✅ Синхронизирована с origin/master (2b9dc44)
+- **dev**: ✅ Синхронизирована с origin/dev (287cfb3)
+- **main/master**: ✅ Синхронизирована с origin/master (287cfb3)
 - **Статус**: ✅ Ветки идентичны (merge не требуется)
 
 ### Готовые модули к использованию
@@ -648,7 +648,7 @@ mtproxy-0.02 compiled at Mar 19 2026 20:08:46 by gcc 13.3.0 64-bit
 | **REST API** | ✅ Готов | ⏳ Интеграционные | ✅ |
 | **Prometheus** | ✅ Готов | ⏳ Ручные | ✅ |
 | **Grafana** | ✅ Готов | ⏳ Ручные | ✅ |
-| **HTTP/3 (QUIC)** | ⏳ Stub | ⏳ 19 TODO | ✅ |
+| **HTTP/3 (QUIC)** | ⏳ Stub | ⏳ 17 TODO | ✅ |
 
 ### Сборка
 - **CMakeLists.txt**: ✅ Все модули добавлены
@@ -703,7 +703,7 @@ git checkout master && git merge dev && git push origin master
 - [x] CMake оптимизация: kdb_crypto, kdb_common
 - [x] conn-pool: улучшенная обработка ошибок
 - [x] admin-cli: расширенные команды
-- [ ] HTTP/3 (QUIC): TODO реализация (19 отметок)
+- [ ] HTTP/3 (QUIC): TODO реализация (17 отметок)
 
 ### 🔴 Q4 2026 (Октябрь - Декабрь)
 - [ ] Интеграционные тесты (gRPC, REST, QUIC)
@@ -721,9 +721,9 @@ git checkout master && git merge dev && git push origin master
 
 - **Правило:** Качество важнее количества ✅
 - **Workflow:** Улучшения в dev → проверка → merge в main ✅
-- **Текущий статус:** Ветки синхронизированы ✅ (2b9dc44)
+- **Текущий статус:** Ветки синхронизированы ✅ (287cfb3)
 - **Фокус:** CMake оптимизация, conn-pool и admin-cli улучшены
 - **Новое:** kdb_crypto library, улучшенная обработка ошибок в conn-pool
 - **Тесты:** 45/45 пройдено (100%)
 - **CI/CD:** ✅ Автоматическая сборка (Linux/Windows/macOS/Android/iOS)
-- **TODO:** 19 отметок в http3-quic.c (HTTP/3 QUIC stub)
+- **TODO:** 17 отметок в http3-quic.c (HTTP/3 QUIC stub)
