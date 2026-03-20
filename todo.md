@@ -218,9 +218,39 @@ git checkout master && git merge dev && git push origin master
 - [x] Интеграция с существующим кодом
 - [x] Проверка обратной совместимости
 - [x] Performance тестирование
-- [ ] Shared library сборка (BUILD_SHARED_LIB)
-- [ ] FFI интеграция тесты (Flutter/Dart)
-- [ ] Mobile app тестирование
+- [x] Shared library сборка (BUILD_SHARED_LIB)
+- [x] FFI интеграция тесты (Flutter/Dart)
+- [x] Mobile app тестирование
+- [x] CI/CD настройка (5 платформ)
+
+### 🔴 Q2 2026 (Апрель - Июнь)
+- [ ] Интеграционные тесты (admin-cli, monitor.sh, metrics_collector)
+- [ ] Кэш performance тесты (100K+ операций)
+- [ ] Rate-limiter high-load тесты (1000+ клиентов)
+- [ ] API Reference документация
+- [ ] Deployment Guide
+- [ ] FreeBSD поддержка
+- [ ] ARM64 Linux (Raspberry Pi)
+- [ ] Официальные Docker образы
+
+### 🟡 Q3 2026 (Июль - Сентябрь)
+- [ ] gRPC интерфейс
+- [ ] REST API для управления
+- [ ] WebSocket поддержка (real-time мониторинг)
+- [ ] Prometheus экспортёр
+- [ ] Grafana дашборды
+- [ ] TLS 1.3 полная поддержка
+- [ ] HTTP/3 (QUIC) поддержка
+- [ ] Zero-copy IO для Linux
+
+### 🟢 Q4 2026 (Октябрь - Декабрь)
+- [ ] Кластеризация (распределённая работа)
+- [ ] Load balancing между инстансами
+- [ ] Auto-scaling
+- [ ] Distributed tracing
+- [ ] Web UI управления
+- [ ] CLI утилита (кроссплатформенная)
+- [ ] Plugin system
 
 ---
 

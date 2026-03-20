@@ -101,13 +101,30 @@ MTProxy/
 
 ## 📋 Статус сборок
 
-| Платформа | Статус | CI/CD | Скрипт |
-|-----------|--------|-------|--------|
-| **Linux** | ✅ Работает | ✅ GitHub Actions | `make`, `cmake` |
-| **Windows** | ✅ Работает | ✅ GitHub Actions | `build-native-windows.ps1` |
-| **macOS** | ✅ Работает | ✅ GitHub Actions | `build-native-libs.sh macos` |
-| **Android** | ⚠️ Требуется NDK | ✅ GitHub Actions | `build-native-libs.sh android` |
-| **iOS** | ⚠️ Только macOS | ✅ GitHub Actions | `build-native-libs.sh ios` |
+### Полная поддержка (сервер + library)
+
+| Платформа | Архитектуры | Статус | CI/CD | Скрипт |
+|-----------|-------------|--------|-------|--------|
+| **Linux** | x64, x86 | ✅ Работает | ✅ GitHub Actions | `make`, `cmake` |
+| **Windows** | x64, x86 | ✅ Работает | ✅ GitHub Actions | `build-native-windows.ps1` |
+| **macOS** | x64, arm64 | ✅ Работает | ✅ GitHub Actions | `build-native-libs.sh macos` |
+
+### Частичная поддержка (только library)
+
+| Платформа | Архитектуры | Статус | CI/CD | Скрипт |
+|-----------|-------------|--------|-------|--------|
+| **Android** | armeabi-v7a, arm64-v8a, x86_64 | ⚠️ Shared library | ✅ GitHub Actions | `build-native-libs.sh android` |
+| **iOS** | arm64, x86_64 | ⚠️ Static library | ✅ GitHub Actions | `build-native-libs.sh ios` |
+
+### Статус компонентов
+
+| Компонент | Linux | Windows | macOS | Android | iOS |
+|-----------|-------|---------|-------|---------|-----|
+| **mtproto-proxy** | ✅ | ✅ | ✅ | ❌ | ❌ |
+| **mtproxy-admin** | ✅ | ✅ | ✅ | ❌ | ❌ |
+| **libmtproxy** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **mobile_app** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Тесты** | ✅ | ✅ | ✅ | ⏳ | ⏳ |
 
 ### Требования для сборки
 
@@ -131,19 +148,23 @@ dnf install openssl-devel zlib-devel make automake gcc gcc-c++ cmake
 - MSYS2 с UCRT64 или MinGW-w64
 - CMake 3.20+
 - OpenSSL, ZLIB
+- ⚠️ Ограничение: single-worker mode (fork не поддерживается)
 
 **macOS:**
 - Xcode Command Line Tools
 - Homebrew: `brew install cmake openssl`
+- Поддержка: Intel x64 и Apple Silicon (M1/M2/M3)
 
 **Android:**
-- Android NDK (переменная окружения `ANDROID_NDK`)
+- Android NDK r25c+ (переменная окружения `ANDROID_NDK`)
 - CMake 3.20+
+- Минимальная версия: Android API 21+
 
 **iOS:**
-- macOS (сборка только на macOS)
+- macOS (сборка только на Mac)
 - Xcode 14+
 - CMake 3.20+
+- Минимальная версия: iOS 12.0+
 
 ### Использование Make (оригинальный метод):
 
