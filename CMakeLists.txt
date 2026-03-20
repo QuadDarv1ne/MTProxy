@@ -275,6 +275,9 @@ set(CRYPTO_SOURCES
 
 # NET_SOURCES - все сетевые модули (объединено)
 set(NET_SOURCES
+    # HTTP/3 (QUIC)
+    net/http3-quic.c
+    net/http3-quic.h
     # Расширенные функции
     net/shadowsocks-advanced.c
     net/shadowsocks-advanced.h
