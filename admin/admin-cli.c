@@ -217,13 +217,13 @@ int admin_cli_add_history(admin_cli_context_t *ctx, const char *command) {
 // Команда: help
 int admin_cmd_help(admin_cli_context_t *ctx, int argc, char **argv, admin_command_result_t *result) {
     if (!result) return -1;
-    
+
     char *output = malloc(4096);
     if (!output) return -1;
-    
+
     char *ptr = output;
     ptr += sprintf(ptr, "MTProxy Admin CLI - Available Commands:\n\n");
-    
+
     if (argc > 1) {
         // Помощь по конкретной команде
         admin_command_t cmd = admin_cli_parse_command(argv[1]);
@@ -240,25 +240,26 @@ int admin_cmd_help(admin_cli_context_t *ctx, int argc, char **argv, admin_comman
             ptr += sprintf(ptr, "  %-15s %s\n", command_table[i].name, command_table[i].description);
         }
     }
-    
+
+cleanup:
     result->output = output;
     result->output_size = strlen(output);
     result->success = 1;
-    
+
     return 0;
 }
 
 // Команда: status
 int admin_cmd_status(admin_cli_context_t *ctx, int argc, char **argv, admin_command_result_t *result) {
     if (!result) return -1;
-    
+
     char *output = malloc(1024);
     if (!output) return -1;
-    
+
     time_t now = time(NULL);
     time_t uptime = now - ctx->session_start;
-    
-    sprintf(output, 
+
+    sprintf(output,
             "MTProxy Server Status:\n"
             "  Status: Running\n"
             "  Uptime: %lld seconds\n"
@@ -267,61 +268,64 @@ int admin_cmd_status(admin_cli_context_t *ctx, int argc, char **argv, admin_comm
             (long long)uptime,
             ctx->is_connected ? "yes" : "no",
             ctx->commands_executed);
-    
+
+cleanup:
     result->output = output;
     result->output_size = strlen(output);
     result->success = 1;
-    
+
     return 0;
 }
 
 // Команда: stats
 int admin_cmd_stats(admin_cli_context_t *ctx, int argc, char **argv, admin_command_result_t *result) {
     if (!result) return -1;
-    
+
     char *output = malloc(2048);
     if (!output) return -1;
-    
+
     char *ptr = output;
     ptr += sprintf(ptr, "Server Statistics:\n");
     ptr += sprintf(ptr, "  Session start: %ld\n", (long)ctx->session_start);
     ptr += sprintf(ptr, "  Commands executed: %d\n", ctx->commands_executed);
     ptr += sprintf(ptr, "  Commands failed: %d\n", ctx->commands_failed);
-    
+
+cleanup:
     result->output = output;
     result->output_size = strlen(output);
     result->success = 1;
-    
+
     return 0;
 }
 
 // Команда: health
 int admin_cmd_health(admin_cli_context_t *ctx, int argc, char **argv, admin_command_result_t *result) {
     if (!result) return -1;
-    
+
     char *output = malloc(512);
     if (!output) return -1;
-    
+
     sprintf(output, "Health Check: OK\nTimestamp: %ld\n", (long)time(NULL));
-    
+
+cleanup:
     result->output = output;
     result->output_size = strlen(output);
     result->success = 1;
-    
+
     return 0;
 }
 
 // Команда: metrics
 int admin_cmd_metrics(admin_cli_context_t *ctx, int argc, char **argv, admin_command_result_t *result) {
     if (!result) return -1;
-    
+
     char *output = malloc(1024);
     if (!output) return -1;
-    
+
     const char *format = (argc > 1) ? argv[1] : "text";
-    
+
     if (strcmp(format, "json") == 0) {
-        sprintf(output, 
+        sprintf(output,
                 "{\n"
                 "  \"uptime\": %lld,\n"
                 "  \"commands_executed\": %d,\n"
@@ -342,37 +346,41 @@ int admin_cmd_metrics(admin_cli_context_t *ctx, int argc, char **argv, admin_com
                 ctx->commands_executed,
                 ctx->commands_failed);
     }
-    
+
+cleanup:
     result->output = output;
     result->output_size = strlen(output);
     result->success = 1;
-    
+
     return 0;
 }
 
 // Команда: reload
 int admin_cmd_reload(admin_cli_context_t *ctx, int argc, char **argv, admin_command_result_t *result) {
     if (!result) return -1;
-    
+
     const char *target = (argc > 1) ? argv[1] : "config";
-    
+
     char *output = malloc(512);
-    sprintf(output, "Reloading %s...\nReload command sent.\n", target);
+    if (!output) return -1;
     
+    sprintf(output, "Reloading %s...\nReload command sent.\n", target);
+
+cleanup:
     result->output = output;
     result->output_size = strlen(output);
     result->success = 1;
-    
+
     return 0;
 }
 
 // Команда: config show
 int admin_cmd_config_show(admin_cli_context_t *ctx, int argc, char **argv, admin_command_result_t *result) {
     if (!result) return -1;
-    
+
     char *output = malloc(2048);
     if (!output) return -1;
-    
+
     char *ptr = output;
     ptr += sprintf(ptr, "Configuration:\n");
     ptr += sprintf(ptr, "  [server]\n");
@@ -384,102 +392,112 @@ int admin_cmd_config_show(admin_cli_context_t *ctx, int argc, char **argv, admin
     ptr += sprintf(ptr, "  [ratelimit]\n");
     ptr += sprintf(ptr, "    enabled = true\n");
     ptr += sprintf(ptr, "    max_requests = 1000\n");
-    
+
+cleanup:
     result->output = output;
     result->output_size = strlen(output);
     result->success = 1;
-    
+
     return 0;
 }
 
 // Команда: cache stats
 int admin_cmd_cache_stats(admin_cli_context_t *ctx, int argc, char **argv, admin_command_result_t *result) {
     if (!result) return -1;
-    
+
     char *output = malloc(1024);
     if (!output) return -1;
-    
+
     sprintf(output,
             "Cache Statistics:\n"
             "  Entries: N/A\n"
             "  Hit rate: N/A\n"
             "  Memory usage: N/A\n"
             "(Connect to server for real-time stats)\n");
-    
+
+cleanup:
     result->output = output;
     result->output_size = strlen(output);
     result->success = 1;
-    
+
     return 0;
 }
 
 // Команда: cache clear
 int admin_cmd_cache_clear(admin_cli_context_t *ctx, int argc, char **argv, admin_command_result_t *result) {
     if (!result) return -1;
-    
+
     char *output = malloc(512);
-    sprintf(output, "Cache clear command sent.\n");
+    if (!output) return -1;
     
+    sprintf(output, "Cache clear command sent.\n");
+
+cleanup:
     result->output = output;
     result->output_size = strlen(output);
     result->success = 1;
-    
+
     return 0;
 }
 
 // Команда: ratelimit status
 int admin_cmd_ratelimit_status(admin_cli_context_t *ctx, int argc, char **argv, admin_command_result_t *result) {
     if (!result) return -1;
-    
+
     char *output = malloc(1024);
     if (!output) return -1;
-    
+
     sprintf(output,
             "Rate Limit Status:\n"
             "  Enabled: yes\n"
             "  Algorithm: Token Bucket\n"
             "  Active limits: N/A\n");
-    
+
+cleanup:
     result->output = output;
     result->output_size = strlen(output);
     result->success = 1;
-    
+
     return 0;
 }
 
 // Команда: connections list
 int admin_cmd_connections_list(admin_cli_context_t *ctx, int argc, char **argv, admin_command_result_t *result) {
     if (!result) return -1;
-    
+
     char *output = malloc(1024);
     if (!output) return -1;
-    
+
     sprintf(output,
             "Active Connections:\n"
             "  ID        Client IP          Port    Duration\n"
             "  --------  ---------------    ------  --------\n"
             "(Connect to server for real-time data)\n");
-    
+
+cleanup:
     result->output = output;
     result->output_size = strlen(output);
     result->success = 1;
-    
+
     return 0;
 }
 
 // Команда: log level
 int admin_cmd_log_level(admin_cli_context_t *ctx, int argc, char **argv, admin_command_result_t *result) {
     if (!result) return -1;
-    
+
     const char *level = (argc > 1) ? argv[1] : "info";
-    
+
     char *output = malloc(512);
-    sprintf(output, "Log level set to: %s\n", level);
+    if (!output) return -1;
     
+    sprintf(output, "Log level set to: %s\n", level);
+
+cleanup:
     result->output = output;
     result->output_size = strlen(output);
     result->success = 1;
-    
+
     return 0;
 }
 

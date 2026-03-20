@@ -45,20 +45,19 @@ find_package(Threads REQUIRED)
 
 # Compiler-specific options
 if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
-    # Base optimization flags
+    # Base optimization flags (single definition)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -Wall -Wno-array-bounds -fno-strict-aliasing -fno-strict-overflow -fwrapv -DAES=1 -D_GNU_SOURCE=1 -D_FILE_OFFSET_BITS=64")
-    
-    # Architecture-specific optimizations
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mpclmul -march=native -mfpmath=sse -mssse3")
-    
-    # Advanced optimization flags
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto -ffast-math -funroll-loops -ftree-vectorize")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native -mtune=native")
-    
+
+    # Architecture-specific optimizations (single definition)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mpclmul -mfpmath=sse -mssse3")
+
+    # Advanced optimization flags (single definition)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto -funroll-loops -ftree-vectorize")
+
     # Profile-guided optimization support
     option(ENABLE_PGO "Enable Profile-Guided Optimization" OFF)
     option(USE_PGO_PROFILE "Use existing PGO profile for optimization" OFF)
-    
+
     if(ENABLE_PGO AND NOT USE_PGO_PROFILE)
         # First pass: generate profiling data
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-generate=${CMAKE_BINARY_DIR}/pgo-data")
@@ -76,14 +75,14 @@ if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
             message(WARNING "First build with ENABLE_PGO=ON, run the binary, then rebuild with USE_PGO_PROFILE=ON")
         endif()
     endif()
-    
-    # Link-time optimization
+
+    # Link-time optimization and architecture tuning (single definition)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto=auto")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -flto=auto")
-    
+
     # Security-specific flags
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fstack-protector-strong -D_FORTIFY_SOURCE=2")
-    
+
     # Debug flags for development
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0 -DDEBUG=1")
@@ -92,23 +91,23 @@ if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
     elseif(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Os -DNDEBUG")
     else()
-        # Release build - maximum optimization
+        # Release build - maximum optimization (single definition)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -DNDEBUG")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native -mtune=native")
     endif()
-    
-    # Additional optimization flags for specific architectures
+
+    # Additional optimization flags for specific architectures (single definition)
     include(CheckCCompilerFlag)
     CHECK_C_COMPILER_FLAG("-mavx2" HAS_AVX2)
     if(HAS_AVX2)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx2")
     endif()
-    
+
     CHECK_C_COMPILER_FLAG("-mavx512f" HAS_AVX512)
     if(HAS_AVX512)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx512f")
     endif()
-    
+
     # Enable link-time garbage collection
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffunction-sections -fdata-sections")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--gc-sections")
@@ -572,8 +571,12 @@ set(MTPROTO_SOURCES
     mtproto/mtproto-version-manager.h
 )
 
+# Create a static library for crypto modules (compiled without -ffast-math for security)
+add_library(kdb_crypto STATIC ${CRYPTO_SOURCES})
+target_compile_options(kdb_crypto PRIVATE -fno-fast-math)
+
 # Create a static library for common functionality
-add_library(kdb_common STATIC ${COMMON_SOURCES} ${JOBS_SOURCES} ${CRYPTO_SOURCES} ${VV_SOURCES} ${CONN_POOL_SOURCES} ${GENERAL_SOURCES} ${INFRASTRUCTURE_SOURCES} ${THREAD_SYSTEM_SOURCES} ${SYSTEM_SOURCES} ${SECURITY_SOURCES} ${ADVANCED_OPTIMIZATION_SOURCES} ${OBFUSCATION_SOURCES} ${PERF_MONITOR_SOURCES})
+add_library(kdb_common STATIC ${COMMON_SOURCES} ${JOBS_SOURCES} ${VV_SOURCES} ${CONN_POOL_SOURCES} ${GENERAL_SOURCES} ${INFRASTRUCTURE_SOURCES} ${THREAD_SYSTEM_SOURCES} ${SYSTEM_SOURCES} ${SECURITY_SOURCES} ${ADVANCED_OPTIMIZATION_SOURCES} ${OBFUSCATION_SOURCES} ${PERF_MONITOR_SOURCES})
 
 # Target for the main mtproto-proxy executable
 add_executable(mtproto-proxy
@@ -585,6 +588,7 @@ add_executable(mtproto-proxy
 # Link libraries
 target_link_libraries(mtproto-proxy
     kdb_common
+    kdb_crypto
     ${PLATFORM_LIBS}
     OpenSSL::SSL
     OpenSSL::Crypto

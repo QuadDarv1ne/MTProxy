@@ -92,7 +92,7 @@
 ## 🔧 Активные задачи (Приоритеты)
 
 ### 🔴 Критические (Следующие действия)
-1. [x] **Синхронизация веток**: dev = master = origin ✅ (c4ba06e)
+1. [x] **Синхронизация веток**: dev = master = origin ✅ (fc51617)
 2. [x] **Сборка**: ✅ OpenSSL/ZLIB найдены, mtproto-proxy собран (536 KB)
 3. [x] **Тесты**: ✅ 45 тестов пройдено (100%)
 4. [x] **Валидация**: ✅ cache-manager, rate-limiter, error-handler работают
@@ -129,11 +129,14 @@
 - **error-handler**: 12 категорий, circuit breaker, exponential backoff
 - **crypto-optimizer**: авто-настройка, рекомендации, benchmark (3 метода)
 - **mtproxy (shared lib)**: публичный API для внешней интеграции (FFI)
+- **conn-pool**: улучшенная обработка ошибок, логирование, cleanup
+- **admin-cli**: расширенные команды управления
 
 ### Сборка
 - **WSL/Linux**: полная сборка через `make -j4`, mtproto-proxy 536 KB
 - **Windows**: single-worker mode (fork не поддерживается), mtproxy-admin.exe
 - **CMake**: авто-детект MSYS2/UCRT64, все модули включены
+- **CMake оптимизация**: kdb_crypto (без -ffast-math), kdb_common
 
 ### Тесты
 - ✅ 45 тестов пройдено (100%)
@@ -150,14 +153,18 @@
 - [x] Рефакторинг stub-реализаций — ✅ benchmark, performance measurement
 - [x] Оптимизация CMake: кэширование, PGO — ✅ выполнено (748445c)
 - [x] Обновление README с новой структурой — ✅ выполнено (748445c)
+- [x] CMake: разделение crypto без -ffast-math — ✅ kdb_crypto library
+- [x] CMake: устранение дублирования флагов — ✅ оптимизация компиляции
+- [x] conn-pool: улучшенная обработка ошибок — ✅ errno, логирование, NULL проверки
+- [x] admin-cli: расширенные команды — ✅ улучшенная обработка ошибок
 
 ---
 
 ## 📋 Текущий статус
 
 ### Ветки
-- **dev**: ✅ Синхронизирована с origin/dev (6b0cc94)
-- **main/master**: ✅ Синхронизирована с origin/master (6b0cc94)
+- **dev**: ✅ Синхронизирована с origin/dev (fc51617)
+- **main/master**: ✅ Синхронизирована с origin/master (fc51617)
 - **Статус**: ✅ Ветки идентичны (merge не требуется)
 
 ### Готовые модули к использованию
@@ -173,6 +180,7 @@
 | mtproxy (shared lib) | ✅ Готов | ✅ FFI тесты | ✅ |
 | mobile_app (Flutter) | ✅ Готов | ✅ Dart тесты | ✅ |
 | CI/CD | ✅ Настроен | ✅ Auto-build | ✅ |
+| conn-pool | ✅ Готов | ✅ Интеграция | ✅ |
 
 ### Сборка
 - **CMakeLists.txt**: ✅ Все модули добавлены
@@ -185,10 +193,10 @@
 
 | Метрика | Значение |
 |---------|----------|
-| **Коммитов (Март)** | 25+ |
-| **Новых файлов** | 35+ |
-| **Строк кода** | ~9000+ |
-| **Новых модулей** | 8 |
+| **Коммитов (Март)** | 30+ |
+| **Новых файлов** | 40+ |
+| **Строк кода** | ~10000+ |
+| **Новых модулей** | 10 |
 | **Утилит** | 3 |
 | **Скриптов** | 4 |
 | **Тестов** | 45 ✅ C + 4 ✅ Dart |
@@ -258,7 +266,7 @@ git checkout master && git merge dev && git push origin master
 
 - **Правило:** Качество важнее количества ✅
 - **Workflow:** Улучшения в dev → проверка → merge в main ✅
-- **Текущий статус:** Ветки синхронизированы ✅ (6b0cc94)
+- **Текущий статус:** Ветки синхронизированы ✅ (fc51617)
 - **Фокус:** Тесты пройдены (45/45), стабильная версия
 - **Новое:** Shared library + Mobile app (Flutter/Dart) готовы
 - **CI/CD:** ✅ Автоматическая сборка (Linux/Windows/macOS/Android/iOS)
@@ -614,8 +622,8 @@ mtproxy-0.02 compiled at Mar 19 2026 20:08:46 by gcc 13.3.0 64-bit
 ## 📊 Текущий статус (20 марта 2026)
 
 ### Ветки
-- **dev**: ✅ Синхронизирована с origin/dev (16fd302)
-- **main/master**: ✅ Синхронизирована с origin/master (16fd302)
+- **dev**: ✅ Синхронизирована с origin/dev (fc51617)
+- **main/master**: ✅ Синхронизирована с origin/master (fc51617)
 - **Статус**: ✅ Ветки идентичны (merge не требуется)
 
 ### Готовые модули к использованию
@@ -631,6 +639,7 @@ mtproxy-0.02 compiled at Mar 19 2026 20:08:46 by gcc 13.3.0 64-bit
 | mtproxy (shared lib) | ✅ Готов | ✅ FFI тесты | ✅ |
 | mobile_app (Flutter) | ✅ Готов | ✅ Dart тесты | ✅ |
 | CI/CD | ✅ Настроен | ✅ Auto-build | ✅ |
+| conn-pool | ✅ Готов | ✅ Интеграция | ✅ |
 | **gRPC API** | ✅ Готов | ⏳ Интеграционные | ✅ |
 | **REST API** | ✅ Готов | ⏳ Интеграционные | ✅ |
 | **Prometheus** | ✅ Готов | ⏳ Ручные | ✅ |
@@ -688,12 +697,9 @@ git checkout master && git merge dev && git push origin master
 - [x] FFI интеграция тесты (Flutter/Dart)
 - [x] Mobile app тестирование
 - [x] CI/CD настройка (5 платформ)
-- [x] gRPC API реализация
-- [x] REST API реализация
-- [x] Prometheus экспортёр
-- [x] Grafana дашборды
-- [x] HTTP/3 (QUIC) поддержка
-- [x] TLS 1.3 поддержка
+- [x] CMake оптимизация: kdb_crypto, kdb_common
+- [x] conn-pool: улучшенная обработка ошибок
+- [x] admin-cli: расширенные команды
 
 ### 🔴 Q4 2026 (Октябрь - Декабрь)
 - [ ] Интеграционные тесты (gRPC, REST, QUIC)
@@ -711,7 +717,7 @@ git checkout master && git merge dev && git push origin master
 
 - **Правило:** Качество важнее количества ✅
 - **Workflow:** Улучшения в dev → проверка → merge в main ✅
-- **Текущий статус:** Ветки синхронизированы ✅ (16fd302)
-- **Фокус:** Q3 2026 фичи реализованы (gRPC, REST, Prometheus, Grafana, QUIC, TLS 1.3)
-- **Новое:** API (gRPC + REST), Мониторинг (Prometheus + Grafana), Протоколы (HTTP/3, TLS 1.3)
+- **Текущий статус:** Ветки синхронизированы ✅ (fc51617)
+- **Фокус:** CMake оптимизация, conn-pool и admin-cli улучшены
+- **Новое:** kdb_crypto library, улучшенная обработка ошибок в conn-pool
 - **CI/CD:** ✅ Автоматическая сборка (Linux/Windows/macOS/Android/iOS)
