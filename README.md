@@ -93,25 +93,31 @@ MTProxy/
 | **Сетевых модулей** | 41 |
 | **Файлов в system/** | 82 |
 | **Модулей безопасности** | 6 + security_enhanced |
-| **Документов** | 10+ |
+| **Документов** | 12+ |
 | **Тестов** | 45 C + 4 Dart (100% пройдено) |
 | **Сборка** | mtproto-proxy (536 KB), mtproxy-admin |
 | **Shared library** | ✅ BUILD_SHARED_LIB |
 | **Mobile app** | ✅ Flutter/Dart (40+ файлов) |
 
-## Сборка
+## 📋 Статус сборок
 
-**Для сборки проекта установите необходимые зависимости:**
+| Платформа | Статус | CI/CD | Скрипт |
+|-----------|--------|-------|--------|
+| **Linux** | ✅ Работает | ✅ GitHub Actions | `make`, `cmake` |
+| **Windows** | ✅ Работает | ✅ GitHub Actions | `build-native-windows.ps1` |
+| **macOS** | ✅ Работает | ✅ GitHub Actions | `build-native-libs.sh macos` |
+| **Android** | ⚠️ Требуется NDK | ✅ GitHub Actions | `build-native-libs.sh android` |
+| **iOS** | ⚠️ Только macOS | ✅ GitHub Actions | `build-native-libs.sh ios` |
 
-**В Debian/Ubuntu:**
+### Требования для сборки
 
+**Linux (Debian/Ubuntu):**
 ```bash
 apt update
 apt install git curl build-essential libssl-dev zlib1g-dev cmake
 ```
 
-**В CentOS/RHEL/Fedora:**
-
+**Linux (CentOS/RHEL/Fedora):**
 ```bash
 # Для CentOS/RHEL
 yum install openssl-devel zlib-devel cmake
@@ -120,6 +126,24 @@ yum groupinstall "Development Tools"
 # Для Fedora
 dnf install openssl-devel zlib-devel make automake gcc gcc-c++ cmake
 ```
+
+**Windows:**
+- MSYS2 с UCRT64 или MinGW-w64
+- CMake 3.20+
+- OpenSSL, ZLIB
+
+**macOS:**
+- Xcode Command Line Tools
+- Homebrew: `brew install cmake openssl`
+
+**Android:**
+- Android NDK (переменная окружения `ANDROID_NDK`)
+- CMake 3.20+
+
+**iOS:**
+- macOS (сборка только на macOS)
+- Xcode 14+
+- CMake 3.20+
 
 ### Использование Make (оригинальный метод):
 
