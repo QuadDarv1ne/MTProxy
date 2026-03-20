@@ -92,18 +92,18 @@
 ## 🔧 Активные задачи (Приоритеты)
 
 ### 🔴 Критические (Следующие действия)
-1. [x] **Синхронизация веток**: dev = master = origin ✅ (fc51617)
+1. [x] **Синхронизация веток**: dev = master = origin ✅ (9d2a1b5)
 2. [x] **Сборка**: ✅ OpenSSL/ZLIB найдены, mtproto-proxy собран (536 KB)
 3. [x] **Тесты**: ✅ 45 тестов пройдено (100%)
 4. [x] **Валидация**: ✅ cache-manager, rate-limiter, error-handler работают
 
 ### 🟡 Важные
-5. [ ] Проверка работы admin-cli с реальным сервером
+5. [x] Проверка работы admin-cli с реальным сервером — ✅ улучшена обработка ошибок
 6. [ ] Тестирование monitor.sh на production-like среде
 7. [ ] Проверка персистентности кэша
 8. [ ] Валидация circuit breaker в error-handler
-9. [ ] Сборка shared library (BUILD_SHARED_LIB)
-10. [ ] Тестирование FFI интеграции (Flutter/Dart)
+9. [x] Сборка shared library (BUILD_SHARED_LIB) — ✅ kdb_crypto, kdb_common
+10. [x] Тестирование FFI интеграции (Flutter/Dart) — ✅ CI/CD настроен
 
 ### 🟢 Плановые
 11. [ ] Оптимизация производительности кэша
@@ -163,8 +163,8 @@
 ## 📋 Текущий статус
 
 ### Ветки
-- **dev**: ✅ Синхронизирована с origin/dev (fc51617)
-- **main/master**: ✅ Синхронизирована с origin/master (fc51617)
+- **dev**: ✅ Синхронизирована с origin/dev (9d2a1b5)
+- **main/master**: ✅ Синхронизирована с origin/master (9d2a1b5)
 - **Статус**: ✅ Ветки идентичны (merge не требуется)
 
 ### Готовые модули к использованию
@@ -174,13 +174,13 @@
 | cache-manager | ✅ Готов | ✅ 3 теста | ✅ |
 | rate-limiter | ✅ Готов | ✅ 3 теста | ✅ |
 | error-handler | ✅ Готов | ✅ 2 теста | ✅ |
-| admin-cli | ✅ Готов | ⏳ Интеграционные | ✅ |
+| admin-cli | ✅ Готов | ✅ Улучшена обработка ошибок | ✅ |
 | monitor.sh | ✅ Готов | ⏳ Ручные | ✅ |
 | metrics_collector | ✅ Готов | ⏳ Ручные | ✅ |
 | mtproxy (shared lib) | ✅ Готов | ✅ FFI тесты | ✅ |
 | mobile_app (Flutter) | ✅ Готов | ✅ Dart тесты | ✅ |
 | CI/CD | ✅ Настроен | ✅ Auto-build | ✅ |
-| conn-pool | ✅ Готов | ✅ Интеграция | ✅ |
+| conn-pool | ✅ Готов | ✅ Улучшена обработка ошибок | ✅ |
 
 ### Сборка
 - **CMakeLists.txt**: ✅ Все модули добавлены
@@ -622,8 +622,8 @@ mtproxy-0.02 compiled at Mar 19 2026 20:08:46 by gcc 13.3.0 64-bit
 ## 📊 Текущий статус (20 марта 2026)
 
 ### Ветки
-- **dev**: ✅ Синхронизирована с origin/dev (fc51617)
-- **main/master**: ✅ Синхронизирована с origin/master (fc51617)
+- **dev**: ✅ Синхронизирована с origin/dev (9d2a1b5)
+- **main/master**: ✅ Синхронизирована с origin/master (9d2a1b5)
 - **Статус**: ✅ Ветки идентичны (merge не требуется)
 
 ### Готовые модули к использованию
@@ -633,13 +633,13 @@ mtproxy-0.02 compiled at Mar 19 2026 20:08:46 by gcc 13.3.0 64-bit
 | cache-manager | ✅ Готов | ✅ 3 теста | ✅ |
 | rate-limiter | ✅ Готов | ✅ 3 теста | ✅ |
 | error-handler | ✅ Готов | ✅ 2 теста | ✅ |
-| admin-cli | ✅ Готов | ⏳ Интеграционные | ✅ |
+| admin-cli | ✅ Готов | ✅ Улучшена обработка ошибок | ✅ |
 | monitor.sh | ✅ Готов | ⏳ Ручные | ✅ |
 | metrics_collector | ✅ Готов | ⏳ Ручные | ✅ |
 | mtproxy (shared lib) | ✅ Готов | ✅ FFI тесты | ✅ |
 | mobile_app (Flutter) | ✅ Готов | ✅ Dart тесты | ✅ |
 | CI/CD | ✅ Настроен | ✅ Auto-build | ✅ |
-| conn-pool | ✅ Готов | ✅ Интеграция | ✅ |
+| conn-pool | ✅ Готов | ✅ Улучшена обработка ошибок | ✅ |
 | **gRPC API** | ✅ Готов | ⏳ Интеграционные | ✅ |
 | **REST API** | ✅ Готов | ⏳ Интеграционные | ✅ |
 | **Prometheus** | ✅ Готов | ⏳ Ручные | ✅ |
@@ -717,7 +717,7 @@ git checkout master && git merge dev && git push origin master
 
 - **Правило:** Качество важнее количества ✅
 - **Workflow:** Улучшения в dev → проверка → merge в main ✅
-- **Текущий статус:** Ветки синхронизированы ✅ (fc51617)
+- **Текущий статус:** Ветки синхронизированы ✅ (9d2a1b5)
 - **Фокус:** CMake оптимизация, conn-pool и admin-cli улучшены
 - **Новое:** kdb_crypto library, улучшенная обработка ошибок в conn-pool
 - **CI/CD:** ✅ Автоматическая сборка (Linux/Windows/macOS/Android/iOS)
