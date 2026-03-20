@@ -15,30 +15,6 @@
 #define NULL ((void*)0)
 #endif
 
-// Define missing functions for compatibility
-static int my_strcmp(const char* s1, const char* s2) {
-    while (*s1 && (*s1 == *s2)) {
-        s1++;
-        s2++;
-    }
-    return *(unsigned char*)s1 - *(unsigned char*)s2;
-}
-
-static int my_snprintf(char* str, size_t size, const char* format, ...) {
-    // Simple implementation - just copy a basic message
-    const char* basic_msg = "Cluster monitoring active";
-    size_t len = strlen(basic_msg);
-    if (size > 0) {
-        size_t copy_len = (len < size - 1) ? len : size - 1;
-        memcpy(str, basic_msg, copy_len);
-        str[copy_len] = '\0';
-    }
-    return (int)len;
-}
-
-// Manual time_t definition for compatibility
-typedef long long time_t;
-
 // Global context
 static distributed_monitor_ctx_t* g_monitor_ctx = NULL;
 static monitor_config_t g_monitor_config = {0};
@@ -49,7 +25,7 @@ static node_status_callback_t g_node_status_callback = NULL;
 static metric_callback_t g_metric_callback = NULL;
 
 // Utility functions
-static time_t get_current_timestamp_internal(void) {
+time_t get_current_timestamp(void) {
     return (time_t)time(NULL);
 }
 
@@ -85,7 +61,7 @@ int init_distributed_monitor(distributed_monitor_ctx_t* ctx, const char* cluster
     strncpy(ctx->cluster_name, cluster_name, sizeof(ctx->cluster_name) - 1);
     ctx->monitoring_port = port;
     ctx->monitoring_enabled = true;
-    ctx->last_update = get_current_timestamp_internal();
+    ctx->last_update = get_current_timestamp();
     ctx->node_count = 0;
     ctx->alert_count = 0;
     
@@ -128,7 +104,7 @@ int add_cluster_node(distributed_monitor_ctx_t* ctx, const char* node_name, cons
     strncpy(node->ip_address, ip, sizeof(node->ip_address) - 1);
     node->port = port;
     node->status = NODE_STATUS_UNKNOWN;
-    node->last_heartbeat = get_current_timestamp_internal();
+    node->last_heartbeat = get_current_timestamp();
     node->uptime_seconds = 0;
     node->cpu_usage_percent = 0.0;
     node->memory_usage_bytes = 0;
@@ -137,7 +113,7 @@ int add_cluster_node(distributed_monitor_ctx_t* ctx, const char* node_name, cons
     node->metric_count = 0;
     
     ctx->node_count++;
-    ctx->last_update = get_current_timestamp_internal();
+    ctx->last_update = get_current_timestamp();
     
     return 0;
 }
@@ -152,7 +128,7 @@ int remove_cluster_node(distributed_monitor_ctx_t* ctx, const char* node_name) {
                 ctx->nodes[j] = ctx->nodes[j + 1];
             }
             ctx->node_count--;
-            ctx->last_update = get_current_timestamp_internal();
+            ctx->last_update = get_current_timestamp();
             return 0;
         }
     }
@@ -192,14 +168,14 @@ int update_node_status(distributed_monitor_ctx_t* ctx, const char* node_name, no
     
     node_status_t old_status = node->status;
     node->status = status;
-    node->last_heartbeat = get_current_timestamp_internal();
+    node->last_heartbeat = get_current_timestamp();
     
     // Call callback if registered
     if (g_node_status_callback && old_status != status) {
         g_node_status_callback(node, old_status);
     }
     
-    ctx->last_update = get_current_timestamp_internal();
+    ctx->last_update = get_current_timestamp();
     return 0;
 }
 
@@ -214,7 +190,7 @@ int report_node_metrics(distributed_monitor_ctx_t* ctx, const char* node_name,
     int added = 0;
     for (int i = 0; i < count && node->metric_count < 32; i++) {
         node->metrics[node->metric_count] = metrics[i];
-        node->metrics[node->metric_count].timestamp = get_current_timestamp_internal();
+        node->metrics[node->metric_count].timestamp = get_current_timestamp();
         node->metric_count++;
         added++;
         
@@ -237,7 +213,7 @@ int report_node_metrics(distributed_monitor_ctx_t* ctx, const char* node_name,
         }
     }
     
-    ctx->last_update = get_current_timestamp_internal();
+    ctx->last_update = get_current_timestamp();
     
     // Check for alerts based on thresholds
     if (node->cpu_usage_percent > g_monitor_config.alert_threshold_cpu_percent) {
@@ -274,11 +250,11 @@ int generate_alert(distributed_monitor_ctx_t* ctx, alert_severity_t severity,
     } else {
         strcpy(alert->source_node, "SYSTEM");
     }
-    alert->timestamp = get_current_timestamp_internal();
+    alert->timestamp = get_current_timestamp();
     alert->acknowledged = false;
     
     ctx->alert_count++;
-    ctx->last_update = get_current_timestamp_internal();
+    ctx->last_update = get_current_timestamp();
     
     // Call alert callback if registered
     if (g_alert_callback) {
@@ -291,7 +267,7 @@ int generate_alert(distributed_monitor_ctx_t* ctx, alert_severity_t severity,
 void perform_cluster_health_check(distributed_monitor_ctx_t* ctx) {
     if (!ctx) return;
     
-    time_t current_time = get_current_timestamp_internal();
+    time_t current_time = get_current_timestamp();
     
     for (int i = 0; i < ctx->node_count; i++) {
         cluster_node_t* node = &ctx->nodes[i];
@@ -364,7 +340,7 @@ uint64_t calculate_total_connections(distributed_monitor_ctx_t* ctx) {
 void generate_cluster_report(distributed_monitor_ctx_t* ctx, char* report_buffer, size_t buffer_size) {
     if (!ctx || !report_buffer || buffer_size == 0) return;
     
-    time_t current_time = get_current_timestamp_internal();
+    time_t current_time = get_current_timestamp();
     
     int written = snprintf(report_buffer, buffer_size,
         "=== MTProxy Cluster Report ===\n"
@@ -437,12 +413,8 @@ const char* alert_severity_to_string(alert_severity_t severity) {
 
 void print_cluster_status(distributed_monitor_ctx_t* ctx) {
     if (!ctx) return;
-    
+
     char report_buffer[4096];
     generate_cluster_report(ctx, report_buffer, sizeof(report_buffer));
     printf("%s\n", report_buffer);
-}
-
-time_t get_current_timestamp(void) {
-    return get_current_timestamp_internal();
 }

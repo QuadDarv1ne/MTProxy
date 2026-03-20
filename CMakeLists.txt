@@ -622,8 +622,36 @@ set_target_properties(test-new-modules PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# FFI API test executable
+add_executable(test-ffi-api
+    testing/test_ffi_api.c
+)
+
+target_link_libraries(test-ffi-api
+    kdb_common
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-ffi-api PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# Performance test executable
+add_executable(test-performance
+    testing/test_performance.c
+)
+
+target_link_libraries(test-performance
+    kdb_common
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-performance PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # Installation rules
-install(TARGETS mtproto-proxy mtproxy-admin test-new-modules
+install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-ffi-api test-performance
     RUNTIME DESTINATION bin
 )
 

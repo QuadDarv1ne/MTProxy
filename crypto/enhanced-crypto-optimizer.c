@@ -55,7 +55,7 @@ void crypto_optimizer_get_recommendations(crypto_optimizer_t *optimizer,
     memset(recommendations, 0, sizeof(crypto_perf_recommendations_t));
 
     // Simple recommendation logic based on batch size as performance indicator
-    int operation_count = optimizer->batch_size;
+    int operation_count = optimizer->batch_processor.batch_size;
 
     recommendations->recommended_optimization = CRYPTO_OPT_NONE;
     recommendations->confidence_level = 0;
