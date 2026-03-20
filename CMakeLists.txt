@@ -1,5 +1,14 @@
 cmake_minimum_required(VERSION 3.20)
-project(MTProxy VERSION 1.0.0 LANGUAGES C)
+
+# Read version from VERSION file
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION")
+    file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" VERSION_CONTENT)
+    string(STRIP "${VERSION_CONTENT}" PROJECT_VERSION)
+else()
+    set(PROJECT_VERSION "1.0.0")
+endif()
+
+project(MTProxy VERSION ${PROJECT_VERSION} LANGUAGES C)
 
 # Set C standard
 set(CMAKE_C_STANDARD 11)
