@@ -1,0 +1,51 @@
+# Dockerignore для MTProxy
+# Исключения из Docker образа
+
+# Build директории
+build/
+objs/
+dep/
+build-windows-x64/
+cmake-build-*/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Документация (не нужна в runtime)
+*.md
+!README.md
+docs/
+ROADMAP.md
+CHANGELOG.md
+
+# Тесты
+testing/
+test/
+tests/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Временные файлы
+*.log
+*.tmp
+*.bak
+
+# Конфигурация разработчика
+config.local.json
+*.local

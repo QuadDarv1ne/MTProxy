@@ -1,0 +1,56 @@
+# Docker Compose для MTProxy
+# Быстрый запуск прокси с конфигурацией
+
+version: '3.8'
+
+services:
+  mtproxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mtproxy
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+      - "443:443"
+      - "3128:3128"
+    volumes:
+      - ./config:/etc/mtproxy:ro
+      - mtproxy_data:/var/lib/mtproxy
+      - mtproxy_logs:/var/log/mtproxy
+    environment:
+      - MT_PROXY_PORT=8080
+      - MT_PROXY_SECRET=your_secret_here
+      - MT_PROXY_WORKERS=4
+    networks:
+      - mtproxy_net
+    healthcheck:
+      test: ["CMD", "mtproto-proxy", "--health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Admin интерфейс (опционально)
+  mtproxy-admin-web:
+    image: mtproxy-admin:latest
+    container_name: mtproxy-admin
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./config:/etc/mtproxy:ro
+    depends_on:
+      - mtproxy
+    networks:
+      - mtproxy_net
+
+volumes:
+  mtproxy_data:
+    driver: local
+  mtproxy_logs:
+    driver: local
+
+networks:
+  mtproxy_net:
+    driver: bridge
