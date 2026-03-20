@@ -728,8 +728,22 @@ set_target_properties(rate-limiter-highload-test PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# Integration tests executable (Q2 2026)
+add_executable(integration-tests
+    testing/integration_tests.c
+)
+
+target_link_libraries(integration-tests
+    kdb_common
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(integration-tests PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # Installation rules
-install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-ffi-api test-performance test-admin-cli-integration cache-performance-test rate-limiter-highload-test
+install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-ffi-api test-performance test-admin-cli-integration cache-performance-test rate-limiter-highload-test integration-tests
     RUNTIME DESTINATION bin
 )
 
