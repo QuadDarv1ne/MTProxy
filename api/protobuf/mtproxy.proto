@@ -1,0 +1,285 @@
+// MTProxy gRPC Service Definition
+// Версия: 1.0.0
+// Дата: Март 2026
+
+syntax = "proto3";
+
+package mtproxy.api.v1;
+
+option go_package = "github.com/QuadDarv1ne/MTProxy/api/protobuf;mtproxyapi";
+option java_package = "com.mtproxy.api.v1";
+option java_outer_classname = "MtProxyProto";
+
+// ============================================================================
+// Основной сервис управления MTProxy
+// ============================================================================
+
+service MTProxyService {
+  // Управление сервером
+  rpc StartServer(StartServerRequest) returns (ServerStatus);
+  rpc StopServer(StopServerRequest) returns (ServerStatus);
+  rpc RestartServer(RestartServerRequest) returns (ServerStatus);
+  rpc GetServerStatus(GetServerStatusRequest) returns (ServerStatus);
+  
+  // Конфигурация
+  rpc GetConfig(GetConfigRequest) returns (ProxyConfig);
+  rpc UpdateConfig(UpdateConfigRequest) returns (ProxyConfig);
+  rpc ValidateConfig(ValidateConfigRequest) returns (ValidationResult);
+  
+  // Статистика и мониторинг
+  rpc GetStatistics(GetStatisticsRequest) returns (ProxyStatistics);
+  rpc StreamStatistics(StreamStatisticsRequest) returns (stream ProxyStatistics);
+  rpc GetActiveConnections(GetActiveConnectionsRequest) returns (ConnectionList);
+  
+  // Управление секретами
+  rpc AddSecret(AddSecretRequest) returns (SecretResponse);
+  rpc RemoveSecret(RemoveSecretRequest) returns (SecretResponse);
+  rpc ListSecrets(ListSecretsRequest) returns (SecretList);
+  
+  // Rate limiting
+  rpc GetRateLimits(GetRateLimitsRequest) returns (RateLimitConfig);
+  rpc UpdateRateLimit(UpdateRateLimitRequest) returns (RateLimitConfig);
+  
+  // Логирование
+  rpc GetLogs(GetLogsRequest) returns (LogEntries);
+  rpc StreamLogs(StreamLogsRequest) returns (stream LogEntry);
+}
+
+// ============================================================================
+// Сообщения управления сервером
+// ============================================================================
+
+message StartServerRequest {
+  bool force = 1;
+}
+
+message StopServerRequest {
+  bool graceful = 1;
+  int32 timeout_seconds = 2;
+}
+
+message RestartServerRequest {
+  bool graceful = 1;
+  int32 timeout_seconds = 2;
+}
+
+message GetServerStatusRequest {}
+
+message ServerStatus {
+  enum State {
+    STATE_UNKNOWN = 0;
+    STATE_STARTING = 1;
+    STATE_RUNNING = 2;
+    STATE_STOPPING = 3;
+    STATE_STOPPED = 4;
+    STATE_ERROR = 5;
+  }
+  
+  State state = 1;
+  string version = 2;
+  string commit_hash = 3;
+  int64 uptime_seconds = 4;
+  int64 start_time_unix = 5;
+  string error_message = 6;
+  PlatformInfo platform = 7;
+}
+
+message PlatformInfo {
+  string os = 1;
+  string arch = 2;
+  int32 cpu_cores = 3;
+  int64 total_memory_bytes = 4;
+}
+
+// ============================================================================
+// Сообщения конфигурации
+// ============================================================================
+
+message ProxyConfig {
+  // Сеть
+  int32 port = 1;
+  bool ipv6_enabled = 2;
+  int32 max_connections = 3;
+  int32 backlog = 4;
+  
+  // Секреты
+  repeated string secrets = 5;
+  
+  // Логи
+  string log_file = 6;
+  string log_level = 7;
+  
+  // Производительность
+  int32 workers = 8;
+  bool use_aes_ni = 9;
+  
+  // Rate limiting
+  RateLimitConfig rate_limit = 10;
+  
+  // TLS
+  TLSConfig tls = 11;
+}
+
+message TLSConfig {
+  bool enabled = 1;
+  string cert_file = 2;
+  string key_file = 3;
+  string min_version = 4;  // TLS1.2, TLS1.3
+}
+
+message RateLimitConfig {
+  bool enabled = 1;
+  int32 requests_per_minute = 2;
+  int32 burst_size = 3;
+  bool whitelist_enabled = 4;
+  repeated string whitelist_ips = 5;
+}
+
+message GetConfigRequest {}
+
+message UpdateConfigRequest {
+  ProxyConfig config = 1;
+  bool reload = 2;
+}
+
+message ValidateConfigRequest {
+  ProxyConfig config = 1;
+}
+
+message ValidationResult {
+  bool valid = 1;
+  repeated string errors = 2;
+  repeated string warnings = 3;
+}
+
+// ============================================================================
+// Сообщения статистики
+// ============================================================================
+
+message GetStatisticsRequest {
+  bool include_history = 1;
+  int32 history_points = 2;
+}
+
+message ProxyStatistics {
+  // Подключения
+  int32 active_connections = 1;
+  int64 total_connections = 2;
+  int64 connections_per_second = 3;
+  
+  // Трафик
+  int64 bytes_sent = 4;
+  int64 bytes_received = 5;
+  int64 bytes_per_second_in = 6;
+  int64 bytes_per_second_out = 7;
+  
+  // Производительность
+  double cpu_usage_percent = 8;
+  int64 memory_usage_bytes = 9;
+  double memory_usage_mb = 10;
+  
+  // Ошибки
+  int64 total_errors = 11;
+  int64 errors_per_second = 12;
+  
+  // Rate limiting
+  int64 rate_limited_requests = 13;
+  
+  // Временные метки
+  int64 timestamp_unix = 14;
+  int64 uptime_seconds = 15;
+}
+
+message StreamStatisticsRequest {
+  int32 interval_seconds = 1;
+}
+
+// ============================================================================
+// Сообщения подключений
+// ============================================================================
+
+message GetActiveConnectionsRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+  string filter_ip = 3;
+}
+
+message ConnectionList {
+  repeated ConnectionInfo connections = 1;
+  int32 total_count = 2;
+}
+
+message ConnectionInfo {
+  string id = 1;
+  string client_ip = 2;
+  int32 client_port = 3;
+  int64 connected_at_unix = 4;
+  int64 duration_seconds = 5;
+  int64 bytes_sent = 6;
+  int64 bytes_received = 7;
+  string status = 8;
+  string protocol_version = 9;
+}
+
+// ============================================================================
+// Сообщения секретов
+// ============================================================================
+
+message AddSecretRequest {
+  string secret = 1;
+  string description = 2;
+}
+
+message RemoveSecretRequest {
+  string secret = 1;
+}
+
+message SecretResponse {
+  bool success = 1;
+  string message = 2;
+  string secret = 3;
+}
+
+message ListSecretsRequest {}
+
+message SecretList {
+  repeated SecretInfo secrets = 1;
+  int32 total_count = 2;
+}
+
+message SecretInfo {
+  string secret_hash = 1;  // Хеш для безопасности
+  string description = 2;
+  int64 created_at_unix = 3;
+  int64 last_used_unix = 4;
+  int64 usage_count = 5;
+}
+
+// ============================================================================
+// Сообщения логов
+// ============================================================================
+
+message GetLogsRequest {
+  int32 limit = 1;
+  string level = 2;  // ERROR, WARN, INFO, DEBUG
+  int64 start_time_unix = 3;
+  int64 end_time_unix = 4;
+}
+
+message LogEntries {
+  repeated LogEntry entries = 1;
+  int32 total_count = 2;
+}
+
+message LogEntry {
+  int64 timestamp_unix = 1;
+  string level = 2;
+  string message = 3;
+  string source = 4;
+  map<string, string> fields = 5;
+}
+
+message StreamLogsRequest {
+  repeated string levels = 1;
+  repeated string sources = 2;
+}

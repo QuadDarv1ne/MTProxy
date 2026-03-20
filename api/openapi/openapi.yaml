@@ -1,0 +1,719 @@
+openapi: 3.0.3
+info:
+  title: MTProxy REST API
+  description: |
+    REST API для управления MTProxy сервером
+    
+    ## Возможности
+    - Управление сервером (старт/стоп/рестарт)
+    - Конфигурация прокси
+    - Статистика и мониторинг
+    - Управление секретами
+    - Rate limiting
+    - Логирование
+    
+    ## Аутентификация
+    Для доступа к API используйте API ключ в заголовке:
+    ```
+    X-API-Key: your-api-key
+    ```
+  version: 1.0.0
+  contact:
+    name: MTProxy Support
+    url: https://github.com/QuadDarv1ne/MTProxy
+
+servers:
+  - url: http://localhost:8888/api/v1
+    description: Local development server
+  - url: https://your-server.com:8888/api/v1
+    description: Production server
+
+tags:
+  - name: server
+    description: Управление сервером
+  - name: config
+    description: Конфигурация
+  - name: statistics
+    description: Статистика и мониторинг
+  - name: connections
+    description: Подключения
+  - name: secrets
+    description: Управление секретами
+  - name: ratelimit
+    description: Rate limiting
+  - name: logs
+    description: Логирование
+
+paths:
+  /server/start:
+    post:
+      tags: [server]
+      summary: Запуск сервера
+      operationId: startServer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                force:
+                  type: boolean
+                  default: false
+      responses:
+        '200':
+          description: Сервер запущен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerStatus'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /server/stop:
+    post:
+      tags: [server]
+      summary: Остановка сервера
+      operationId: stopServer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                graceful:
+                  type: boolean
+                  default: true
+                timeout_seconds:
+                  type: integer
+                  default: 30
+      responses:
+        '200':
+          description: Сервер остановлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerStatus'
+
+  /server/restart:
+    post:
+      tags: [server]
+      summary: Перезапуск сервера
+      operationId: restartServer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                graceful:
+                  type: boolean
+                  default: true
+      responses:
+        '200':
+          description: Сервер перезапущен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerStatus'
+
+  /server/status:
+    get:
+      tags: [server]
+      summary: Получить статус сервера
+      operationId: getServerStatus
+      responses:
+        '200':
+          description: Статус сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerStatus'
+
+  /config:
+    get:
+      tags: [config]
+      summary: Получить текущую конфигурацию
+      operationId: getConfig
+      responses:
+        '200':
+          description: Конфигурация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProxyConfig'
+    
+    put:
+      tags: [config]
+      summary: Обновить конфигурацию
+      operationId: updateConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProxyConfig'
+      responses:
+        '200':
+          description: Конфигурация обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProxyConfig'
+
+  /config/validate:
+    post:
+      tags: [config]
+      summary: Валидировать конфигурацию
+      operationId: validateConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProxyConfig'
+      responses:
+        '200':
+          description: Результат валидации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResult'
+
+  /statistics:
+    get:
+      tags: [statistics]
+      summary: Получить статистику
+      operationId: getStatistics
+      parameters:
+        - name: include_history
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: history_points
+          in: query
+          schema:
+            type: integer
+            default: 60
+      responses:
+        '200':
+          description: Статистика
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProxyStatistics'
+
+  /statistics/stream:
+    get:
+      tags: [statistics]
+      summary: Stream статистики (SSE)
+      operationId: streamStatistics
+      parameters:
+        - name: interval_seconds
+          in: query
+          schema:
+            type: integer
+            default: 5
+      responses:
+        '200':
+          description: Stream статистики
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/ProxyStatistics'
+
+  /connections:
+    get:
+      tags: [connections]
+      summary: Получить активные подключения
+      operationId: getActiveConnections
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: filter_ip
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Список подключений
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectionList'
+
+  /secrets:
+    get:
+      tags: [secrets]
+      summary: Список секретов
+      operationId: listSecrets
+      responses:
+        '200':
+          description: Список секретов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SecretList'
+    
+    post:
+      tags: [secrets]
+      summary: Добавить секрет
+      operationId: addSecret
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [secret]
+              properties:
+                secret:
+                  type: string
+                description:
+                  type: string
+      responses:
+        '201':
+          description: Секрет добавлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SecretResponse'
+
+  /secrets/{secret}:
+    delete:
+      tags: [secrets]
+      summary: Удалить секрет
+      operationId: removeSecret
+      parameters:
+        - name: secret
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Секрет удалён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SecretResponse'
+
+  /ratelimit:
+    get:
+      tags: [ratelimit]
+      summary: Получить настройки rate limiting
+      operationId: getRateLimits
+      responses:
+        '200':
+          description: Настройки rate limiting
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitConfig'
+    
+    put:
+      tags: [ratelimit]
+      summary: Обновить rate limiting
+      operationId: updateRateLimit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RateLimitConfig'
+      responses:
+        '200':
+          description: Настройки обновлены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitConfig'
+
+  /logs:
+    get:
+      tags: [logs]
+      summary: Получить логи
+      operationId: getLogs
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+        - name: level
+          in: query
+          schema:
+            type: string
+            enum: [ERROR, WARN, INFO, DEBUG]
+        - name: start_time
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: end_time
+          in: query
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Логи
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogEntries'
+
+  /logs/stream:
+    get:
+      tags: [logs]
+      summary: Stream логов (SSE)
+      operationId: streamLogs
+      parameters:
+        - name: levels
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [ERROR, WARN, INFO, DEBUG]
+        - name: sources
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: Stream логов
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/LogEntry'
+
+components:
+  schemas:
+    ServerStatus:
+      type: object
+      properties:
+        state:
+          type: string
+          enum: [unknown, starting, running, stopping, stopped, error]
+        version:
+          type: string
+        commit_hash:
+          type: string
+        uptime_seconds:
+          type: integer
+          format: int64
+        start_time_unix:
+          type: integer
+          format: int64
+        error_message:
+          type: string
+        platform:
+          $ref: '#/components/schemas/PlatformInfo'
+    
+    PlatformInfo:
+      type: object
+      properties:
+        os:
+          type: string
+        arch:
+          type: string
+        cpu_cores:
+          type: integer
+        total_memory_bytes:
+          type: integer
+          format: int64
+    
+    ProxyConfig:
+      type: object
+      properties:
+        port:
+          type: integer
+          default: 443
+        ipv6_enabled:
+          type: boolean
+          default: false
+        max_connections:
+          type: integer
+          default: 10000
+        backlog:
+          type: integer
+          default: 1024
+        secrets:
+          type: array
+          items:
+            type: string
+        log_file:
+          type: string
+        log_level:
+          type: string
+          enum: [ERROR, WARN, INFO, DEBUG]
+        workers:
+          type: integer
+          default: 1
+        use_aes_ni:
+          type: boolean
+          default: true
+        rate_limit:
+          $ref: '#/components/schemas/RateLimitConfig'
+        tls:
+          $ref: '#/components/schemas/TLSConfig'
+    
+    TLSConfig:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        cert_file:
+          type: string
+        key_file:
+          type: string
+        min_version:
+          type: string
+          enum: [TLS1.2, TLS1.3]
+    
+    RateLimitConfig:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          default: true
+        requests_per_minute:
+          type: integer
+          default: 100
+        burst_size:
+          type: integer
+          default: 20
+        whitelist_enabled:
+          type: boolean
+        whitelist_ips:
+          type: array
+          items:
+            type: string
+    
+    ProxyStatistics:
+      type: object
+      properties:
+        active_connections:
+          type: integer
+        total_connections:
+          type: integer
+          format: int64
+        connections_per_second:
+          type: integer
+          format: int64
+        bytes_sent:
+          type: integer
+          format: int64
+        bytes_received:
+          type: integer
+          format: int64
+        bytes_per_second_in:
+          type: integer
+          format: int64
+        bytes_per_second_out:
+          type: integer
+          format: int64
+        cpu_usage_percent:
+          type: number
+          format: double
+        memory_usage_bytes:
+          type: integer
+          format: int64
+        memory_usage_mb:
+          type: number
+          format: double
+        total_errors:
+          type: integer
+          format: int64
+        errors_per_second:
+          type: integer
+          format: int64
+        rate_limited_requests:
+          type: integer
+          format: int64
+        timestamp_unix:
+          type: integer
+          format: int64
+        uptime_seconds:
+          type: integer
+          format: int64
+    
+    ConnectionList:
+      type: object
+      properties:
+        connections:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConnectionInfo'
+        total_count:
+          type: integer
+    
+    ConnectionInfo:
+      type: object
+      properties:
+        id:
+          type: string
+        client_ip:
+          type: string
+        client_port:
+          type: integer
+        connected_at_unix:
+          type: integer
+          format: int64
+        duration_seconds:
+          type: integer
+          format: int64
+        bytes_sent:
+          type: integer
+          format: int64
+        bytes_received:
+          type: integer
+          format: int64
+        status:
+          type: string
+        protocol_version:
+          type: string
+    
+    SecretList:
+      type: object
+      properties:
+        secrets:
+          type: array
+          items:
+            $ref: '#/components/schemas/SecretInfo'
+        total_count:
+          type: integer
+    
+    SecretInfo:
+      type: object
+      properties:
+        secret_hash:
+          type: string
+          description: SHA256 хеш секрета (не сам секрет)
+        description:
+          type: string
+        created_at_unix:
+          type: integer
+          format: int64
+        last_used_unix:
+          type: integer
+          format: int64
+        usage_count:
+          type: integer
+          format: int64
+    
+    SecretResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        secret:
+          type: string
+    
+    ValidationResult:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        errors:
+          type: array
+          items:
+            type: string
+        warnings:
+          type: array
+          items:
+            type: string
+    
+    LogEntries:
+      type: object
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/LogEntry'
+        total_count:
+          type: integer
+    
+    LogEntry:
+      type: object
+      properties:
+        timestamp_unix:
+          type: integer
+          format: int64
+        level:
+          type: string
+          enum: [ERROR, WARN, INFO, DEBUG]
+        message:
+          type: string
+        source:
+          type: string
+        fields:
+          type: object
+          additionalProperties:
+            type: string
+    
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        details:
+          type: string
+
+  responses:
+    BadRequest:
+      description: Неверный запрос
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    
+    Unauthorized:
+      description: Неавторизован
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    
+    NotFound:
+      description: Не найдено
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    
+    InternalError:
+      description: Внутренняя ошибка
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+security:
+  - ApiKeyAuth: []
