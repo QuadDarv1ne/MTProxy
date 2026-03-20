@@ -247,10 +247,10 @@ git checkout master && git merge dev && git push origin master
 - [✓] Кэш performance тесты (100K+ операций) — ✅ test создан (cache_performance_test.c)
 - [✓] Rate-limiter high-load тесты (1000+ клиентов) — ✅ test создан (rate_limiter_highload_test.c)
 - [ ] API Reference документация
-- [ ] Deployment Guide
+- [✓] Deployment Guide — ✅ создан (DEPLOYMENT.md)
 - [ ] FreeBSD поддержка
 - [ ] ARM64 Linux (Raspberry Pi)
-- [ ] Официальные Docker образы
+- [✓] Официальные Docker образы — ✅ созданы (Dockerfile, docker-compose.yml)
 
 ### 🟡 Q3 2026 (Июль - Сентябрь)
 - [ ] gRPC интерфейс
