@@ -220,24 +220,26 @@ int admin_cmd_help(admin_cli_context_t *ctx, int argc, char **argv, admin_comman
 
     char *output = malloc(4096);
     if (!output) return -1;
+    output[0] = '\0';
 
     char *ptr = output;
-    ptr += sprintf(ptr, "MTProxy Admin CLI - Available Commands:\n\n");
+    char *end = output + 4096;
+    ptr += snprintf(ptr, end - ptr, "MTProxy Admin CLI - Available Commands:\n\n");
 
     if (argc > 1) {
         // Помощь по конкретной команде
         admin_command_t cmd = admin_cli_parse_command(argv[1]);
         for (int i = 0; command_table[i].name != NULL; i++) {
             if (command_table[i].cmd == cmd) {
-                ptr += sprintf(ptr, "  %s\n", command_table[i].syntax);
-                ptr += sprintf(ptr, "    %s\n", command_table[i].description);
+                ptr += snprintf(ptr, end - ptr, "  %s\n", command_table[i].syntax);
+                ptr += snprintf(ptr, end - ptr, "    %s\n", command_table[i].description);
                 break;
             }
         }
     } else {
         // Список всех команд
         for (int i = 0; command_table[i].name != NULL; i++) {
-            ptr += sprintf(ptr, "  %-15s %s\n", command_table[i].name, command_table[i].description);
+            ptr += snprintf(ptr, end - ptr, "  %-15s %s\n", command_table[i].name, command_table[i].description);
         }
     }
 
@@ -259,7 +261,7 @@ int admin_cmd_status(admin_cli_context_t *ctx, int argc, char **argv, admin_comm
     time_t now = time(NULL);
     time_t uptime = now - ctx->session_start;
 
-    sprintf(output,
+    snprintf(output, 1024,
             "MTProxy Server Status:\n"
             "  Status: Running\n"
             "  Uptime: %lld seconds\n"
@@ -283,12 +285,14 @@ int admin_cmd_stats(admin_cli_context_t *ctx, int argc, char **argv, admin_comma
 
     char *output = malloc(2048);
     if (!output) return -1;
+    output[0] = '\0';
 
     char *ptr = output;
-    ptr += sprintf(ptr, "Server Statistics:\n");
-    ptr += sprintf(ptr, "  Session start: %ld\n", (long)ctx->session_start);
-    ptr += sprintf(ptr, "  Commands executed: %d\n", ctx->commands_executed);
-    ptr += sprintf(ptr, "  Commands failed: %d\n", ctx->commands_failed);
+    char *end = output + 2048;
+    ptr += snprintf(ptr, end - ptr, "Server Statistics:\n");
+    ptr += snprintf(ptr, end - ptr, "  Session start: %ld\n", (long)ctx->session_start);
+    ptr += snprintf(ptr, end - ptr, "  Commands executed: %d\n", ctx->commands_executed);
+    ptr += snprintf(ptr, end - ptr, "  Commands failed: %d\n", ctx->commands_failed);
 
 cleanup:
     result->output = output;
@@ -305,7 +309,7 @@ int admin_cmd_health(admin_cli_context_t *ctx, int argc, char **argv, admin_comm
     char *output = malloc(512);
     if (!output) return -1;
 
-    sprintf(output, "Health Check: OK\nTimestamp: %ld\n", (long)time(NULL));
+    snprintf(output, 512, "Health Check: OK\nTimestamp: %ld\n", (long)time(NULL));
 
 cleanup:
     result->output = output;
@@ -325,7 +329,7 @@ int admin_cmd_metrics(admin_cli_context_t *ctx, int argc, char **argv, admin_com
     const char *format = (argc > 1) ? argv[1] : "text";
 
     if (strcmp(format, "json") == 0) {
-        sprintf(output,
+        snprintf(output, 1024,
                 "{\n"
                 "  \"uptime\": %lld,\n"
                 "  \"commands_executed\": %d,\n"
@@ -337,7 +341,7 @@ int admin_cmd_metrics(admin_cli_context_t *ctx, int argc, char **argv, admin_com
                 ctx->commands_failed,
                 ctx->is_connected ? "true" : "false");
     } else {
-        sprintf(output,
+        snprintf(output, 1024,
                 "Metrics:\n"
                 "  uptime_seconds=%lld\n"
                 "  commands_executed=%d\n"
@@ -363,8 +367,8 @@ int admin_cmd_reload(admin_cli_context_t *ctx, int argc, char **argv, admin_comm
 
     char *output = malloc(512);
     if (!output) return -1;
-    
-    sprintf(output, "Reloading %s...\nReload command sent.\n", target);
+
+    snprintf(output, 512, "Reloading %s...\nReload command sent.\n", target);
 
 cleanup:
     result->output = output;
@@ -380,18 +384,20 @@ int admin_cmd_config_show(admin_cli_context_t *ctx, int argc, char **argv, admin
 
     char *output = malloc(2048);
     if (!output) return -1;
+    output[0] = '\0';
 
     char *ptr = output;
-    ptr += sprintf(ptr, "Configuration:\n");
-    ptr += sprintf(ptr, "  [server]\n");
-    ptr += sprintf(ptr, "    port = 8080\n");
-    ptr += sprintf(ptr, "    max_connections = 10000\n");
-    ptr += sprintf(ptr, "  [cache]\n");
-    ptr += sprintf(ptr, "    enabled = true\n");
-    ptr += sprintf(ptr, "    max_entries = 100000\n");
-    ptr += sprintf(ptr, "  [ratelimit]\n");
-    ptr += sprintf(ptr, "    enabled = true\n");
-    ptr += sprintf(ptr, "    max_requests = 1000\n");
+    char *end = output + 2048;
+    ptr += snprintf(ptr, end - ptr, "Configuration:\n");
+    ptr += snprintf(ptr, end - ptr, "  [server]\n");
+    ptr += snprintf(ptr, end - ptr, "    port = 8080\n");
+    ptr += snprintf(ptr, end - ptr, "    max_connections = 10000\n");
+    ptr += snprintf(ptr, end - ptr, "  [cache]\n");
+    ptr += snprintf(ptr, end - ptr, "    enabled = true\n");
+    ptr += snprintf(ptr, end - ptr, "    max_entries = 100000\n");
+    ptr += snprintf(ptr, end - ptr, "  [ratelimit]\n");
+    ptr += snprintf(ptr, end - ptr, "    enabled = true\n");
+    ptr += snprintf(ptr, end - ptr, "    max_requests = 1000\n");
 
 cleanup:
     result->output = output;
@@ -408,7 +414,7 @@ int admin_cmd_cache_stats(admin_cli_context_t *ctx, int argc, char **argv, admin
     char *output = malloc(1024);
     if (!output) return -1;
 
-    sprintf(output,
+    snprintf(output, 1024,
             "Cache Statistics:\n"
             "  Entries: N/A\n"
             "  Hit rate: N/A\n"
@@ -429,8 +435,8 @@ int admin_cmd_cache_clear(admin_cli_context_t *ctx, int argc, char **argv, admin
 
     char *output = malloc(512);
     if (!output) return -1;
-    
-    sprintf(output, "Cache clear command sent.\n");
+
+    snprintf(output, 512, "Cache clear command sent.\n");
 
 cleanup:
     result->output = output;
@@ -447,7 +453,7 @@ int admin_cmd_ratelimit_status(admin_cli_context_t *ctx, int argc, char **argv, 
     char *output = malloc(1024);
     if (!output) return -1;
 
-    sprintf(output,
+    snprintf(output, 1024,
             "Rate Limit Status:\n"
             "  Enabled: yes\n"
             "  Algorithm: Token Bucket\n"
@@ -468,7 +474,7 @@ int admin_cmd_connections_list(admin_cli_context_t *ctx, int argc, char **argv, 
     char *output = malloc(1024);
     if (!output) return -1;
 
-    sprintf(output,
+    snprintf(output, 1024,
             "Active Connections:\n"
             "  ID        Client IP          Port    Duration\n"
             "  --------  ---------------    ------  --------\n"
@@ -490,8 +496,8 @@ int admin_cmd_log_level(admin_cli_context_t *ctx, int argc, char **argv, admin_c
 
     char *output = malloc(512);
     if (!output) return -1;
-    
-    sprintf(output, "Log level set to: %s\n", level);
+
+    snprintf(output, 512, "Log level set to: %s\n", level);
 
 cleanup:
     result->output = output;
