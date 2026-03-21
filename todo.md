@@ -117,15 +117,15 @@
 
 ---
 
-## 📝 Пометки по проекту (21 марта 2026, a9decd6)
+## 📝 Пометки по проекту (21 марта 2026, 8deb612)
 
 ### Архитектура
 - ✅ Модульная структура: 366 C/H файлов (186 .c + 180 .h), 41 сетевой модуль, 82 файла в system/
 - ✅ Разделение ответственности: engine/, net/, security/, crypto/, mtproto/
 - ✅ POSIX-совместимость через posix-compat-windows.h для Windows (16 файлов исправлено)
 - ✅ FFI интеграция: shared library для Flutter/Dart (mobile_app/)
-- ✅ 286+ коммитов в истории проекта
-- ✅ Текущий коммит: a9decd6 (dev = master)
+- ✅ 289+ коммитов в истории проекта
+- ✅ Текущий коммит: 8deb612 (dev = master)
 
 ### Критические компоненты
 - **config-manager**: горячая перезагрузка, валидация, история (1000 записей)
@@ -167,18 +167,21 @@
 - [x] admin-cli: расширенные команды — ✅ улучшенная обработка ошибок
 - [x] HTTP/3 (QUIC): реализация TODO в http3-quic.c (17 отметок) — ✅ stub готов
 - [x] Исправление warning'ов компиляции — ✅ memory-optimization.c, memory-manager.c
-- [x] Windows совместимость: 16 файлов исправлено — ✅ a9decd6
+- [x] Windows совместимость: 16 файлов исправлено — ✅ 8deb612
+- [x] Безопасность: simple_strcpy → безопасная версия (19 вызовов) — ✅ b798656
+- [x] Безопасность: strtok → strtok_r (admin-cli) — ✅ 496e93d
+- [x] Надёжность: проверка malloc для мьютексов — ✅ 476be80, 8deb612
 
 ---
 
 ## 📋 Текущий статус
 
 ### Ветки
-- **dev**: ✅ a9decd6 — docs: обновлён todo.md — актуальный статус на 5d1ba17
-- **main/master**: ✅ a9decd6 — синхронизирована с dev
-- **origin/dev**: ✅ a9decd6 — синхронизирована
-- **origin/master**: ✅ a9decd6 — синхронизирована
-- **Статус**: ✅ Ветки идентичны (a9decd6)
+- **dev**: ✅ 8deb612 — fix: проверка выделения памяти для global_mutex в cache_manager_init
+- **main/master**: ✅ 8deb612 — синхронизирована с dev
+- **origin/dev**: ✅ 8deb612 — синхронизирована
+- **origin/master**: ✅ 8deb612 — синхронизирована
+- **Статус**: ✅ Ветки идентичны (8deb612)
 - **Рабочие изменения**: нет (чистое дерево)
 
 ### Готовые модули к использованию
@@ -599,19 +602,19 @@ mtproxy-0.02 compiled at Mar 19 2026 20:08:46 by gcc 13.3.0 64-bit
 | **Собранных бинарников** | mtproto-proxy (536 KB) ✅, mtproxy-admin.exe ✅ |
 | **Тестов** | 51 ✅ (100% пройдено) |
 | **TODO/FIXME отметок** | 17 (http3-quic.c stub) |
-| **Исправлений Windows** | 16 файлов ✅ (a9decd6) |
+| **Исправлений Windows** | 16 файлов ✅ (8deb612) |
 | **Shared library** | ✅ Готово (BUILD_SHARED_LIB) |
 | **Mobile app** | ✅ Flutter/Dart (mobile_app/, 40+ файлов) |
 | **CI/CD** | ✅ GitHub Actions (5 платформ) |
-| **Последняя сборка** | kdb_common + kdb_crypto (a9decd6) |
+| **Последняя сборка** | kdb_common + kdb_crypto (8deb612) |
 
 ---
 
-*Последнее обновление: 21 марта 2026 г. (a9decd6 — todo.md updated)*
+*Последнее обновление: 21 марта 2026 г. (8deb612 — todo.md updated)*
 
 ---
 
-## 🪟 Windows Build Status (21 марта 2026 — a9decd6)
+## 🪟 Windows Build Status (21 марта 2026 — 8deb612)
 
 ### Исправления совместимости (16 файлов) — ✅ Выполнено
 - [x] **CMakeLists.txt**: Temporarily disabled problematic modules for Windows build
@@ -897,15 +900,15 @@ git checkout master && git merge dev && git push origin master
 ### Последние исправления (коммиты)
 | Коммит | Изменение |
 |--------|-----------|
+| **8deb612** | fix: проверка выделения памяти для global_mutex в cache_manager_init |
+| **476be80** | fix: проверка выделения памяти для мьютекса в rate_limiter_init |
+| **496e93d** | security: замена strtok на потокобезопасную strtok_r в admin_cli_tokenize |
+| **b798656** | security: замена simple_strcpy на безопасную версию с проверкой границ (19 вызовов) |
 | **a9decd6** | docs: обновлён todo.md — актуальный статус на 5d1ba17 |
 | **5d1ba17** | docs: обновлён todo.md — статус на 15e7cdf (Windows build improvements) |
 | **15e7cdf** | fix: Windows build compatibility improvements (posix-compat stubs) |
 | **0a724e2** | fix: Windows compatibility for net/ modules (posix-compat headers) |
 | **799506f** | docs: обновлён todo.md — статус на 57140b1 (исправления безопасности, синхронизация) |
 | **57140b1** | security: замена strcpy на strncpy для предотвращения переполнения буфера (5 файлов) |
-| **d783c65** | docs: обновлён todo.md — статус на fda46bb (3 исправления безопасности) |
-| **fda46bb** | fix: проверка malloc в cache_get — возврат CACHE_ERROR при неудаче |
-| **9c7ca28** | security: замена sprintf на snprintf в admin-cli.c |
-| **7661200** | fix: проверка fwrite/fread в http3_session_save/load |
 
 ---
