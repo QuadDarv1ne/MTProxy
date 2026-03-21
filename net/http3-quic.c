@@ -313,21 +313,25 @@ int http3_session_save(const quic_connection_t* conn, const char* filename) {
     if (!conn || !filename) {
         return -1;
     }
-    
+
     // TODO: Save session ticket to file
     // This enables 0-RTT resumption on next connection
-    
+
     FILE* f = fopen(filename, "wb");
     if (!f) {
         return -1;
     }
-    
+
     // Write placeholder session data
     // In real implementation, this would be the session ticket
     const char* session_data = "session_placeholder";
-    fwrite(session_data, 1, strlen(session_data), f);
+    size_t written = fwrite(session_data, 1, strlen(session_data), f);
     fclose(f);
     
+    if (written != strlen(session_data)) {
+        return -1;
+    }
+
     return 0;
 }
 
@@ -335,16 +339,26 @@ int http3_session_load(http3_context_t* ctx, const char* filename) {
     if (!ctx || !filename) {
         return -1;
     }
-    
+
     // TODO: Load session ticket from file
     // This enables 0-RTT resumption
-    
+
     FILE* f = fopen(filename, "rb");
     if (!f) {
         return -1;
     }
-    
+
+    // Read and verify session data
+    char buffer[64];
+    size_t read_bytes = fread(buffer, 1, sizeof(buffer) - 1, f);
     fclose(f);
+    
+    if (read_bytes == 0) {
+        return -1;
+    }
+    
+    buffer[read_bytes] = '\0';
+
     return 0;
 }
 
