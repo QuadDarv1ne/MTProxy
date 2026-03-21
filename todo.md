@@ -117,15 +117,15 @@
 
 ---
 
-## 📝 Пометки по проекту (20 марта 2026, текущий статус)
+## 📝 Пометки по проекту (21 марта 2026, a4d8edc)
 
 ### Архитектура
 - ✅ Модульная структура: 366 C/H файлов, 41 сетевой модуль, 82 файла в system/
 - ✅ Разделение ответственности: engine/, net/, security/, crypto/, mtproto/
-- ✅ POSIX-совместимость через posix-compat-windows.h для Windows
+- ✅ POSIX-совместимость через posix-compat-windows.h для Windows (13 файлов исправлено)
 - ✅ FFI интеграция: shared library для Flutter/Dart (mobile_app/)
-- ✅ 277+ коммитов в истории проекта
-- ✅ Текущий коммит: 799506f (dev)
+- ✅ 279+ коммитов в истории проекта
+- ✅ Текущий коммит: a4d8edc (dev = master)
 
 ### Критические компоненты
 - **config-manager**: горячая перезагрузка, валидация, история (1000 записей)
@@ -136,11 +136,12 @@
 - **mtproxy (shared lib)**: публичный API для внешней интеграции (FFI)
 - **conn-pool**: улучшенная обработка ошибок, логирование, cleanup
 - **admin-cli**: расширенные команды управления
+- **Windows build**: 13 файлов исправлено, kdb_common/kdb_crypto собираются
 
 ### Сборка
 - **WSL/Linux**: полная сборка через `make -j4`, mtproto-proxy 536 KB
-- **Windows**: single-worker mode (fork не поддерживается), mtproxy-admin.exe
-- **CMake**: авто-детект MSYS2/UCRT64, все модули включены
+- **Windows**: single-worker mode (fork не поддерживается), 13 файлов исправлено
+- **CMake**: авто-детект MSYS2/UCRT64, Windows-модули отключены
 - **CMake оптимизация**: kdb_crypto (без -ffast-math), kdb_common
 
 ### Тесты
@@ -151,6 +152,7 @@
 
 ### Известные ограничения
 - Windows: только single-worker mode (fork не поддерживается)
+- Windows: 6 модулей отключено (Unix socket API)
 - HTTP/3 (QUIC): stub-реализация (17 TODO в http3-quic.c)
 - Документация API: gRPC + REST готовы
 
@@ -165,15 +167,18 @@
 - [x] admin-cli: расширенные команды — ✅ улучшенная обработка ошибок
 - [x] HTTP/3 (QUIC): реализация TODO в http3-quic.c (17 отметок) — ✅ stub готов
 - [x] Исправление warning'ов компиляции — ✅ memory-optimization.c, memory-manager.c
+- [x] Windows совместимость: 13 файлов исправлено — ✅ a4d8edc
 
 ---
 
 ## 📋 Текущий статус
 
 ### Ветки
-- **dev**: ✅ Синхронизирована с origin/dev (799506f)
-- **main/master**: ✅ Синхронизирована с origin/master (799506f)
-- **Статус**: ✅ Ветки идентичны (merge не требуется)
+- **dev**: ✅ a4d8edc — Windows compatibility improvements
+- **main/master**: ✅ a4d8edc — синхронизирована с dev
+- **origin/dev**: ✅ a4d8edc — отправлено
+- **origin/master**: ✅ a4d8edc — отправлено
+- **Статус**: ✅ Ветки идентичны (a4d8edc)
 
 ### Готовые модули к использованию
 | Модуль | Статус | Тесты | Документация |
@@ -190,11 +195,13 @@
 | CI/CD | ✅ Настроен | ✅ Auto-build | ✅ |
 | conn-pool | ✅ Готов | ✅ Улучшена обработка ошибок | ✅ |
 | **HTTP/3 (QUIC)** | ⏳ Stub | ⏳ TODO реализация | ✅ |
+| **Windows build** | ⏳ В процессе | ⏳ 13 файлов исправлено | ✅ |
 
 ### Сборка
-- **CMakeLists.txt**: ✅ Все модули добавлены
+- **CMakeLists.txt**: ✅ Все модули добавлены, Windows-совместимые отключены
 - **Makefile**: ✅ Исправлен, тесты работают (make test)
-- **Windows**: ✅ POSIX совместимость через posix-compat-windows.h
+- **Windows**: ✅ POSIX совместимость через posix-compat-windows.h (13 файлов исправлено)
+- **Linux/WSL**: ✅ Полная сборка через make -j4
 - **Тесты**: ✅ 45/45 пройдено (100%)
 
 ---
@@ -599,13 +606,14 @@ mtproxy-0.02 compiled at Mar 19 2026 20:08:46 by gcc 13.3.0 64-bit
 
 ---
 
-*Последнее обновление: 20 марта 2026 г. (стабильная версия b98fed5, Q3 2026 фичи реализованы)*
+*Последнее обновление: 21 марта 2026 г. (a4d8edc — Windows compatibility improvements)*
 
 ---
 
-## 🪟 Windows Build Status (21 марта 2026)
+## 🪟 Windows Build Status (21 марта 2026 — a4d8edc)
 
-### Исправления совместимости (12 файлов)
+### Исправления совместимости (13 файлов) — ✅ Выполнено
+- [x] **CMakeLists.txt**: Temporarily disabled problematic modules for Windows build
 - [x] **posix-compat-windows.h**: Fixed inet_pton/inet_ntop guards (HAVE_INET_PTON/HAVE_INET_NTOP)
 - [x] **posix-compat-windows.h**: Fixed _ARPA_INET_H_ include guard structure
 - [x] **net-msg.h**: Added writev/readv emulation for Windows
@@ -615,34 +623,35 @@ mtproxy-0.02 compiled at Mar 19 2026 20:08:46 by gcc 13.3.0 64-bit
 - [x] **net/advanced-connection-pool.c**: Removed non-existent mtproto-proxy.h include
 - [x] **net/enhanced-tls-obfuscation.c**: Added stddef.h, string.h, stdlib.h
 - [x] **net/multiproto-manager.c**: Removed conflicting time_t typedef
-- [x] **net/net-buffer-manager.c**: Fixed include path
+- [x] **net/net-buffer-manager.c**: Fixed include path (net/net-buffer-manager.h → net-buffer-manager.h)
 - [x] **net/net-connections.c**: Added Windows socket compatibility headers
 - [x] **net/net-msg.c**: Added Windows sys/uio.h compatibility
 
-### Статус сборки Windows
+### Статус сборки Windows (a4d8edc)
 | Компонент | Статус | Примечание |
 |-----------|--------|------------|
 | **kdb_crypto** | ✅ Собирается | Статическая библиотека |
 | **kdb_common** | ✅ Собирается | Статическая библиотека |
-| **mtproto-proxy** | ⏳ В процессе | Требует отключения Unix-модулей |
-| **mtproxy-admin** | ⏳ В процессе | Зависит от основных модулей |
-| **libmtproxy (shared)** | ⏳ В процессе | BUILD_SHARED_LIB |
+| **mtproto-proxy** | ⏳ Частично | kdb_common + kdb_crypto готовы, требуются основные модули |
+| **mtproxy-admin** | ⏳ Зависит от mtproto-proxy | |
+| **libmtproxy (shared)** | ⏳ BUILD_SHARED_LIB | Готов к тестированию |
 
 ### Отключённые модули (Windows compatibility)
-- net/net-connections.c — Unix socket API (epoll, TCP_WINDOW_CLAMP)
-- net/net-crypto-aes.c — Unix-specific calls (O_NONBLOCK, srand48)
-- net/net-events.c — arpa/inet.h
-- net/advanced-network.c — malloc/free без заголовков
-- net/async-network-optimizer.c — size_t без stddef.h
-- net/enhanced-tls-obfuscation.c — исправлено, собирается
-- net/zero-copy-optimizer.c — Unix socket API
+- [ ] net/net-connections.c — Unix socket API (epoll, TCP_WINDOW_CLAMP)
+- [ ] net/net-crypto-aes.c — Unix-specific calls (O_NONBLOCK, srand48, /dev/random)
+- [ ] net/net-events.c — arpa/inet.h
+- [ ] net/advanced-network.c — malloc/free без заголовков
+- [ ] net/async-network-optimizer.c — size_t без stddef.h
+- [x] net/enhanced-tls-obfuscation.c — ✅ исправлено, собирается
+- [ ] net/zero-copy-optimizer.c — Unix socket API
 
 ### Известные проблемы Windows
 1. **fork() не поддерживается** — только single-worker mode (-M 1)
-2. **epoll отсутствует** — используется select/WSAPoll эмуляция
+2. **epoll отсутствует** — требуется select/WSAPoll эмуляция
 3. **TCP_WINDOW_CLAMP** — Windows не поддерживает эту опцию
-4. **/dev/random** — заменяется на CryptGenRandom
+4. **/dev/random** — заменяется на CryptGenRandom / BCryptGenRandom
 5. **srand48/lrand48** — эмулируется через rand()/srand
+6. **sys/uio.h** — эмуляция writev/readv добавлена в net-msg.h
 
 ### Рекомендации для Windows
 ```bash
@@ -657,13 +666,14 @@ cmake --build build-windows-x64 --config Release
 ./build-windows-x64/bin/mtproto-proxy.exe -M 1 -p 8888 -S <secret>
 ```
 
-### Следующие шаги для Windows
-- [ ] Исправить net-crypto-aes.c (O_NONBLOCK, srand48)
-- [ ] Исправить net-events.c (arpa/inet.h)
-- [ ] Исправить zero-copy-optimizer.c (epoll эмуляция)
-- [ ] Протестировать mtproto-proxy.exe
-- [ ] Протестировать mtproxy-admin.exe
-- [ ] Добавить Windows CI workflow
+### Следующие шаги для Windows (Приоритеты)
+- [ ] **Критично**: Исправить net-crypto-aes.c (O_NONBLOCK → FILE_FLAG_RANDOM_ACCESS, srand48 → rand)
+- [ ] **Критично**: Исправить net-events.c (arpa/inet.h → ws2tcpip.h)
+- [ ] **Важно**: Исправить zero-copy-optimizer.c (epoll → Select/WSAPoll)
+- [ ] **Важно**: Исправить net/net-tcp-connections.c (Unix socket API)
+- [ ] **Тесты**: Протестировать mtproto-proxy.exe
+- [ ] **Тесты**: Протестировать mtproxy-admin.exe
+- [ ] **CI/CD**: Добавить Windows CI workflow
 
 ---
 
