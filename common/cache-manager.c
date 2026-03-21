@@ -322,27 +322,35 @@ cache_status_t cache_get(cache_manager_t *cache, const char *key,
     entry->access_count++;
     entry->last_access_time = time(NULL);
     entry->frequency++;
-    
+
     // Перемещение в начало LRU списка
     if (cache->config.policy == CACHE_LRU) {
         cache_move_to_lru_head(cache, entry);
     }
-    
+
     // Копирование данных
     *data_size = entry->data_size;
     *data = malloc(entry->data_size);
-    if (*data) {
-        memcpy(*data, entry->data, entry->data_size);
+    if (!*data) {
+        cache->stats.misses++;
+
+#ifdef _WIN32
+        if (cache->config.enable_locking) LeaveCriticalSection((CRITICAL_SECTION*)cache->global_mutex);
+#else
+        if (cache->config.enable_locking) pthread_mutex_unlock((pthread_mutex_t*)cache->global_mutex);
+#endif
+        return CACHE_ERROR;
     }
-    
+    memcpy(*data, entry->data, entry->data_size);
+
     cache->stats.hits++;
-    
+
 #ifdef _WIN32
     if (cache->config.enable_locking) LeaveCriticalSection((CRITICAL_SECTION*)cache->global_mutex);
 #else
     if (cache->config.enable_locking) pthread_mutex_unlock((pthread_mutex_t*)cache->global_mutex);
 #endif
-    
+
     return CACHE_OK;
 }
 
