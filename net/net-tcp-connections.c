@@ -24,11 +24,16 @@
 */
 
 #include <errno.h>
+#ifdef _WIN32
+#include <io.h>
+#include "net-msg.h"
+#else
 #include <sys/uio.h>
+#include <unistd.h>
+#endif
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
-#include <unistd.h>
 
 #include "net/net-connections.h"
 #include "net/net-msg.h"

@@ -20,22 +20,31 @@
 */
 #define        _FILE_OFFSET_BITS        64
 
+#ifdef _WIN32
+#include "../common/posix-compat-windows.h"
+#else
 #include <arpa/inet.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <sys/epoll.h>
+#include <sys/socket.h>
+#endif
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <math.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/epoll.h>
-#include <sys/socket.h>
+#ifdef _WIN32
+#include <io.h>
+#include "net-msg.h"
+#else
 #include <sys/uio.h>
-#include <time.h>
 #include <unistd.h>
+#endif
+#include <time.h>
 
 #include "crc32.h"
 #include "net/net-events.h"

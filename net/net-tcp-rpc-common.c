@@ -25,7 +25,12 @@
 
 #include <assert.h>
 #include <stdio.h>
+#ifdef _WIN32
+#include <io.h>
+#include "net-msg.h"
+#else
 #include <sys/uio.h>
+#endif
 
 #include "common/precise-time.h"
 #include "common/rpc-const.h"

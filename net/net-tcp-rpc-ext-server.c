@@ -51,13 +51,21 @@
 
 #include "vv/vv-io.h"
 
+#ifdef _WIN32
+#include "../common/posix-compat-windows.h"
+#else
 #include <arpa/inet.h>
-#include <fcntl.h>
 #include <netinet/in.h>
 #include <sys/select.h>
 #include <sys/socket.h>
+#endif
+#include <fcntl.h>
 #include <sys/types.h>
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 /*
  *
