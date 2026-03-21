@@ -740,34 +740,76 @@ git checkout master && git merge dev && git push origin master
 
 ---
 
-*Последнее обновление: 21 марта 2026 г. (стабильная версия 7ff887d, v1.0.1, ветки синхронизированы)*
+*Последнее обновление: 21 марта 2026 г. (стабильная версия 2850b5c, v1.0.1, ветки синхронизированы)*
 
 ---
 
-## 📅 Обновление статуса (21 марта 2026)
+## 📅 Обновление статуса (21 марта 2026 — актуально)
 
-### Текущий коммит: 7ff887d
+### Текущий коммит: 2850b5c
 - **Ветки**: dev = master = origin/dev = origin/master ✅
 - **Версия**: v1.0.1
 - **Статус**: Чистое дерево git, все изменения закоммичены
 
+### Статистика проекта
+| Метрика | Значение |
+|---------|----------|
+| **Всего коммитов** | 257+ |
+| **C/H файлов** | 361 |
+| **Сетевых модулей** | 41 |
+| **Модулей system/** | 82 |
+| **Тестов** | 45 C + 4 Dart |
+| **Документов** | 33+ |
+| **TODO в коде** | 17 (http3-quic.c stub) |
+
 ### Выполнено к 21 марта 2026
 - [x] Q2 2026 выполнен на 75% (6/8 задач)
-- [x] API Reference документация создана
-- [x] Deployment Guide создан
+- [x] API Reference документация создана (API_REFERENCE.md)
+- [x] Deployment Guide создан (DEPLOYMENT.md)
 - [x] Docker образы готовы (Dockerfile, docker-compose.yml)
-- [x] 3 performance теста созданы
+- [x] 3 performance теста созданы (cache, rate-limiter, integration)
 - [x] Интеграционные тесты готовы
+- [x] FFI + Mobile app (Flutter/Dart) готовы
+- [x] CI/CD настроен (5 платформ: Linux/Windows/macOS/Android/iOS)
 - [ ] Ожидают: FreeBSD поддержка, ARM64 Linux
 
-### Активные TODO в коде (20 отметок)
-- **http3-quic.c**: 17 TODO (stub-реализация HTTP/3 QUIC)
-- **jobs.c**: 3 переменные `todo` (не являются задачами, это имена переменных)
+### Активные TODO в коде
+| Файл | TODO | Статус |
+|------|------|--------|
+| **net/http3-quic.c** | 17 TODO | Stub-реализация HTTP/3 QUIC |
+| **jobs.c** | 3 `todo` | Переменные (не задачи) |
 
-### Фокус на Q4 2026
-- Интеграционные тесты (gRPC, REST, QUIC)
-- Кластеризация и load balancing
-- Auto-scaling и distributed tracing
-- Web UI и plugin system
+### Структура TODO в http3-quic.c
+1. Server startup/shutdown (2)
+2. QUIC handshake (1)
+3. UDP datagram processing (1)
+4. CONNECTION_CLOSE frame (2)
+5. HTTP/3 HEADERS/DATA frames (6)
+6. Stream management (2)
+7. RTT measurement (1)
+8. Session ticket save/load (2)
+
+### Приоритеты (Q4 2026)
+- [ ] Интеграционные тесты (gRPC, REST, QUIC)
+- [ ] HTTP/3 QUIC реализация (17 TODO)
+- [ ] Кластеризация и load balancing
+- [ ] Auto-scaling и distributed tracing
+- [ ] Web UI управления
+- [ ] Plugin system
+
+### Готовые модули
+| Модуль | Статус | Тесты | Документация |
+|--------|--------|-------|--------------|
+| config-manager | ✅ | ✅ | ✅ |
+| cache-manager | ✅ | ✅ | ✅ |
+| rate-limiter | ✅ | ✅ | ✅ |
+| error-handler | ✅ | ✅ | ✅ |
+| admin-cli | ✅ | ✅ | ✅ |
+| monitor.sh | ✅ | ⏳ | ✅ |
+| metrics_collector.py | ✅ | ⏳ | ✅ |
+| mtproxy (shared lib) | ✅ | ✅ | ✅ |
+| mobile_app (Flutter) | ✅ | ✅ | ✅ |
+| CI/CD | ✅ | ✅ | ✅ |
+| http3-quic.c | ⏳ Stub | ❌ | ✅ |
 
 ---
