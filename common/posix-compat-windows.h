@@ -17,6 +17,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <io.h>
 #include <string.h>
 #include <psapi.h>
@@ -550,11 +551,12 @@ static inline int client_socket_ipv6(const unsigned char *ipv6, int port, int fl
     return -1;
 }
 
-// Stub for connections_prepare_stat
-static inline void connections_prepare_stat(void) {}
+// Stub for connections_prepare_stat - correct signature
+typedef struct stats_buffer stats_buffer_t;
+static inline int connections_prepare_stat(stats_buffer_t *sb) { return 0; }
 
-// Stub for crypto_aes_prepare_stat
-static inline void crypto_aes_prepare_stat(void) {}
+// Stub for crypto_aes_prepare_stat - correct signature
+static inline int crypto_aes_prepare_stat(stats_buffer_t *sb) { return 0; }
 
 // Stub for assert_engine_thread
 static inline void assert_engine_thread(void) {}
@@ -577,8 +579,10 @@ extern double last_epoll_wait_at;
 extern long long epoll_calls;
 extern long long epoll_intr;
 
-// main_secret is aes_secret_t - use byte array
-extern unsigned char main_secret[64];
+// main_secret is aes_secret_t (defined in net-crypto-aes.h)
+// Include the header for proper type definition
+#include "../net/net-crypto-aes.h"
+extern aes_secret_t main_secret;
 
 // main_thread_interrupt_status is volatile int
 extern volatile int main_thread_interrupt_status;
@@ -589,7 +593,8 @@ static double _a_idle_quotient_stub = 0.0;
 static double _last_epoll_wait_at_stub = 0.0;
 static long long _epoll_calls_stub = 0;
 static long long _epoll_intr_stub = 0;
-static unsigned char _main_secret_stub[64] = {0};
+// Stub for main_secret - actual aes_secret_t structure
+static aes_secret_t _main_secret_stub = {0, 0, {0}};
 static volatile int _main_thread_interrupt_status_stub = 0;
 
 #define tot_idle_time _tot_idle_time_stub

@@ -433,6 +433,11 @@ set(SECURITY_SOURCES
     common/mtproxy-fixes-simple.h
 )
 
+# Windows-specific: Exclude mtproxy-fixes-simple.h due to type conflicts
+if(WIN32)
+    list(REMOVE_ITEM SECURITY_SOURCES "common/mtproxy-fixes-simple.h")
+endif()
+
 set(ENGINE_SOURCES
     engine/engine.c
     engine/engine.h
