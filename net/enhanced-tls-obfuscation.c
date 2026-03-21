@@ -4,6 +4,9 @@
  */
 
 #include "enhanced-tls-obfuscation.h"
+#include <stddef.h>
+#include <string.h>
+#include <stdlib.h>
 
 // Define helper functions since we're not including standard libraries
 static size_t simple_strlen(const char *str) {

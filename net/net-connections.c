@@ -28,23 +28,35 @@
 
 #define        _FILE_OFFSET_BITS        64
 
+#ifdef _WIN32
+#include "../common/posix-compat-windows.h"
+#else
 #include <arpa/inet.h>
+#endif
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <math.h>
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#endif
 #include <pthread.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/epoll.h>
-#include <sys/socket.h>
-#include <sys/uio.h>
 #include <time.h>
+#ifdef _WIN32
+#include <io.h>
+#else
+#include <sys/uio.h>
+#include <sys/epoll.h>
 #include <unistd.h>
+#endif
 
 #include "crc32.h"
 #include "jobs/jobs.h"

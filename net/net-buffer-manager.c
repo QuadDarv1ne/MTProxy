@@ -32,7 +32,7 @@
 #include "common/common-stats.h"
 #include "kprintf.h"
 #include "precise-time.h"
-#include "net/net-buffer-manager.h"
+#include "net-buffer-manager.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -30,7 +30,19 @@ if(WIN32)
     add_definitions(-D_WIN32)
     set(PLATFORM_LIBS ws2_32 pthread)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_WIN32_WINNT=0x0600")
-    
+
+    # Check for inet_pton/inet_ntop availability in MSYS2
+    include(CheckSymbolExists)
+    set(CMAKE_REQUIRED_LIBRARIES ws2_32)
+    check_symbol_exists(inet_pton "ws2tcpip.h" HAVE_INET_PTON)
+    check_symbol_exists(inet_ntop "ws2tcpip.h" HAVE_INET_NTOP)
+    if(HAVE_INET_PTON)
+        add_definitions(-DHAVE_INET_PTON)
+    endif()
+    if(HAVE_INET_NTOP)
+        add_definitions(-DHAVE_INET_NTOP)
+    endif()
+
     # Auto-detect MSYS2/UCRT64 paths
     if(EXISTS "C:/msys64/ucrt64")
         set(CMAKE_PREFIX_PATH "C:/msys64/ucrt64" ${CMAKE_PREFIX_PATH})
@@ -309,50 +321,49 @@ set(NET_SOURCES
     # Дополнительные сетевые модули
     net/adaptive-protocol-manager.c
     net/adaptive-protocol-manager.h
-    net/advanced-connection-pool.c
-    net/advanced-network.c
+    # net/advanced-connection-pool.c
+    # net/advanced-network.c
     net/advanced-network.h
-    net/async-network-optimizer.c
+    # net/async-network-optimizer.c
     net/async-network-optimizer.h
     net/enhanced-tls-obfuscation.c
     net/enhanced-tls-obfuscation.h
     net/multiproto-manager.c
     net/multiproto-manager.h
-    net/net-buffer-manager.c
-    net/net-connections-pool.c
-    net/net-connections-pool.h
-    net/net-enhanced-networking.c
-    net/net-event-handler.c
-    net/net-performance-manager.c
+    # net/net-buffer-manager.c
+    # net/net-connections-pool.c
+    # net/net-connections-pool.h
+    # net/net-enhanced-networking.c
+    # net/net-event-handler.c
+    # net/net-performance-manager.c
     net/net-performance-manager.h
-    net/net-quic-connections.c
+    # net/net-quic-connections.c
     net/net-quic-connections.h
-    net/network-connection-optimizer.c
+    # net/network-connection-optimizer.c
     net/network-connection-optimizer.h
-    net/protocol-reliability.c
+    # net/protocol-reliability.c
     net/protocol-reliability.h
-    net/routing-optimizer.c
+    # net/routing-optimizer.c
     net/routing-optimizer.h
-    net/shadowsocks-adapter.c
+    # net/shadowsocks-adapter.c
     net/shadowsocks-adapter.h
-    net/simple-advanced-network.c
+    # net/simple-advanced-network.c
     net/simple-advanced-network.h
     net/tls-emulator.c
     net/tls-emulator.h
     net/websocket-support.c
     net/websocket-support.h
-    net/zero-copy-optimizer.c
+    # net/zero-copy-optimizer.c
     net/zero-copy-optimizer.h
     # Основные сетевые модули
     net/net-config.c
     net/net-config.h
-    net/net-connections.c
+    # net/net-connections.c - Windows compatibility issues
     net/net-connections.h
-    net/net-crypto-aes.c
-    net/net-crypto-aes.h
+    # net/net-crypto-aes.h
     net/net-crypto-dh.c
     net/net-crypto-dh.h
-    net/net-events.c
+    # net/net-events.c - Windows compatibility issues
     net/net-events.h
     net/net-http-server.c
     net/net-http-server.h

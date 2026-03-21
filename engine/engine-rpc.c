@@ -107,7 +107,7 @@ void register_custom_op_cb (unsigned op, void (*func)(struct tl_in_state *tlio_i
   struct rpc_custom_op *O = malloc (sizeof (*O));
   O->op = op;
   O->func = func;
-  rpc_custom_op_tree = tree_insert_rpc_custom_op (rpc_custom_op_tree, O, lrand48 ());
+  rpc_custom_op_tree = tree_insert_rpc_custom_op (rpc_custom_op_tree, O, lrand48_j ());
 }
 
 static struct tl_act_extra *(*tl_parse_function)(struct tl_in_state *tlio_in, long long actor_id);
@@ -750,11 +750,11 @@ int query_job_run (job_t job, int fd, int generation) /* {{{ */  {
     tlf_query_header (IO, h);
   
     if (tlf_error (IO)) {
-      struct tl_out_state *OUT = tl_aio_init_store (q->src_type, &q->src_pid, h ? h->qid : 0);
-      if (OUT) {
-        tls_set_error_format (OUT, IO->errnum, "%s", IO->error);
-        tls_end_ext (OUT, RPC_REQ_RESULT);
-        tl_out_state_free (OUT);
+      struct tl_out_state *out_state = tl_aio_init_store (q->src_type, &q->src_pid, h ? h->qid : 0);
+      if (out_state) {
+        tls_set_error_format (out_state, IO->errnum, "%s", IO->error);
+        tls_end_ext (out_state, RPC_REQ_RESULT);
+        tl_out_state_free (out_state);
       }
       res = JOB_COMPLETED;
     } else {

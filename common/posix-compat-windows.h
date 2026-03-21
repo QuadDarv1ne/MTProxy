@@ -10,12 +10,12 @@
 
 #ifdef _WIN32
 
+#include <winsock2.h>
 #include <windows.h>
 #include <process.h>
 #include <signal.h>
 #include <errno.h>
 #include <sys/types.h>
-#include <winsock2.h>
 #include <stdlib.h>
 #include <io.h>
 #include <string.h>
@@ -341,7 +341,8 @@ static inline void windows_posix_cleanup(void) {
 
 // htons, htonl, ntohs, ntohl are already in winsock2.h
 
-// inet_pton for Windows
+// inet_pton for Windows (only if not provided by system)
+#ifndef HAVE_INET_PTON
 static inline int inet_pton(int af, const char *src, void *dst) {
     struct sockaddr_storage ss;
     int size = sizeof(ss);
@@ -375,8 +376,10 @@ static inline int inet_pton(int af, const char *src, void *dst) {
     errno = EAFNOSUPPORT;
     return -1;
 }
+#endif
 
-// inet_ntop for Windows
+// inet_ntop for Windows (only if not provided by system)
+#ifndef HAVE_INET_NTOP
 static inline const char *inet_ntop(int af, const void *src, char *dst, socklen_t size) {
     struct sockaddr_storage ss;
     unsigned long ssize = sizeof(ss);
@@ -402,6 +405,8 @@ static inline const char *inet_ntop(int af, const void *src, char *dst, socklen_
 
     return dst;
 }
+
+#endif // HAVE_INET_NTOP
 
 #endif // _ARPA_INET_H_
 

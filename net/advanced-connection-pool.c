@@ -31,7 +31,6 @@
 #include "net-connections.h"
 #include "net-rpc-targets.h"
 #include "net-tcp-rpc-client.h"
-#include "mtproto/mtproto-proxy.h"
 #include "vv/vv-tree.h"
 #include "common/mp-queue.h"
 #include "common/common-stats.h"

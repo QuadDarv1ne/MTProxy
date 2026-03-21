@@ -30,6 +30,7 @@
 
 #ifdef _WIN32
     // Windows: define struct iovec manually
+    #include <io.h>
     #ifndef _SSIZE_T_DEFINED
         typedef ptrdiff_t ssize_t;
         #define _SSIZE_T_DEFINED
@@ -38,6 +39,31 @@
         void *iov_base;
         size_t iov_len;
     };
+    
+    // writev/readv emulation for Windows
+    static inline int writev(int fd, const struct iovec *iov, int iovcnt) {
+        int total = 0;
+        for (int i = 0; i < iovcnt; i++) {
+            if (iov[i].iov_len > 0) {
+                int written = _write(fd, iov[i].iov_base, (unsigned int)iov[i].iov_len);
+                if (written < 0) return -1;
+                total += written;
+            }
+        }
+        return total;
+    }
+    
+    static inline int readv(int fd, const struct iovec *iov, int iovcnt) {
+        int total = 0;
+        for (int i = 0; i < iovcnt; i++) {
+            if (iov[i].iov_len > 0) {
+                int rd = _read(fd, iov[i].iov_base, (unsigned int)iov[i].iov_len);
+                if (rd < 0) return -1;
+                total += rd;
+            }
+        }
+        return total;
+    }
 #else
     #include <sys/uio.h>
 #endif

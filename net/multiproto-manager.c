@@ -14,10 +14,7 @@
 typedef __SIZE_TYPE__ size_t;
 #endif
 
-#ifndef _TIME_T
-#define _TIME_T
-typedef long time_t;
-#endif
+// time_t is already defined in system headers on Windows
 
 // Define basic functions if not available
 #ifndef __STRING_H_

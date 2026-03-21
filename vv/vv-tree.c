@@ -578,9 +578,9 @@ TREE_PREFIX int SUFFIX(tree_count_,TREE_NAME) (TREE_NODE_TYPE *T) {
 TREE_PREFIX TREE_NODE_TYPE *SUFFIX (tree_alloc_, TREE_NAME) (X_TYPE x, Y_TYPE y) {
   TREE_NODE_TYPE *T;
   #ifndef TREE_MALLOC
-    T = calloc (1, sizeof (*T));
+    T = (TREE_NODE_TYPE *)calloc (1, sizeof (*T));
   #else
-    T = TREE_MALLOC (sizeof (*T));
+    T = (TREE_NODE_TYPE *)TREE_MALLOC (sizeof (*T));
   #endif
   T->x = x;
   T->y = y;

@@ -30,8 +30,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _WIN32
+#include <io.h>
+#include "net/net-msg.h"  // For struct iovec and writev/readv on Windows
+#else
 #include <unistd.h>
 #include <sys/uio.h>
+#endif
 
 #include "sha1.h"
 #include "kprintf.h"
