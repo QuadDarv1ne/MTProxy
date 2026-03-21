@@ -136,8 +136,10 @@ int config_manager_init(const char *config_file_path) {
                 config_file_path,
                 sizeof(global_config_ctx.config_file_path) - 1);
     } else {
-        strcpy(global_config_ctx.config_file_path, "/etc/mtproxy.conf");
+        strncpy(global_config_ctx.config_file_path, "/etc/mtproxy.conf",
+                sizeof(global_config_ctx.config_file_path) - 1);
     }
+    global_config_ctx.config_file_path[sizeof(global_config_ctx.config_file_path) - 1] = '\0';
 
     global_config_ctx.auto_reload_enabled = 1;
     global_config_ctx.validation_enabled = 1;

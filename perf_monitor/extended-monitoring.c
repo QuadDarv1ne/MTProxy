@@ -51,7 +51,9 @@ extended_monitoring_t* monitoring_init(int max_metrics, int max_alerts, int even
     monitoring->exporters.enable_prometheus_export = 0;
     monitoring->exporters.prometheus_port = 9090;
     monitoring->exporters.enable_json_export = 1;
-    strcpy(monitoring->exporters.json_file_path, "/tmp/mtproxy_metrics.json");
+    strncpy(monitoring->exporters.json_file_path, "/tmp/mtproxy_metrics.json",
+            sizeof(monitoring->exporters.json_file_path) - 1);
+    monitoring->exporters.json_file_path[sizeof(monitoring->exporters.json_file_path) - 1] = '\0';
     
     monitoring->is_initialized = 1;
     monitoring->is_running = 0;

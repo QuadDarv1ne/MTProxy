@@ -109,7 +109,9 @@ int structured_logger_init(const char *log_file_path) {
         strncpy(global_logger_config.log_file_path, log_file_path, 
                 sizeof(global_logger_config.log_file_path) - 1);
     } else {
-        strcpy(global_logger_config.log_file_path, "/var/log/mtproxy.log");
+        strncpy(global_logger_config.log_file_path, "/var/log/mtproxy.log",
+                sizeof(global_logger_config.log_file_path) - 1);
+        global_logger_config.log_file_path[sizeof(global_logger_config.log_file_path) - 1] = '\0';
     }
     
     // Создание async buffer

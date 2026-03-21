@@ -74,7 +74,9 @@ int init_distributed_monitor(distributed_monitor_ctx_t* ctx, const char* cluster
     g_monitor_config.alert_threshold_throughput_bps = 1000000000ULL; // 1 Gbps
     g_monitor_config.max_offline_time_seconds = 120;
     g_monitor_config.auto_node_discovery = true;
-    strcpy(g_monitor_config.coordinator_ip, "127.0.0.1");
+    strncpy(g_monitor_config.coordinator_ip, "127.0.0.1",
+            sizeof(g_monitor_config.coordinator_ip) - 1);
+    g_monitor_config.coordinator_ip[sizeof(g_monitor_config.coordinator_ip) - 1] = '\0';
     g_monitor_config.coordinator_port = 8080;
     
     return 0;
@@ -245,21 +247,18 @@ int generate_alert(distributed_monitor_ctx_t* ctx, alert_severity_t severity,
     alert->alert_id = alert_id_counter++;
     alert->severity = severity;
     strncpy(alert->message, message, sizeof(alert->message) - 1);
+    alert->message[sizeof(alert->message) - 1] = '\0';
     if (source_node) {
         strncpy(alert->source_node, source_node, sizeof(alert->source_node) - 1);
+        alert->source_node[sizeof(alert->source_node) - 1] = '\0';
     } else {
-        strcpy(alert->source_node, "SYSTEM");
+        strncpy(alert->source_node, "SYSTEM", sizeof(alert->source_node) - 1);
+        alert->source_node[sizeof(alert->source_node) - 1] = '\0';
     }
     alert->timestamp = get_current_timestamp();
     alert->acknowledged = false;
-    
+
     ctx->alert_count++;
-    ctx->last_update = get_current_timestamp();
-    
-    // Call alert callback if registered
-    if (g_alert_callback) {
-        g_alert_callback(alert);
-    }
     
     return 0;
 }

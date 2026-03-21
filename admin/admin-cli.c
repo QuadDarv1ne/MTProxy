@@ -118,10 +118,11 @@ admin_command_t admin_cli_parse_command(const char *command_name) {
 // Инициализация CLI
 int admin_cli_init(admin_cli_context_t *ctx) {
     if (!ctx) return -1;
-    
+
     memset(ctx, 0, sizeof(admin_cli_context_t));
-    
-    strcpy(ctx->prompt, "mtproxy> ");
+
+    strncpy(ctx->prompt, "mtproxy> ", sizeof(ctx->prompt) - 1);
+    ctx->prompt[sizeof(ctx->prompt) - 1] = '\0';
     ctx->output_format = 0;
     ctx->verbose = 0;
     ctx->color_enabled = 1;
