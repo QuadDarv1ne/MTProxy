@@ -249,17 +249,39 @@ cache_manager_t* cache_manager_init(const cache_config_t *config) {
         }
 #endif
     }
-    
+
     // Глобальная блокировка
 #ifdef _WIN32
     cache->global_mutex = malloc(sizeof(CRITICAL_SECTION));
     if (cache->global_mutex) {
         InitializeCriticalSection((CRITICAL_SECTION*)cache->global_mutex);
+    } else {
+        for (int i = 0; i < cache->partition_count; i++) {
+            if (cache->partitions[i].buckets) free(cache->partitions[i].buckets);
+            if (cache->partitions[i].mutex) {
+                DeleteCriticalSection((CRITICAL_SECTION*)cache->partitions[i].mutex);
+                free(cache->partitions[i].mutex);
+            }
+        }
+        free(cache->partitions);
+        free(cache);
+        return NULL;
     }
 #else
     cache->global_mutex = malloc(sizeof(pthread_mutex_t));
     if (cache->global_mutex) {
         pthread_mutex_init((pthread_mutex_t*)cache->global_mutex, NULL);
+    } else {
+        for (int i = 0; i < cache->partition_count; i++) {
+            if (cache->partitions[i].buckets) free(cache->partitions[i].buckets);
+            if (cache->partitions[i].mutex) {
+                pthread_mutex_destroy((pthread_mutex_t*)cache->partitions[i].mutex);
+                free(cache->partitions[i].mutex);
+            }
+        }
+        free(cache->partitions);
+        free(cache);
+        return NULL;
     }
 #endif
     
