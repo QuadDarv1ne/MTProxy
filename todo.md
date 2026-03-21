@@ -117,15 +117,15 @@
 
 ---
 
-## 📝 Пометки по проекту (21 марта 2026, a4d8edc)
+## 📝 Пометки по проекту (21 марта 2026, e373a46)
 
 ### Архитектура
 - ✅ Модульная структура: 366 C/H файлов, 41 сетевой модуль, 82 файла в system/
 - ✅ Разделение ответственности: engine/, net/, security/, crypto/, mtproto/
 - ✅ POSIX-совместимость через posix-compat-windows.h для Windows (13 файлов исправлено)
 - ✅ FFI интеграция: shared library для Flutter/Dart (mobile_app/)
-- ✅ 279+ коммитов в истории проекта
-- ✅ Текущий коммит: a4d8edc (dev = master)
+- ✅ 281+ коммитов в истории проекта
+- ✅ Текущий коммит: e373a46 (dev = master)
 
 ### Критические компоненты
 - **config-manager**: горячая перезагрузка, валидация, история (1000 записей)
@@ -174,11 +174,11 @@
 ## 📋 Текущий статус
 
 ### Ветки
-- **dev**: ✅ a4d8edc — Windows compatibility improvements
-- **main/master**: ✅ a4d8edc — синхронизирована с dev
-- **origin/dev**: ✅ a4d8edc — отправлено
-- **origin/master**: ✅ a4d8edc — отправлено
-- **Статус**: ✅ Ветки идентичны (a4d8edc)
+- **dev**: ✅ e373a46 — todo.md updated
+- **main/master**: ✅ e373a46 — синхронизирована с dev
+- **origin/dev**: ⏳ требуется push
+- **origin/master**: ⏳ требуется push
+- **Статус**: ✅ Ветки идентичны (e373a46)
 
 ### Готовые модули к использованию
 | Модуль | Статус | Тесты | Документация |
@@ -598,19 +598,19 @@ mtproxy-0.02 compiled at Mar 19 2026 20:08:46 by gcc 13.3.0 64-bit
 | **Собранных бинарников** | mtproto-proxy (536 KB) ✅, mtproxy-admin.exe ✅ |
 | **Тестов** | 51 ✅ (100% пройдено) |
 | **TODO/FIXME отметок** | 17 (http3-quic.c stub) |
-| **Исправлений Windows** | 16 файлов ✅ (14 Windows + 2 заголовки) |
+| **Исправлений Windows** | 13 файлов ✅ (a4d8edc) |
 | **Shared library** | ✅ Готово (BUILD_SHARED_LIB) |
 | **Mobile app** | ✅ Flutter/Dart (mobile_app/, 40+ файлов) |
 | **CI/CD** | ✅ GitHub Actions (5 платформ) |
-| **Последняя сборка** | mtproxy-0.02, gcc 13.3.0, commit b98fed5 |
+| **Последняя сборка** | kdb_common + kdb_crypto (e373a46) |
 
 ---
 
-*Последнее обновление: 21 марта 2026 г. (a4d8edc — Windows compatibility improvements)*
+*Последнее обновление: 21 марта 2026 г. (e373a46 — todo.md updated)*
 
 ---
 
-## 🪟 Windows Build Status (21 марта 2026 — a4d8edc)
+## 🪟 Windows Build Status (21 марта 2026 — e373a46)
 
 ### Исправления совместимости (13 файлов) — ✅ Выполнено
 - [x] **CMakeLists.txt**: Temporarily disabled problematic modules for Windows build
@@ -627,7 +627,7 @@ mtproxy-0.02 compiled at Mar 19 2026 20:08:46 by gcc 13.3.0 64-bit
 - [x] **net/net-connections.c**: Added Windows socket compatibility headers
 - [x] **net/net-msg.c**: Added Windows sys/uio.h compatibility
 
-### Статус сборки Windows (a4d8edc)
+### Статус сборки Windows (e373a46)
 | Компонент | Статус | Примечание |
 |-----------|--------|------------|
 | **kdb_crypto** | ✅ Собирается | Статическая библиотека |
