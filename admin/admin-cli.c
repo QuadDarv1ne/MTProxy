@@ -67,27 +67,28 @@ static const struct {
 // Токенизация строки
 char** admin_cli_tokenize(const char *command_line, int *argc) {
     if (!command_line || !argc) return NULL;
-    
+
     char *line = strdup(command_line);
     if (!line) return NULL;
-    
+
     char **tokens = malloc(64 * sizeof(char*));
     if (!tokens) {
         free(line);
         return NULL;
     }
-    
+
     int count = 0;
-    char *token = strtok(line, " \t\n");
-    
+    char *saveptr = NULL;
+    char *token = strtok_r(line, " \t\n", &saveptr);
+
     while (token && count < 63) {
         tokens[count++] = strdup(token);
-        token = strtok(NULL, " \t\n");
+        token = strtok_r(NULL, " \t\n", &saveptr);
     }
-    
+
     tokens[count] = NULL;
     *argc = count;
-    
+
     free(line);
     return tokens;
 }
