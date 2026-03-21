@@ -603,6 +603,72 @@ mtproxy-0.02 compiled at Mar 19 2026 20:08:46 by gcc 13.3.0 64-bit
 
 ---
 
+## 🪟 Windows Build Status (21 марта 2026)
+
+### Исправления совместимости (12 файлов)
+- [x] **posix-compat-windows.h**: Fixed inet_pton/inet_ntop guards (HAVE_INET_PTON/HAVE_INET_NTOP)
+- [x] **posix-compat-windows.h**: Fixed _ARPA_INET_H_ include guard structure
+- [x] **net-msg.h**: Added writev/readv emulation for Windows
+- [x] **net/http3-quic.h**: Added winsock2.h, ws2tcpip.h headers
+- [x] **engine/engine-rpc.c**: Fixed lrand48() → lrand48_j(), renamed OUT variable
+- [x] **vv/vv-tree.c**: Added explicit type casts for TREE_MALLOC
+- [x] **net/advanced-connection-pool.c**: Removed non-existent mtproto-proxy.h include
+- [x] **net/enhanced-tls-obfuscation.c**: Added stddef.h, string.h, stdlib.h
+- [x] **net/multiproto-manager.c**: Removed conflicting time_t typedef
+- [x] **net/net-buffer-manager.c**: Fixed include path
+- [x] **net/net-connections.c**: Added Windows socket compatibility headers
+- [x] **net/net-msg.c**: Added Windows sys/uio.h compatibility
+
+### Статус сборки Windows
+| Компонент | Статус | Примечание |
+|-----------|--------|------------|
+| **kdb_crypto** | ✅ Собирается | Статическая библиотека |
+| **kdb_common** | ✅ Собирается | Статическая библиотека |
+| **mtproto-proxy** | ⏳ В процессе | Требует отключения Unix-модулей |
+| **mtproxy-admin** | ⏳ В процессе | Зависит от основных модулей |
+| **libmtproxy (shared)** | ⏳ В процессе | BUILD_SHARED_LIB |
+
+### Отключённые модули (Windows compatibility)
+- net/net-connections.c — Unix socket API (epoll, TCP_WINDOW_CLAMP)
+- net/net-crypto-aes.c — Unix-specific calls (O_NONBLOCK, srand48)
+- net/net-events.c — arpa/inet.h
+- net/advanced-network.c — malloc/free без заголовков
+- net/async-network-optimizer.c — size_t без stddef.h
+- net/enhanced-tls-obfuscation.c — исправлено, собирается
+- net/zero-copy-optimizer.c — Unix socket API
+
+### Известные проблемы Windows
+1. **fork() не поддерживается** — только single-worker mode (-M 1)
+2. **epoll отсутствует** — используется select/WSAPoll эмуляция
+3. **TCP_WINDOW_CLAMP** — Windows не поддерживает эту опцию
+4. **/dev/random** — заменяется на CryptGenRandom
+5. **srand48/lrand48** — эмулируется через rand()/srand
+
+### Рекомендации для Windows
+```bash
+# Использовать CMake с MSYS2/UCRT64
+cmake -B build-windows-x64 -G "MinGW Makefiles"
+cmake --build build-windows-x64 --config Release
+
+# Или PowerShell скрипт
+./build-scripts/build-native-windows.ps1
+
+# Запуск в single-worker режиме
+./build-windows-x64/bin/mtproto-proxy.exe -M 1 -p 8888 -S <secret>
+```
+
+### Следующие шаги для Windows
+- [ ] Исправить net-crypto-aes.c (O_NONBLOCK, srand48)
+- [ ] Исправить net-events.c (arpa/inet.h)
+- [ ] Исправить zero-copy-optimizer.c (epoll эмуляция)
+- [ ] Протестировать mtproto-proxy.exe
+- [ ] Протестировать mtproxy-admin.exe
+- [ ] Добавить Windows CI workflow
+
+---
+
+---
+
 ## 🆕 Реализовано (Q3 2026 — 20 марта)
 
 ### gRPC и REST API
