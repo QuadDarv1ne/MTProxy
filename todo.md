@@ -117,15 +117,15 @@
 
 ---
 
-## 📝 Пометки по проекту (21 марта 2026, 5d1ba17)
+## 📝 Пометки по проекту (21 марта 2026, a9decd6)
 
 ### Архитектура
 - ✅ Модульная структура: 366 C/H файлов (186 .c + 180 .h), 41 сетевой модуль, 82 файла в system/
 - ✅ Разделение ответственности: engine/, net/, security/, crypto/, mtproto/
 - ✅ POSIX-совместимость через posix-compat-windows.h для Windows (16 файлов исправлено)
 - ✅ FFI интеграция: shared library для Flutter/Dart (mobile_app/)
-- ✅ 284+ коммитов в истории проекта
-- ✅ Текущий коммит: 5d1ba17 (dev = master)
+- ✅ 286+ коммитов в истории проекта
+- ✅ Текущий коммит: a9decd6 (dev = master)
 
 ### Критические компоненты
 - **config-manager**: горячая перезагрузка, валидация, история (1000 записей)
@@ -167,18 +167,18 @@
 - [x] admin-cli: расширенные команды — ✅ улучшенная обработка ошибок
 - [x] HTTP/3 (QUIC): реализация TODO в http3-quic.c (17 отметок) — ✅ stub готов
 - [x] Исправление warning'ов компиляции — ✅ memory-optimization.c, memory-manager.c
-- [x] Windows совместимость: 16 файлов исправлено — ✅ 5d1ba17
+- [x] Windows совместимость: 16 файлов исправлено — ✅ a9decd6
 
 ---
 
 ## 📋 Текущий статус
 
 ### Ветки
-- **dev**: ✅ 5d1ba17 — docs: обновлён todo.md — статус на 15e7cdf
-- **main/master**: ✅ 5d1ba17 — синхронизирована с dev
-- **origin/dev**: ✅ 5d1ba17 — синхронизирована
-- **origin/master**: ✅ 5d1ba17 — синхронизирована
-- **Статус**: ✅ Ветки идентичны (5d1ba17)
+- **dev**: ✅ a9decd6 — docs: обновлён todo.md — актуальный статус на 5d1ba17
+- **main/master**: ✅ a9decd6 — синхронизирована с dev
+- **origin/dev**: ✅ a9decd6 — синхронизирована
+- **origin/master**: ✅ a9decd6 — синхронизирована
+- **Статус**: ✅ Ветки идентичны (a9decd6)
 - **Рабочие изменения**: нет (чистое дерево)
 
 ### Готовые модули к использованию
@@ -599,19 +599,19 @@ mtproxy-0.02 compiled at Mar 19 2026 20:08:46 by gcc 13.3.0 64-bit
 | **Собранных бинарников** | mtproto-proxy (536 KB) ✅, mtproxy-admin.exe ✅ |
 | **Тестов** | 51 ✅ (100% пройдено) |
 | **TODO/FIXME отметок** | 17 (http3-quic.c stub) |
-| **Исправлений Windows** | 16 файлов ✅ (5d1ba17) |
+| **Исправлений Windows** | 16 файлов ✅ (a9decd6) |
 | **Shared library** | ✅ Готово (BUILD_SHARED_LIB) |
 | **Mobile app** | ✅ Flutter/Dart (mobile_app/, 40+ файлов) |
 | **CI/CD** | ✅ GitHub Actions (5 платформ) |
-| **Последняя сборка** | kdb_common + kdb_crypto (5d1ba17) |
+| **Последняя сборка** | kdb_common + kdb_crypto (a9decd6) |
 
 ---
 
-*Последнее обновление: 21 марта 2026 г. (5d1ba17 — todo.md updated)*
+*Последнее обновление: 21 марта 2026 г. (a9decd6 — todo.md updated)*
 
 ---
 
-## 🪟 Windows Build Status (21 марта 2026 — 5d1ba17)
+## 🪟 Windows Build Status (21 марта 2026 — a9decd6)
 
 ### Исправления совместимости (16 файлов) — ✅ Выполнено
 - [x] **CMakeLists.txt**: Temporarily disabled problematic modules for Windows build
@@ -627,11 +627,11 @@ mtproxy-0.02 compiled at Mar 19 2026 20:08:46 by gcc 13.3.0 64-bit
 - [x] **net/net-buffer-manager.c**: Fixed include path (net/net-buffer-manager.h → net-buffer-manager.h)
 - [x] **net/net-connections.c**: Added Windows socket compatibility headers
 - [x] **net/net-msg.c**: Added Windows sys/uio.h compatibility
-- [x] **common/posix-compat-windows.h** (5d1ba17): Improved stub functions (connections_prepare_stat, crypto_aes_prepare_stat, main_secret)
-- [x] **mtproto/mtproto-proxy.c** (5d1ba17): Added 12 Windows stub functions for excluded modules
-- [x] **CMakeLists.txt** (5d1ba17): Excluded mtproxy-fixes-simple.h on Windows (type conflicts)
+- [x] **common/posix-compat-windows.h** (a9decd6): Improved stub functions (connections_prepare_stat, crypto_aes_prepare_stat, main_secret)
+- [x] **mtproto/mtproto-proxy.c** (a9decd6): Added 12 Windows stub functions for excluded modules
+- [x] **CMakeLists.txt** (a9decd6): Excluded mtproxy-fixes-simple.h on Windows (type conflicts)
 
-### Статус сборки Windows (5d1ba17)
+### Статус сборки Windows (a9decd6)
 | Компонент | Статус | Примечание |
 |-----------|--------|------------|
 | **kdb_crypto** | ✅ Собирается | Статическая библиотека |
@@ -897,6 +897,7 @@ git checkout master && git merge dev && git push origin master
 ### Последние исправления (коммиты)
 | Коммит | Изменение |
 |--------|-----------|
+| **a9decd6** | docs: обновлён todo.md — актуальный статус на 5d1ba17 |
 | **5d1ba17** | docs: обновлён todo.md — статус на 15e7cdf (Windows build improvements) |
 | **15e7cdf** | fix: Windows build compatibility improvements (posix-compat stubs) |
 | **0a724e2** | fix: Windows compatibility for net/ modules (posix-compat headers) |
