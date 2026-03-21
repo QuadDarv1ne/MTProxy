@@ -117,15 +117,15 @@
 
 ---
 
-## 📝 Пометки по проекту (21 марта 2026, 15e7cdf)
+## 📝 Пометки по проекту (21 марта 2026, 5d1ba17)
 
 ### Архитектура
-- ✅ Модульная структура: 366 C/H файлов, 41 сетевой модуль, 82 файла в system/
+- ✅ Модульная структура: 366 C/H файлов (186 .c + 180 .h), 41 сетевой модуль, 82 файла в system/
 - ✅ Разделение ответственности: engine/, net/, security/, crypto/, mtproto/
 - ✅ POSIX-совместимость через posix-compat-windows.h для Windows (16 файлов исправлено)
 - ✅ FFI интеграция: shared library для Flutter/Dart (mobile_app/)
-- ✅ 283+ коммитов в истории проекта
-- ✅ Текущий коммит: 15e7cdf (dev = master)
+- ✅ 284+ коммитов в истории проекта
+- ✅ Текущий коммит: 5d1ba17 (dev = master)
 
 ### Критические компоненты
 - **config-manager**: горячая перезагрузка, валидация, история (1000 записей)
@@ -167,19 +167,19 @@
 - [x] admin-cli: расширенные команды — ✅ улучшенная обработка ошибок
 - [x] HTTP/3 (QUIC): реализация TODO в http3-quic.c (17 отметок) — ✅ stub готов
 - [x] Исправление warning'ов компиляции — ✅ memory-optimization.c, memory-manager.c
-- [x] Windows совместимость: 16 файлов исправлено — ✅ 15e7cdf
+- [x] Windows совместимость: 16 файлов исправлено — ✅ 5d1ba17
 
 ---
 
 ## 📋 Текущий статус
 
 ### Ветки
-- **dev**: ✅ 15e7cdf — Windows build compatibility improvements
-- **main/master**: ✅ 15e7cdf — синхронизирована с dev
-- **origin/dev**: ⏳ требуется push
-- **origin/master**: ⏳ требуется push
-- **Статус**: ✅ Ветки идентичны (15e7cdf)
-- **Рабочие изменения**: CMakeLists.txt, posix-compat-windows.h, mtproto-proxy.c
+- **dev**: ✅ 5d1ba17 — docs: обновлён todo.md — статус на 15e7cdf
+- **main/master**: ✅ 5d1ba17 — синхронизирована с dev
+- **origin/dev**: ✅ 5d1ba17 — синхронизирована
+- **origin/master**: ✅ 5d1ba17 — синхронизирована
+- **Статус**: ✅ Ветки идентичны (5d1ba17)
+- **Рабочие изменения**: нет (чистое дерево)
 
 ### Готовые модули к использованию
 | Модуль | Статус | Тесты | Документация |
@@ -595,23 +595,23 @@ mtproxy-0.02 compiled at Mar 19 2026 20:08:46 by gcc 13.3.0 64-bit
 | **Модулей безопасности** | 6 + security_enhanced |
 | **Сетевых модулей** | 41 |
 | **Документов** | 33 в docs/, security/ и корневой |
-| **C-файлов в проекте** | 361 (C/H) |
+| **C-файлов в проекте** | 366 (186 .c + 180 .h) |
 | **Собранных бинарников** | mtproto-proxy (536 KB) ✅, mtproxy-admin.exe ✅ |
 | **Тестов** | 51 ✅ (100% пройдено) |
 | **TODO/FIXME отметок** | 17 (http3-quic.c stub) |
-| **Исправлений Windows** | 16 файлов ✅ (15e7cdf) |
+| **Исправлений Windows** | 16 файлов ✅ (5d1ba17) |
 | **Shared library** | ✅ Готово (BUILD_SHARED_LIB) |
 | **Mobile app** | ✅ Flutter/Dart (mobile_app/, 40+ файлов) |
 | **CI/CD** | ✅ GitHub Actions (5 платформ) |
-| **Последняя сборка** | kdb_common + kdb_crypto (15e7cdf) |
+| **Последняя сборка** | kdb_common + kdb_crypto (5d1ba17) |
 
 ---
 
-*Последнее обновление: 21 марта 2026 г. (15e7cdf — Windows build compatibility improvements)*
+*Последнее обновление: 21 марта 2026 г. (5d1ba17 — todo.md updated)*
 
 ---
 
-## 🪟 Windows Build Status (21 марта 2026 — 15e7cdf)
+## 🪟 Windows Build Status (21 марта 2026 — 5d1ba17)
 
 ### Исправления совместимости (16 файлов) — ✅ Выполнено
 - [x] **CMakeLists.txt**: Temporarily disabled problematic modules for Windows build
@@ -627,11 +627,11 @@ mtproxy-0.02 compiled at Mar 19 2026 20:08:46 by gcc 13.3.0 64-bit
 - [x] **net/net-buffer-manager.c**: Fixed include path (net/net-buffer-manager.h → net-buffer-manager.h)
 - [x] **net/net-connections.c**: Added Windows socket compatibility headers
 - [x] **net/net-msg.c**: Added Windows sys/uio.h compatibility
-- [x] **common/posix-compat-windows.h** (15e7cdf): Improved stub functions (connections_prepare_stat, crypto_aes_prepare_stat, main_secret)
-- [x] **mtproto/mtproto-proxy.c** (15e7cdf): Added 12 Windows stub functions for excluded modules
-- [x] **CMakeLists.txt** (15e7cdf): Excluded mtproxy-fixes-simple.h on Windows (type conflicts)
+- [x] **common/posix-compat-windows.h** (5d1ba17): Improved stub functions (connections_prepare_stat, crypto_aes_prepare_stat, main_secret)
+- [x] **mtproto/mtproto-proxy.c** (5d1ba17): Added 12 Windows stub functions for excluded modules
+- [x] **CMakeLists.txt** (5d1ba17): Excluded mtproxy-fixes-simple.h on Windows (type conflicts)
 
-### Статус сборки Windows (15e7cdf)
+### Статус сборки Windows (5d1ba17)
 | Компонент | Статус | Примечание |
 |-----------|--------|------------|
 | **kdb_crypto** | ✅ Собирается | Статическая библиотека |
@@ -897,6 +897,7 @@ git checkout master && git merge dev && git push origin master
 ### Последние исправления (коммиты)
 | Коммит | Изменение |
 |--------|-----------|
+| **5d1ba17** | docs: обновлён todo.md — статус на 15e7cdf (Windows build improvements) |
 | **15e7cdf** | fix: Windows build compatibility improvements (posix-compat stubs) |
 | **0a724e2** | fix: Windows compatibility for net/ modules (posix-compat headers) |
 | **799506f** | docs: обновлён todo.md — статус на 57140b1 (исправления безопасности, синхронизация) |
@@ -905,49 +906,5 @@ git checkout master && git merge dev && git push origin master
 | **fda46bb** | fix: проверка malloc в cache_get — возврат CACHE_ERROR при неудаче |
 | **9c7ca28** | security: замена sprintf на snprintf в admin-cli.c |
 | **7661200** | fix: проверка fwrite/fread в http3_session_save/load |
-
----
-
-## 🔧 Текущие изменения (21 марта 2026 — рабочие изменения)
-
-### Несохранённые изменения (working directory)
-| Файл | Изменение | Статус |
-|------|-----------|--------|
-| **CMakeLists.txt** | Windows: исключён mtproxy-fixes-simple.h из SECURITY_SOURCES | ⏳ Не закоммичено |
-| **common/posix-compat-windows.h** | Улучшены stub-функции: correct signatures для connections/crypto_prepare_stat, aes_secret_t для main_secret | ⏳ Не закоммичено |
-| **mtproto/mtproto-proxy.c** | Добавлены Windows stub-функции для excluded modules (connection_*, server_socket, etc.) | ⏳ Не закоммичено |
-
-### Детали изменений
-
-#### CMakeLists.txt (строка 436)
-```cmake
-# Windows-specific: Exclude mtproxy-fixes-simple.h due to type conflicts
-if(WIN32)
-    list(REMOVE_ITEM SECURITY_SOURCES "common/mtproxy-fixes-simple.h")
-endif()
-```
-**Причина**: Избежание конфликтов типов при сборке на Windows (mtproxy-fixes-simple.h переопределяет типы, которые уже есть в Windows SDK)
-
-#### posix-compat-windows.h
-- **Добавлено**: `#include <stdio.h>` для совместимости
-- **Исправлено**: `connections_prepare_stat` и `crypto_aes_prepare_stat` — правильные сигнатуры с `stats_buffer_t *`
-- **Исправлено**: `main_secret` — тип `aes_secret_t` вместо `unsigned char[64]` (требует net-crypto-aes.h)
-- **Исправлено**: Stub для `main_secret` — инициализация `{0, 0, {0}}` для структуры aes_secret_t
-
-#### mtproto-proxy.c
-- **Добавлено**: 12 Windows stub-функций для excluded modules:
-  - `connection_get_by_fd_generation`, `fail_connection`
-  - `set_connection_timeout`, `clear_connection_timeout`
-  - `create_target`, `destroy_target`
-  - `fetch_connections_stat`, `fetch_aes_crypto_stat`
-  - `init_listening_tcpv6_connection`, `server_socket`
-
-**Причина**: Модули excluded из Windows сборки (net/net-connections.c, net/net-crypto-aes.c) требуют заглушек для линковки
-
-### Следующие шаги
-1. [ ] Закоммитить изменения в dev
-2. [ ] Протестировать Windows сборку
-3. [ ] Синхронизировать ветки (dev → main)
-4. [ ] Push в origin
 
 ---
