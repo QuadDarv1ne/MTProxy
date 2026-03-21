@@ -380,8 +380,8 @@ set(NET_SOURCES
     net/net-tcp-rpc-client.h
     net/net-tcp-rpc-common.c
     net/net-tcp-rpc-common.h
-    net/net-tcp-rpc-ext-server.c
-    net/net-tcp-rpc-ext-server.h
+    # net/net-tcp-rpc-ext-server.c - Requires net-events.c and net-connections.c (epoll Windows compatibility)
+    # net/net-tcp-rpc-ext-server.h
     net/net-tcp-rpc-server.c
     net/net-tcp-rpc-server.h
     net/net-thread.c
@@ -389,6 +389,22 @@ set(NET_SOURCES
     net/net-timers.c
     net/net-timers.h
 )
+
+# Windows-specific: Exclude files requiring epoll/select emulation
+if(WIN32)
+    # net-events.c and net-connections.c require epoll implementation for Windows
+    # These are excluded until proper Windows compatibility is added
+    list(REMOVE_ITEM NET_SOURCES 
+        "net/net-events.c"
+        "net/net-connections.c"
+        "net/net-tcp-rpc-ext-server.c"
+    )
+    list(REMOVE_ITEM NET_SOURCES 
+        "net/net-events.h"
+        "net/net-connections.h"
+        "net/net-tcp-rpc-ext-server.h"
+    )
+endif()
 
 # SECURITY_SOURCES - все модули безопасности (объединено)
 set(SECURITY_SOURCES

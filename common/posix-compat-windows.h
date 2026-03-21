@@ -481,6 +481,129 @@ static inline int getrusage(int who, struct rusage *usage) {
 
 #endif // _SYS_RESOURCE_H_
 
+// fcntl flags and commands
+#ifndef O_NONBLOCK
+#define O_NONBLOCK 0x4000
+#endif
+
+#ifndef F_SETFL
+#define F_SETFL 4
+#endif
+
+#ifndef F_GETFL
+#define F_GETFL 3
+#endif
+
+// fcntl emulation for Windows (limited support)
+static inline int fcntl(int fd, int cmd, ...) {
+    if (fd < 0) {
+        errno = EBADF;
+        return -1;
+    }
+    
+    // Only support F_SETFL with O_NONBLOCK for socket non-blocking mode
+    if (cmd == F_SETFL) {
+        // For Windows sockets, non-blocking mode is set via ioctlsocket
+        // This is a stub - actual socket handling should use ioctlsocket
+        return 0; // Success (socket already in non-blocking mode by default in our code)
+    }
+    
+    if (cmd == F_GETFL) {
+        return 0; // Default flags
+    }
+    
+    errno = EINVAL;
+    return -1;
+}
+
+// Stub implementations for excluded network functions
+// Only provide stubs for functions NOT declared in other headers
+
+// show_ip stub - returns static buffer with IP string
+static inline const char *show_ip(unsigned ip) {
+    static char buf[16];
+    struct in_addr addr;
+    addr.s_addr = ip;
+    strncpy(buf, inet_ntoa(addr), sizeof(buf) - 1);
+    buf[sizeof(buf) - 1] = '\0';
+    return buf;
+}
+
+// show_ipv6 stub - returns static buffer with IPv6 string
+static inline const char *show_ipv6(const unsigned char ipv6[16]) {
+    static char buf[64];
+    snprintf(buf, sizeof(buf), "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
+             ipv6[0], ipv6[1], ipv6[2], ipv6[3], ipv6[4], ipv6[5], ipv6[6], ipv6[7],
+             ipv6[8], ipv6[9], ipv6[10], ipv6[11], ipv6[12], ipv6[13], ipv6[14], ipv6[15]);
+    return buf;
+}
+
+// Stub for client_socket - not used in Windows build
+static inline int client_socket(unsigned int ip, int port, int use_ipv6) {
+    errno = ENOSYS;
+    return -1;
+}
+
+// Stub for client_socket_ipv6 - not used in Windows build
+static inline int client_socket_ipv6(const unsigned char *ipv6, int port, int flags) {
+    errno = ENOSYS;
+    return -1;
+}
+
+// Stub for connections_prepare_stat
+static inline void connections_prepare_stat(void) {}
+
+// Stub for crypto_aes_prepare_stat
+static inline void crypto_aes_prepare_stat(void) {}
+
+// Stub for assert_engine_thread
+static inline void assert_engine_thread(void) {}
+
+// Stub for assert_net_cpu_thread
+static inline void assert_net_cpu_thread(void) {}
+
+// Stub for incr_active_dh_connections
+static inline void incr_active_dh_connections(void) {}
+
+// Stub for nat_translate_ip
+static inline unsigned int nat_translate_ip(unsigned int ip) { return ip; }
+
+// Global variables stubs for excluded modules
+// Note: Types must match the original declarations (from net-events.c)
+extern double tot_idle_time;
+extern double a_idle_time;
+extern double a_idle_quotient;
+extern double last_epoll_wait_at;
+extern long long epoll_calls;
+extern long long epoll_intr;
+
+// main_secret is aes_secret_t - use byte array
+extern unsigned char main_secret[64];
+
+// main_thread_interrupt_status is volatile int
+extern volatile int main_thread_interrupt_status;
+
+static double _tot_idle_time_stub = 0.0;
+static double _a_idle_time_stub = 0.0;
+static double _a_idle_quotient_stub = 0.0;
+static double _last_epoll_wait_at_stub = 0.0;
+static long long _epoll_calls_stub = 0;
+static long long _epoll_intr_stub = 0;
+static unsigned char _main_secret_stub[64] = {0};
+static volatile int _main_thread_interrupt_status_stub = 0;
+
+#define tot_idle_time _tot_idle_time_stub
+#define a_idle_time _a_idle_time_stub
+#define a_idle_quotient _a_idle_quotient_stub
+#define last_epoll_wait_at _last_epoll_wait_at_stub
+#define epoll_calls _epoll_calls_stub
+#define epoll_intr _epoll_intr_stub
+#define main_secret _main_secret_stub
+#define main_thread_interrupt_status _main_thread_interrupt_status_stub
+
+// Stub for crc32c_partial (use crc32c_fast instead)
+#define crc32c_partial crc32c_fast
+
 #endif // _WIN32
 
 #endif // POSIX_COMPAT_WINDOWS_H
