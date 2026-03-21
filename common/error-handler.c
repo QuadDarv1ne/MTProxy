@@ -109,20 +109,24 @@ int error_handler_init(error_handler_context_t *ctx, const recovery_config_t *co
     
     ctx->enable_logging = 1;
     ctx->enable_correlation_tracking = 1;
-    
+
     // Инициализация блокировки
 #ifdef _WIN32
     ctx->mutex = malloc(sizeof(CRITICAL_SECTION));
     if (ctx->mutex) {
         InitializeCriticalSection((CRITICAL_SECTION*)ctx->mutex);
+    } else {
+        return -1;
     }
 #else
     ctx->mutex = malloc(sizeof(pthread_mutex_t));
     if (ctx->mutex) {
         pthread_mutex_init((pthread_mutex_t*)ctx->mutex, NULL);
+    } else {
+        return -1;
     }
 #endif
-    
+
     ctx->is_initialized = 1;
     
     vkprintf(1, "Error handler initialized\n");
