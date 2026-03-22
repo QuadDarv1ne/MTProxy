@@ -248,6 +248,9 @@ set(COMMON_SOURCES
     common/proc-stat.h
     common/resolver.c
     common/resolver.h
+    # Профили конфигурации
+    common/config-profiles.c
+    common/config-profiles.h
     common/rpc-const.h
     common/server-functions.c
     common/server-functions.h
@@ -358,6 +361,15 @@ set(NET_SOURCES
     # Статистика трафика
     net/traffic-stats.c
     net/traffic-stats.h
+    # DNS кэш
+    net/dns-cache.c
+    net/dns-cache.h
+    # SOCKS5
+    net/socks5.c
+    net/socks5.h
+    # WebSocket туннель
+    net/ws-tunnel.c
+    net/ws-tunnel.h
     # Основные сетевые модули
     net/net-config.c
     net/net-config.h
