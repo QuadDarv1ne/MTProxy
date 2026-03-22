@@ -551,6 +551,99 @@ static inline int client_socket_ipv6(const unsigned char *ipv6, int port, int fl
     return -1;
 }
 
+// /dev/random and /dev/urandom emulation for Windows
+// Uses CryptGenRandom for cryptographically secure random numbers
+#ifndef _CRYPTUIAPI_H_
+#include <wincrypt.h>
+#endif
+
+static inline int windows_get_random(void *buf, size_t len) {
+    HCRYPTPROV hCryptProv = 0;
+    BOOL result = FALSE;
+
+    if (len == 0) return 0;
+
+    // Acquire cryptographic context
+    if (!CryptAcquireContext(&hCryptProv, NULL, NULL, PROV_RSA_FULL,
+                            CRYPT_VERIFYCONTEXT | CRYPT_SILENT)) {
+        return -1;
+    }
+
+    // Generate random bytes
+    result = CryptGenRandom(hCryptProv, (DWORD)len, (BYTE *)buf);
+
+    // Release cryptographic context
+    CryptReleaseContext(hCryptProv, 0);
+
+    return result ? (int)len : -1;
+}
+
+// Stub for /dev/random file descriptor
+#define DEV_RANDOM_FD_MAGIC 0xDEVRANDOM
+#define DEV_URANDOM_FD_MAGIC 0xDEVURANDOM
+
+static inline int open_dev_random(const char *pathname, int flags) {
+    if (strcmp(pathname, "/dev/random") == 0 ||
+        strcmp(pathname, "/dev/urandom") == 0) {
+        // Return magic fd for random device
+        return strcmp(pathname, "/dev/random") == 0 ?
+               DEV_RANDOM_FD_MAGIC : DEV_URANDOM_FD_MAGIC;
+    }
+    errno = ENOENT;
+    return -1;
+}
+
+static inline int read_dev_random(int fd, void *buf, size_t count) {
+    if (fd == DEV_RANDOM_FD_MAGIC || fd == DEV_URANDOM_FD_MAGIC) {
+        return windows_get_random(buf, count);
+    }
+    errno = EBADF;
+    return -1;
+}
+
+static inline int close_dev_random(int fd) {
+    if (fd == DEV_RANDOM_FD_MAGIC || fd == DEV_URANDOM_FD_MAGIC) {
+        return 0;
+    }
+    errno = EBADF;
+    return -1;
+}
+
+// Redefine open/read/close for /dev/random on Windows
+#ifdef open
+#undef open
+#endif
+#ifdef read
+#undef read
+#endif
+#ifdef close
+#undef close
+#endif
+
+#define open(pathname, flags, ...) \
+    (strcmp((pathname), "/dev/random") == 0 || \
+     strcmp((pathname), "/dev/urandom") == 0 ? \
+     open_dev_random((pathname), (flags)) : \
+     _open((pathname), (flags), __VA_ARGS__))
+
+#define read(fd, buf, count) \
+    ((fd) == DEV_RANDOM_FD_MAGIC || (fd) == DEV_URANDOM_FD_MAGIC ? \
+     read_dev_random((fd), (buf), (count)) : \
+     _read((fd), (buf), (count)))
+
+#define close(fd) \
+    ((fd) == DEV_RANDOM_FD_MAGIC || (fd) == DEV_URANDOM_FD_MAGIC ? \
+     close_dev_random(fd) : \
+     _close(fd))
+
+// O_NONBLOCK for Windows (already defined in winsock2.h for sockets)
+#ifndef O_NONBLOCK
+#define O_NONBLOCK 0x0004
+#endif
+#ifndef O_RDONLY
+#define O_RDONLY _O_RDONLY
+#endif
+
 // Stub for connections_prepare_stat - correct signature
 typedef struct stats_buffer stats_buffer_t;
 static inline int connections_prepare_stat(stats_buffer_t *sb) { return 0; }

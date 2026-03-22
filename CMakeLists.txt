@@ -358,9 +358,8 @@ set(NET_SOURCES
     # Основные сетевые модули
     net/net-config.c
     net/net-config.h
-    # net/net-connections.c - Windows compatibility issues
-    net/net-connections.h
-    # net/net-crypto-aes.h
+    net/net-crypto-aes.c
+    net/net-crypto-aes.h
     net/net-crypto-dh.c
     net/net-crypto-dh.h
     # net/net-events.c - Windows compatibility issues

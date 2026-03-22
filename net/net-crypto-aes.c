@@ -34,6 +34,11 @@
 #include <time.h>
 #include <unistd.h>
 
+// Windows compatibility
+#ifdef _WIN32
+#include "common/posix-compat-windows.h"
+#endif
+
 // #include <openssl/aes.h>
 
 #include "kprintf.h"
