@@ -123,11 +123,15 @@ ${EXE}/mtproto-proxy:	${OBJ}/mtproto/mtproto-proxy.o ${OBJ}/mtproto/mtproto-conf
 ${EXE}/test-new-modules: ${OBJ}/testing/test_new_modules.o ${LIB}/libkdb.a
 	${CC} -o $@ $^ ${LIB}/libkdb.a ${LDFLAGS}
 
+${EXE}/test-traffic-stats: ${OBJ}/testing/test_traffic_stats.o ${OBJ}/net/traffic-stats.o
+	${CC} -o $@ $^ ${LDFLAGS}
+
 ${LIB}/libkdb.a: ${LIB_OBJS}
 	rm -f $@ && ar rcs $@ $^
 
-test: ${EXE}/test-new-modules
+test: ${EXE}/test-new-modules ${EXE}/test-traffic-stats
 	${EXE}/test-new-modules
+	${EXE}/test-traffic-stats
 
 clean:
 	rm -rf ${OBJ} ${DEP} ${EXE} || true

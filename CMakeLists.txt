@@ -355,6 +355,9 @@ set(NET_SOURCES
     net/websocket-support.h
     # net/zero-copy-optimizer.c
     net/zero-copy-optimizer.h
+    # Статистика трафика
+    net/traffic-stats.c
+    net/traffic-stats.h
     # Основные сетевые модули
     net/net-config.c
     net/net-config.h
@@ -691,6 +694,20 @@ set_target_properties(test-new-modules PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# Traffic stats test executable
+add_executable(test-traffic-stats
+    testing/test_traffic_stats.c
+    net/traffic-stats.c
+)
+
+target_link_libraries(test-traffic-stats
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-traffic-stats PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # FFI API test executable
 add_executable(test-ffi-api
     testing/test_ffi_api.c
@@ -776,7 +793,7 @@ set_target_properties(integration-tests PROPERTIES
 )
 
 # Installation rules
-install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-ffi-api test-performance test-admin-cli-integration cache-performance-test rate-limiter-highload-test integration-tests
+install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-ffi-api test-performance test-admin-cli-integration cache-performance-test rate-limiter-highload-test integration-tests
     RUNTIME DESTINATION bin
 )
 
