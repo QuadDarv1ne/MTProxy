@@ -99,15 +99,21 @@ int http3_server_start(http3_context_t* ctx, const char* host, uint16_t port) {
                 "Invalid arguments");
         return -1;
     }
-    
-    // TODO: Implement server startup
-    // 1. Create UDP socket
+
+    // Stub implementation: Initialize server state
+    // Production implementation would:
+    // 1. Create UDP socket with SO_REUSEADDR
     // 2. Bind to host:port
-    // 3. Initialize QUIC listener
-    // 4. Start accepting connections
-    
-    printf("[HTTP/3] Server starting on %s:%u\n", host, port);
-    
+    // 3. Initialize QUIC listener with TLS 1.3
+    // 4. Start accepting connections with ALPN "h3"
+
+    ctx->server_port = port;
+    strncpy(ctx->server_host, host, sizeof(ctx->server_host) - 1);
+    ctx->server_host[sizeof(ctx->server_host) - 1] = '\0';
+
+    printf("[HTTP/3] Server starting on %s:%u (ALPN: h3, UDP payload: %u)\n",
+           host, port, ctx->config.max_udp_payload_size);
+
     return 0;
 }
 
@@ -115,26 +121,46 @@ void http3_server_stop(http3_context_t* ctx) {
     if (!ctx) {
         return;
     }
-    
-    // TODO: Implement server shutdown
+
+    // Stub implementation: Cleanup server state
+    // Production implementation would:
     // 1. Stop accepting new connections
-    // 2. Close existing connections gracefully
+    // 2. Close existing connections gracefully (send GOAWAY)
     // 3. Close UDP socket
-    
-    printf("[HTTP/3] Server stopped\n");
+    // 4. Free allocated resources
+
+    printf("[HTTP/3] Server stopped (was listening on %s:%u)\n",
+           ctx->server_host, ctx->server_port);
+
+    ctx->server_port = 0;
+    ctx->server_host[0] = '\0';
 }
 
 int http3_server_process_datagram(http3_context_t* ctx, const uint8_t* data,
                                    size_t len, const struct sockaddr* from_addr) {
     if (!ctx || !data || !from_addr) {
+        g_http3_state.last_error = EINVAL;
         return -1;
     }
-    
-    // TODO: Process incoming UDP datagram
-    // 1. Parse QUIC packet
-    // 2. Handle connection state
-    // 3. Process streams
-    
+
+    // Stub implementation: Log datagram reception
+    // Production implementation would:
+    // 1. Parse QUIC packet header (long/short header)
+    // 2. Handle connection state (handshake, established, closing)
+    // 3. Process streams and frames
+    // 4. Generate response datagram
+
+    char addr_str[INET6_ADDRSTRLEN];
+    if (from_addr->sa_family == AF_INET) {
+        struct sockaddr_in* in4 = (struct sockaddr_in*)from_addr;
+        inet_ntop(AF_INET, &in4->sin_addr, addr_str, sizeof(addr_str));
+    } else {
+        struct sockaddr_in6* in6 = (struct sockaddr_in6*)from_addr;
+        inet_ntop(AF_INET6, &in6->sin6_addr, addr_str, sizeof(addr_str));
+    }
+
+    printf("[HTTP/3] Received datagram from %s (%zu bytes)\n", addr_str, len);
+
     return 0;
 }
 
@@ -147,29 +173,36 @@ quic_connection_t* http3_client_connect(http3_context_t* ctx, const char* server
         g_http3_state.last_error = EINVAL;
         return NULL;
     }
-    
+
     // Allocate connection
     quic_connection_t* conn = calloc(1, sizeof(quic_connection_t));
     if (!conn) {
         g_http3_state.last_error = ENOMEM;
+        snprintf(g_http3_state.error_message, sizeof(g_http3_state.error_message),
+                "Memory allocation failed");
         return NULL;
     }
-    
-    conn->state = QUIC_STATE_IDLE;
+
+    conn->state = QUIC_STATE_HANDSHAKE;
     conn->connection_id = 0;  // Will be assigned during handshake
     conn->is_server = false;
     conn->is_0rtt = ctx->config.enable_0rtt;
-    conn->start_time = 0;  // Will be set on connection
-    conn->last_activity = 0;
-    
-    // TODO: Implement QUIC handshake
+    conn->start_time = time(NULL);
+    conn->last_activity = time(NULL);
+    conn->stream_count = 0;
+    conn->bytes_sent = 0;
+    conn->bytes_received = 0;
+
+    // Stub: Simulate handshake initiation
+    // Production implementation would:
     // 1. Create UDP socket
     // 2. Send ClientHello with ALPN "h3"
-    // 3. Complete TLS handshake
-    // 4. Establish QUIC connection
-    
-    printf("[HTTP/3] Connecting to %s:%u\n", server_name, port);
-    
+    // 3. Complete TLS 1.3 handshake
+    // 4. Establish QUIC connection parameters
+
+    printf("[HTTP/3] Connecting to %s:%u (0-RTT: %s)\n",
+           server_name, port, conn->is_0rtt ? "enabled" : "disabled");
+
     return conn;
 }
 
@@ -177,14 +210,21 @@ void http3_connection_close(quic_connection_t* conn, uint64_t app_error_code) {
     if (!conn) {
         return;
     }
-    
+
     conn->state = QUIC_STATE_CLOSING;
-    
-    // TODO: Send CONNECTION_CLOSE frame
-    // TODO: Cleanup connection resources
-    
-    printf("[HTTP/3] Connection closed (error code: %lu)\n", (unsigned long)app_error_code);
-    
+    conn->last_activity = time(NULL);
+
+    // Stub implementation: Log close reason
+    // Production implementation would:
+    // 1. Send CONNECTION_CLOSE frame with error code
+    // 2. Wait for acknowledgment
+    // 3. Cleanup stream resources
+    // 4. Free connection memory
+
+    const char* error_desc = (app_error_code == 0) ? "graceful" : "error";
+    printf("[HTTP/3] Connection closing (%s, error code: %lu)\n",
+           error_desc, (unsigned long)app_error_code);
+
     free(conn);
 }
 
@@ -221,46 +261,79 @@ int64_t http3_stream_create(quic_connection_t* conn) {
 int http3_stream_send_request(quic_connection_t* conn, uint64_t stream_id,
                                const http3_request_t* request) {
     if (!conn || !request) {
+        g_http3_state.last_error = EINVAL;
         return -1;
     }
-    
-    // TODO: Send HTTP/3 HEADERS frame
-    // TODO: Send HTTP/3 DATA frame if body present
-    
-    printf("[HTTP/3] Sending request: %s %s\n", 
+
+    // Stub implementation: Log request details
+    // Production implementation would:
+    // 1. Encode headers using QPACK
+    // 2. Send HTTP/3 HEADERS frame (type=0x01)
+    // 3. Send HTTP/3 DATA frame (type=0x00) if body present
+    // 4. Handle flow control
+
+    printf("[HTTP/3] Sending request on stream %lu: %s %s\n",
+           (unsigned long)stream_id,
            request->method ? request->method : "GET",
            request->path ? request->path : "/");
-    
+
+    if (request->headers_count > 0) {
+        printf("[HTTP/3] Headers: %d\n", request->headers_count);
+    }
+
     return 0;
 }
 
 int http3_stream_send_response(quic_connection_t* conn, uint64_t stream_id,
                                 const http3_response_t* response) {
     if (!conn || !response) {
+        g_http3_state.last_error = EINVAL;
         return -1;
     }
-    
-    // TODO: Send HTTP/3 HEADERS frame with response headers
-    // TODO: Send HTTP/3 DATA frame with response body
-    
-    printf("[HTTP/3] Sending response: %d %s\n",
+
+    // Stub implementation: Log response details
+    // Production implementation would:
+    // 1. Encode response headers using QPACK
+    // 2. Send HTTP/3 HEADERS frame with response headers
+    // 3. Send HTTP/3 DATA frame with response body
+    // 4. Handle flow control and backpressure
+
+    printf("[HTTP/3] Sending response on stream %lu: %d %s\n",
+           (unsigned long)stream_id,
            response->status_code,
            response->status_text ? response->status_text : "OK");
-    
+
+    if (response->body_length > 0) {
+        printf("[HTTP/3] Response body: %zu bytes\n", response->body_length);
+    }
+
     return 0;
 }
 
 int http3_stream_send_data(quic_connection_t* conn, uint64_t stream_id,
                             const uint8_t* data, size_t len, bool fin) {
     if (!conn || !data || len == 0) {
+        g_http3_state.last_error = EINVAL;
         return -1;
     }
-    
-    // TODO: Send DATA frame
-    // TODO: Handle FIN flag
-    
+
+    // Stub implementation: Track bytes sent
+    // Production implementation would:
+    // 1. Send DATA frame with payload
+    // 2. Handle FIN flag to close stream half-way
+    // 3. Update flow control window
+    // 4. Handle backpressure
+
     conn->bytes_sent += len;
-    
+
+    if (fin) {
+        printf("[HTTP/3] Sending data on stream %lu: %zu bytes (FIN)\n",
+               (unsigned long)stream_id, len);
+    } else {
+        printf("[HTTP/3] Sending data on stream %lu: %zu bytes\n",
+               (unsigned long)stream_id, len);
+    }
+
     return (int)len;
 }
 
@@ -268,11 +341,16 @@ void http3_stream_close(quic_connection_t* conn, uint64_t stream_id) {
     if (!conn) {
         return;
     }
-    
-    // TODO: Send STREAM frame with FIN flag
-    // TODO: Cleanup stream resources
-    
-    (void)stream_id;  // Unused for now
+
+    // Stub implementation: Log stream close
+    // Production implementation would:
+    // 1. Send STREAM frame with FIN flag
+    // 2. Wait for peer acknowledgment
+    // 3. Cleanup stream resources (buffers, state)
+    // 4. Update connection stream count
+
+    conn->last_activity = time(NULL);
+    printf("[HTTP/3] Closing stream %lu\n", (unsigned long)stream_id);
 }
 
 // ============================================================================
@@ -299,10 +377,15 @@ uint64_t http3_connection_get_rtt(const quic_connection_t* conn) {
     if (!conn) {
         return 0;
     }
-    
-    // TODO: Get actual RTT from QUIC layer
-    // For now return estimated RTT
-    return 50000;  // 50ms in microseconds
+
+    // Stub implementation: Return estimated RTT
+    // Production implementation would:
+    // 1. Get actual RTT from QUIC layer (ngtcp2_conn_get_rtt)
+    // 2. Return smoothed RTT in microseconds
+    // 3. Consider min/max RTT variations
+
+    // Return estimated 50ms RTT (typical for local/network connections)
+    return 50000;  // microseconds
 }
 
 // ============================================================================
@@ -311,54 +394,77 @@ uint64_t http3_connection_get_rtt(const quic_connection_t* conn) {
 
 int http3_session_save(const quic_connection_t* conn, const char* filename) {
     if (!conn || !filename) {
+        g_http3_state.last_error = EINVAL;
         return -1;
     }
 
-    // TODO: Save session ticket to file
-    // This enables 0-RTT resumption on next connection
+    // Stub implementation: Save session placeholder
+    // Production implementation would:
+    // 1. Get session ticket from TLS layer
+    // 2. Serialize session data (ticket, transport params, crypto state)
+    // 3. Write to file with checksum for integrity
+    // 4. Enable 0-RTT resumption on next connection
 
     FILE* f = fopen(filename, "wb");
     if (!f) {
+        snprintf(g_http3_state.error_message, sizeof(g_http3_state.error_message),
+                "Failed to open file: %s", filename);
         return -1;
     }
 
-    // Write placeholder session data
-    // In real implementation, this would be the session ticket
-    const char* session_data = "session_placeholder";
-    size_t written = fwrite(session_data, 1, strlen(session_data), f);
+    // Write session placeholder with timestamp
+    // Real implementation would write actual session ticket
+    char session_header[64];
+    snprintf(session_header, sizeof(session_header),
+             "HTTP3_SESSION_v1_%lu", (unsigned long)time(NULL));
+    size_t written = fwrite(session_header, 1, strlen(session_header), f);
     fclose(f);
-    
-    if (written != strlen(session_data)) {
+
+    if (written != strlen(session_header)) {
         return -1;
     }
 
+    printf("[HTTP/3] Session saved to %s\n", filename);
     return 0;
 }
 
 int http3_session_load(http3_context_t* ctx, const char* filename) {
     if (!ctx || !filename) {
+        g_http3_state.last_error = EINVAL;
         return -1;
     }
 
-    // TODO: Load session ticket from file
-    // This enables 0-RTT resumption
+    // Stub implementation: Load session placeholder
+    // Production implementation would:
+    // 1. Read and verify session file (checksum)
+    // 2. Parse session ticket and transport parameters
+    // 3. Restore crypto state for 0-RTT
+    // 4. Enable early data transmission
 
     FILE* f = fopen(filename, "rb");
     if (!f) {
+        snprintf(g_http3_state.error_message, sizeof(g_http3_state.error_message),
+                "Failed to open file: %s", filename);
         return -1;
     }
 
-    // Read and verify session data
+    // Read and verify session header
     char buffer[64];
     size_t read_bytes = fread(buffer, 1, sizeof(buffer) - 1, f);
     fclose(f);
-    
+
     if (read_bytes == 0) {
         return -1;
     }
-    
+
     buffer[read_bytes] = '\0';
 
+    // Verify session header format
+    if (strncmp(buffer, "HTTP3_SESSION_v1_", 17) != 0) {
+        return -1;  // Invalid session format
+    }
+
+    printf("[HTTP/3] Session loaded from %s\n", filename);
     return 0;
 }
 
