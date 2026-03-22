@@ -87,6 +87,7 @@ LIB_OBJS_NORMAL := \
 	${OBJ}/system/numa-allocator.o ${OBJ}/system/io-uring-interface.o ${OBJ}/system/dpdk-interface.o ${OBJ}/system/advanced-optimizer.o \
 	${OBJ}/ml/anomaly-detector.o ${OBJ}/net/tls-emulator.o ${OBJ}/shadowsocks/shadowsocks-obfuscator.o \
 	${OBJ}/vv/vv-tree.o \
+	${OBJ}/admin/admin-rest-api.o \
 
 LIB_OBJS := ${LIB_OBJS_NORMAL}
 
@@ -94,7 +95,7 @@ DEPENDENCE_LIB	:=	$(subst ${OBJ}/,${DEP}/,$(patsubst %.o,%.d,${LIB_OBJS}))
 
 DEPENDENCE_ALL		:=	${DEPENDENCE_NORM} ${DEPENDENCE_STRANGE} ${DEPENDENCE_LIB}
 
-OBJECTS_ALL		:=	${OBJECTS} ${LIB_OBJS}
+OBJECTS_ALL		:=	${OBJECTS} ${LIB_OBJS} ${OBJ}/admin/admin-rest-api.o
 
 all:	${ALLDIRS} ${EXELIST} 
 dirs: ${ALLDIRS}

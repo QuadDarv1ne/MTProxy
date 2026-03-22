@@ -664,6 +664,8 @@ add_executable(mtproxy-admin
     admin/main.c
     admin/admin-cli.c
     admin/admin-cli.h
+    admin/admin-rest-api.c
+    admin/admin-rest-api.h
 )
 
 target_link_libraries(mtproxy-admin
