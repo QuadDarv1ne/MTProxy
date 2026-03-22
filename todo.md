@@ -117,15 +117,15 @@
 
 ---
 
-## 📝 Пометки по проекту (21 марта 2026, 8deb612)
+## 📝 Пометки по проекту (22 марта 2026, 6a770f6)
 
 ### Архитектура
 - ✅ Модульная структура: 366 C/H файлов (186 .c + 180 .h), 41 сетевой модуль, 82 файла в system/
 - ✅ Разделение ответственности: engine/, net/, security/, crypto/, mtproto/
 - ✅ POSIX-совместимость через posix-compat-windows.h для Windows (16 файлов исправлено)
 - ✅ FFI интеграция: shared library для Flutter/Dart (mobile_app/)
-- ✅ 289+ коммитов в истории проекта
-- ✅ Текущий коммит: 8deb612 (dev = master)
+- ✅ 279+ коммитов в истории проекта
+- ✅ Текущий коммит: 6a770f6 (dev = master)
 
 ### Критические компоненты
 - **config-manager**: горячая перезагрузка, валидация, история (1000 записей)
@@ -177,11 +177,11 @@
 ## 📋 Текущий статус
 
 ### Ветки
-- **dev**: ✅ 8deb612 — fix: проверка выделения памяти для global_mutex в cache_manager_init
-- **main/master**: ✅ 8deb612 — синхронизирована с dev
-- **origin/dev**: ✅ 8deb612 — синхронизирована
-- **origin/master**: ✅ 8deb612 — синхронизирована
-- **Статус**: ✅ Ветки идентичны (8deb612)
+- **dev**: ✅ 6a770f6 — fix: проверка выделения памяти для мьютекса в error_handler_init
+- **main/master**: ✅ 6a770f6 — синхронизирована с dev
+- **origin/dev**: ✅ 6a770f6 — синхронизирована
+- **origin/master**: ✅ 6a770f6 — синхронизирована
+- **Статус**: ✅ Ветки идентичны (6a770f6)
 - **Рабочие изменения**: нет (чистое дерево)
 
 ### Готовые модули к использованию
@@ -214,7 +214,7 @@
 
 | Метрика | Значение |
 |---------|----------|
-| **Коммитов (Март)** | 37+ |
+| **Коммитов (Март)** | 39+ |
 | **Новых файлов** | 46+ |
 | **Строк кода** | ~12000+ |
 | **Новых модулей** | 12 |
@@ -259,6 +259,7 @@ git checkout master && git merge dev && git push origin master
 - [✓] Rate-limiter high-load тесты (1000+ клиентов) — ✅ test создан (rate_limiter_highload_test.c)
 - [✓] API Reference документация — ✅ создана (API_REFERENCE.md)
 - [✓] Deployment Guide — ✅ создан (DEPLOYMENT.md)
+- [✓] Проверка malloc для мьютексов — ✅ cache-manager, rate-limiter, error-handler (3 коммита: 8deb612, 476be80, 6a770f6)
 - [ ] FreeBSD поддержка
 - [ ] ARM64 Linux (Raspberry Pi)
 - [✓] Официальные Docker образы — ✅ созданы (Dockerfile, docker-compose.yml)
@@ -593,7 +594,7 @@ mtproxy-0.02 compiled at Mar 19 2026 20:08:46 by gcc 13.3.0 64-bit
 
 | Метрика | Значение |
 |---------|----------|
-| **Веток** | 2 (master, dev) — ✅ синхронизированы (b98fed5) |
+| **Веток** | 2 (master, dev) — ✅ синхронизированы (6a770f6) |
 | **Файлов в system/** | 82 |
 | **Модулей безопасности** | 6 + security_enhanced |
 | **Сетевых модулей** | 41 |
@@ -602,19 +603,19 @@ mtproxy-0.02 compiled at Mar 19 2026 20:08:46 by gcc 13.3.0 64-bit
 | **Собранных бинарников** | mtproto-proxy (536 KB) ✅, mtproxy-admin.exe ✅ |
 | **Тестов** | 51 ✅ (100% пройдено) |
 | **TODO/FIXME отметок** | 17 (http3-quic.c stub) |
-| **Исправлений Windows** | 16 файлов ✅ (8deb612) |
+| **Исправлений Windows** | 16 файлов ✅ (6a770f6) |
 | **Shared library** | ✅ Готово (BUILD_SHARED_LIB) |
 | **Mobile app** | ✅ Flutter/Dart (mobile_app/, 40+ файлов) |
 | **CI/CD** | ✅ GitHub Actions (5 платформ) |
-| **Последняя сборка** | kdb_common + kdb_crypto (8deb612) |
+| **Последняя сборка** | kdb_common + kdb_crypto (6a770f6) |
 
 ---
 
-*Последнее обновление: 21 марта 2026 г. (8deb612 — todo.md updated)*
+*Последнее обновление: 22 марта 2026 г. (6a770f6 — todo.md updated)*
 
 ---
 
-## 🪟 Windows Build Status (21 марта 2026 — 8deb612)
+## 🪟 Windows Build Status (22 марта 2026 — 6a770f6)
 
 ### Исправления совместимости (16 файлов) — ✅ Выполнено
 - [x] **CMakeLists.txt**: Temporarily disabled problematic modules for Windows build
@@ -686,7 +687,7 @@ cmake --build build-windows-x64 --config Release
 
 ---
 
-## 🆕 Реализовано (Q3 2026 — 20 марта)
+## 🆕 Реализовано (Q3 2026 — 22 марта)
 
 ### gRPC и REST API
 - [x] gRPC интерфейс для управления прокси
@@ -713,11 +714,11 @@ cmake --build build-windows-x64 --config Release
 
 ---
 
-## 📊 Текущий статус (20 марта 2026)
+## 📊 Текущий статус (22 марта 2026)
 
 ### Ветки
-- **dev**: ✅ Синхронизирована с origin/dev (b98fed5)
-- **main/master**: ✅ Синхронизирована с origin/master (b98fed5)
+- **dev**: ✅ Синхронизирована с origin/dev (6a770f6)
+- **main/master**: ✅ Синхронизирована с origin/master (6a770f6)
 - **Статус**: ✅ Ветки идентичны (merge не требуется)
 
 ### Готовые модули к использованию
@@ -751,8 +752,8 @@ cmake --build build-windows-x64 --config Release
 
 | Метрика | Значение |
 |---------|----------|
-| **Коммитов (всего)** | 277+ |
-| **Коммитов (Март)** | 37+ |
+| **Коммитов (всего)** | 279+ |
+| **Коммитов (Март)** | 39+ |
 | **Новых файлов** | 46+ |
 | **Строк кода** | ~12000+ |
 | **Новых модулей** | 12 |
@@ -766,7 +767,7 @@ cmake --build build-windows-x64 --config Release
 | **CI/CD** | ✅ GitHub Actions (5 платформ) |
 | **API** | gRPC + REST + OpenAPI |
 | **Мониторинг** | Prometheus + Grafana (5 дашбордов) |
-| **Безопасность** | Исправления strcpy→strncpy (5 файлов) |
+| **Безопасность** | Исправления strcpy→strncpy (5 файлов) + malloc проверки (3 модуля) |
 
 ---
 
@@ -797,6 +798,7 @@ git checkout master && git merge dev && git push origin master
 - [x] admin-cli: расширенные команды
 - [x] HTTP/3 (QUIC): TODO реализация (17 отметок) — stub готов
 - [x] Исправление warning'ов компиляции
+- [x] Проверка malloc для мьютексов: cache-manager, rate-limiter, error-handler
 
 ### 🔴 Q4 2026 (Октябрь - Декабрь)
 - [ ] Интеграционные тесты (gRPC, REST, QUIC)
@@ -814,9 +816,9 @@ git checkout master && git merge dev && git push origin master
 
 - **Правило:** Качество важнее количества ✅
 - **Workflow:** Улучшения в dev → проверка → merge в main ✅
-- **Текущий статус:** Ветки синхронизированы ✅ (799506f)
-- **Фокус:** Безопасность — исправления strcpy→strncpy (5 файлов)
-- **Новое:** Исправления безопасности в 5 файлах
+- **Текущий статус:** Ветки синхронизированы ✅ (6a770f6)
+- **Фокус:** Безопасность — исправления strcpy→strncpy (5 файлов) + malloc проверки (3 модуля)
+- **Новое:** Исправления безопасности в 5 файлах + проверка malloc для мьютексов
 - **Тесты:** 45/45 пройдено (100%)
 - **CI/CD:** ✅ Автоматическая сборка (Linux/Windows/macOS/Android/iOS)
 - **TODO:** 17 отметок в http3-quic.c (HTTP/3 QUIC stub)
@@ -824,13 +826,13 @@ git checkout master && git merge dev && git push origin master
 
 ---
 
-*Последнее обновление: 21 марта 2026 г. (стабильная версия 799506f, v1.0.1, ветки синхронизированы)*
+*Последнее обновление: 22 марта 2026 г. (стабильная версия 6a770f6, v1.0.1, ветки синхронизированы)*
 
 ---
 
-## 📅 Обновление статуса (21 марта 2026 — актуально)
+## 📅 Обновление статуса (22 марта 2026 — актуально)
 
-### Текущий коммит: 799506f
+### Текущий коммит: 6a770f6
 - **Ветки**: dev = master = origin/dev = origin/master ✅
 - **Версия**: v1.0.1
 - **Статус**: Чистое дерево git, все изменения закоммичены
@@ -838,7 +840,7 @@ git checkout master && git merge dev && git push origin master
 ### Статистика проекта
 | Метрика | Значение |
 |---------|----------|
-| **Всего коммитов** | 277+ |
+| **Всего коммитов** | 279+ |
 | **C/H файлов** | 366 (186 .c + 180 .h) |
 | **Сетевых модулей** | 41 |
 | **Модулей system/** | 82 |
@@ -846,8 +848,8 @@ git checkout master && git merge dev && git push origin master
 | **Документов** | 33+ |
 | **TODO в коде** | 17 (http3-quic.c stub) |
 
-### Выполнено к 21 марта 2026
-- [x] Q2 2026 выполнен на 75% (6/8 задач)
+### Выполнено к 22 марта 2026
+- [x] Q2 2026 выполнен на 87.5% (7/8 задач)
 - [x] API Reference документация создана (API_REFERENCE.md)
 - [x] Deployment Guide создан (DEPLOYMENT.md)
 - [x] Docker образы готовы (Dockerfile, docker-compose.yml)
@@ -856,6 +858,7 @@ git checkout master && git merge dev && git push origin master
 - [x] FFI + Mobile app (Flutter/Dart) готовы
 - [x] CI/CD настроен (5 платформ: Linux/Windows/macOS/Android/iOS)
 - [x] Исправления безопасности: strcpy→strncpy (5 файлов)
+- [x] Проверка malloc для мьютексов: cache-manager, rate-limiter, error-handler ✅
 - [ ] Ожидают: FreeBSD поддержка, ARM64 Linux
 
 ### Активные TODO в коде
@@ -900,6 +903,8 @@ git checkout master && git merge dev && git push origin master
 ### Последние исправления (коммиты)
 | Коммит | Изменение |
 |--------|-----------|
+| **6a770f6** | fix: проверка выделения памяти для мьютекса в error_handler_init |
+| **e235d0b** | docs: обновлён todo.md — статус на 8deb612 (security fixes) |
 | **8deb612** | fix: проверка выделения памяти для global_mutex в cache_manager_init |
 | **476be80** | fix: проверка выделения памяти для мьютекса в rate_limiter_init |
 | **496e93d** | security: замена strtok на потокобезопасную strtok_r в admin_cli_tokenize |
