@@ -816,9 +816,9 @@ git checkout master && git merge dev && git push origin master
 
 - **Правило:** Качество важнее количества ✅
 - **Workflow:** Улучшения в dev → проверка → merge в main ✅
-- **Текущий статус:** Ветки синхронизированы ✅ (9f0fec8)
-- **Фокус:** HTTP/3 QUIC stub-реализация завершена (17 TODO → 0)
-- **Новое:** Улучшена http3-quic.c — качественные stub-функции с логированием
+- **Текущий статус:** Ветки синхронизированы ✅ (40ac69d)
+- **Фокус:** Windows совместимость — net-crypto-aes.c собирается через CryptGenRandom
+- **Новое:** Эмуляция /dev/random для Windows (93 строки кода)
 - **Тесты:** 45/45 пройдено (100%)
 - **CI/CD:** ✅ Автоматическая сборка (Linux/Windows/macOS/Android/iOS)
 - **TODO:** 0 отметок в http3-quic.c (все реализовано)
@@ -826,7 +826,7 @@ git checkout master && git merge dev && git push origin master
 
 ---
 
-*Последнее обновление: 22 марта 2026 г. (стабильная версия 9f0fec8, v1.0.1, ветки синхронизированы)*
+*Последнее обновление: 22 марта 2026 г. (стабильная версия 40ac69d, v1.0.1, ветки синхронизированы)*
 
 ---
 
@@ -906,9 +906,9 @@ git checkout master && git merge dev && git push origin master
 ### Последние исправления (коммиты)
 | Коммит | Изменение |
 |--------|-----------|
+| **40ac69d** | fix: Windows совместимость net-crypto-aes.c — эмуляция /dev/random через CryptGenRandom |
+| **532b457** | docs: обновлён todo.md — HTTP/3 QUIC stub-реализация завершена (9f0fec8) |
 | **9f0fec8** | improve: http3-quic.c — улучшена stub-реализация (17 TODO → 0) |
-| **1fd5b1e** | docs: обновлён todo.md — актуальный статус на 6a770f6 (22 марта 2026) |
-| **6a770f6** | fix: проверка выделения памяти для мьютекса в error_handler_init |
 | **e235d0b** | docs: обновлён todo.md — статус на 8deb612 (security fixes) |
 | **8deb612** | fix: проверка выделения памяти для global_mutex в cache_manager_init |
 | **476be80** | fix: проверка выделения памяти для мьютекса в rate_limiter_init |
