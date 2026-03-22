@@ -265,10 +265,10 @@ git checkout master && git merge dev && git push origin master
 - [✓] Официальные Docker образы — ✅ созданы (Dockerfile, docker-compose.yml)
 
 ### 🟡 Q3 2026 (Июль - Сентябрь)
+- [x] REST API для управления (admin-rest-api) ✅
 - [ ] gRPC интерфейс
-- [ ] REST API для управления
 - [ ] WebSocket поддержка (real-time мониторинг)
-- [ ] Prometheus экспортёр
+- [x] Prometheus экспортёр метрик (GET /api/v1/metrics) ✅
 - [ ] Grafana дашборды
 - [ ] TLS 1.3 полная поддержка
 - [ ] HTTP/3 (QUIC) поддержка
@@ -816,9 +816,9 @@ git checkout master && git merge dev && git push origin master
 
 - **Правило:** Качество важнее количества ✅
 - **Workflow:** Улучшения в dev → проверка → merge в main ✅
-- **Текущий статус:** Ветки синхронизированы ✅ (40ac69d)
-- **Фокус:** Windows совместимость — net-crypto-aes.c собирается через CryptGenRandom
-- **Новое:** Эмуляция /dev/random для Windows (93 строки кода)
+- **Текущий статус:** Ветки синхронизированы ✅ (07ebe73)
+- **Фокус:** REST API для управления и мониторинга прокси
+- **Новое:** 12 REST endpoints (health, status, stats, metrics, config, cache, ratelimit, connections, log)
 - **Тесты:** 45/45 пройдено (100%)
 - **CI/CD:** ✅ Автоматическая сборка (Linux/Windows/macOS/Android/iOS)
 - **TODO:** 0 отметок в http3-quic.c (все реализовано)
@@ -826,7 +826,7 @@ git checkout master && git merge dev && git push origin master
 
 ---
 
-*Последнее обновление: 22 марта 2026 г. (стабильная версия 40ac69d, v1.0.1, ветки синхронизированы)*
+*Последнее обновление: 22 марта 2026 г. (стабильная версия 07ebe73, v1.0.1, ветки синхронизированы)*
 
 ---
 
@@ -906,9 +906,9 @@ git checkout master && git merge dev && git push origin master
 ### Последние исправления (коммиты)
 | Коммит | Изменение |
 |--------|-----------|
+| **07ebe73** | feat: REST API для управления и мониторинга (admin-rest-api) — 12 endpoints |
+| **7fcf857** | docs: обновлён todo.md — Windows совместимость (40ac69d) |
 | **40ac69d** | fix: Windows совместимость net-crypto-aes.c — эмуляция /dev/random через CryptGenRandom |
-| **532b457** | docs: обновлён todo.md — HTTP/3 QUIC stub-реализация завершена (9f0fec8) |
-| **9f0fec8** | improve: http3-quic.c — улучшена stub-реализация (17 TODO → 0) |
 | **e235d0b** | docs: обновлён todo.md — статус на 8deb612 (security fixes) |
 | **8deb612** | fix: проверка выделения памяти для global_mutex в cache_manager_init |
 | **476be80** | fix: проверка выделения памяти для мьютекса в rate_limiter_init |
