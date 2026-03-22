@@ -92,7 +92,7 @@
 ## 🔧 Активные задачи (Приоритеты)
 
 ### 🔴 Критические (Следующие действия)
-1. [x] **Синхронизация веток**: dev = master = origin ✅ (01b13ca)
+1. [x] **Синхронизация веток**: dev = master = origin ✅ (5e2df7c)
 2. [x] **Сборка**: ✅ OpenSSL/ZLIB найдены, mtproto-proxy собран (536 KB)
 3. [x] **Тесты**: ✅ 45 тестов пройдено (100%)
 4. [x] **Валидация**: ✅ cache-manager, rate-limiter, error-handler работают
@@ -139,15 +139,15 @@
 
 ---
 
-## 📝 Пометки по проекту (22 марта 2026, 01b13ca)
+## 📝 Пометки по проекту (22 марта 2026, 5e2df7c)
 
 ### Архитектура
 - ✅ Модульная структура: 368 C/H файлов (187 .c + 181 .h), 41 сетевой модуль, 82 файла в system/
 - ✅ Разделение ответственности: engine/, net/, security/, crypto/, mtproto/
 - ✅ POSIX-совместимость через posix-compat-windows.h для Windows (16 файлов исправлено)
 - ✅ FFI интеграция: shared library для Flutter/Dart (mobile_app/)
-- ✅ 304 коммитов в истории проекта
-- ✅ Текущий коммит: 01b13ca (dev = master)
+- ✅ 305 коммитов в истории проекта
+- ✅ Текущий коммит: 5e2df7c (dev = master)
 - ✅ Потенциал интеграции: go-pcap2socks (10 функций), tg-ws-proxy (5 функций)
 
 ### Критические компоненты
@@ -201,11 +201,11 @@
 ## 📋 Текущий статус
 
 ### Ветки
-- **dev**: ✅ 01b13ca — docs: добавлены потенциалы интеграции
-- **main/master**: ✅ 01b13ca — синхронизирована с dev
-- **origin/dev**: ✅ 01b13ca — синхронизирована
-- **origin/master**: ✅ 01b13ca — синхронизирована
-- **Статус**: ✅ Ветки идентичны (01b13ca)
+- **dev**: ✅ 5e2df7c — docs: актуализирован todo.md
+- **main/master**: ✅ 5e2df7c — синхронизирована с dev
+- **origin/dev**: ✅ 5e2df7c — синхронизирована
+- **origin/master**: ✅ 5e2df7c — синхронизирована
+- **Статус**: ✅ Ветки идентичны (5e2df7c)
 - **Рабочие изменения**: нет (чистое дерево)
 
 ### Готовые модули к использованию
@@ -337,7 +337,7 @@ git checkout master && git merge dev && git push origin master
 
 - **Правило:** Качество важнее количества ✅
 - **Workflow:** Улучшения в dev → проверка → merge в main ✅
-- **Текущий статус:** Ветки синхронизированы ✅ (01b13ca)
+- **Текущий статус:** Ветки синхронизированы ✅ (5e2df7c)
 - **Фокус:** Q2 2026 задачи выполнены (8/8 = 100%), Q4 2026 планирование
 - **Новое:** API Reference, Deployment Guide, Docker, 3 performance теста, REST API
 - **CI/CD:** ✅ Автоматическая сборка (Linux/Windows/macOS/Android/iOS)
@@ -345,7 +345,7 @@ git checkout master && git merge dev && git push origin master
 
 ---
 
-*Последнее обновление: 22 марта 2026 г. (ветки синхронизированы 01b13ca, тесты 45/45, FFI + mobile app + CI/CD + REST API готовы)*
+*Последнее обновление: 22 марта 2026 г. (ветки синхронизированы 5e2df7c, тесты 45/45, FFI + mobile app + CI/CD + REST API готовы)*
 
 ### Реорганизация CMakeLists.txt
 - [x] Объединены NET_SOURCES в одну секцию (20 файлов)
@@ -505,7 +505,7 @@ security/
 
 ## 📊 Статистика проекта
 
-- **Веток:** 2 (master, dev) — ✅ синхронизированы (01b13ca)
+- **Веток:** 2 (master, dev) — ✅ синхронизированы (5e2df7c)
 - **Файлов в system/:** 82
 - **Модулей безопасности:** 6 + security_enhanced
 - **Сетевых модулей:** 41
@@ -514,9 +514,9 @@ security/
 - **Собранных бинарников:** mtproto-proxy (536 KB) ✅, mtproxy-admin.exe ✅
 - **Тестов:** 45 ✅ (100% пройдено)
 - **TODO/FIXME отметок:** 0 (http3-quic.c stub улучшен)
-- **Исправлений Windows:** 16 файлов ✅ (01b13ca)
+- **Исправлений Windows:** 16 файлов ✅ (5e2df7c)
 - **Потенциал интеграции:** 15 функций (go-pcap2socks: 10, tg-ws-proxy: 5)
-- **Последняя сборка:** mtproxy-0.02, gcc 13.3.0, commit 01b13ca
+- **Последняя сборка:** mtproxy-0.02, gcc 13.3.0, commit 5e2df7c
 
 ---
 
@@ -556,7 +556,7 @@ security/
 
 ---
 
-*Последнее обновление: 22 марта 2026 г. (стабильная версия 01b13ca, тесты 45/45, FFI + mobile app + REST API готовы)*
+*Последнее обновление: 22 марта 2026 г. (стабильная версия 5e2df7c, тесты 45/45, FFI + mobile app + REST API готовы)*
 
 ---
 
@@ -658,15 +658,15 @@ mtproxy-0.02 compiled at Mar 19 2026 20:08:46 by gcc 13.3.0 64-bit
 | **Mobile app** | ✅ Flutter/Dart (mobile_app/, 40+ файлов) |
 | **CI/CD** | ✅ GitHub Actions (5 платформ) |
 | **Потенциал интеграции** | 15 функций (go-pcap2socks: 10, tg-ws-proxy: 5) |
-| **Последняя сборка** | kdb_common + kdb_crypto (01b13ca) |
+| **Последняя сборка** | kdb_common + kdb_crypto (5e2df7c) |
 
 ---
 
-*Последнее обновление: 22 марта 2026 г. (01b13ca — todo.md updated)*
+*Последнее обновление: 22 марта 2026 г. (5e2df7c — todo.md updated)*
 
 ---
 
-## 🪟 Windows Build Status (22 марта 2026 — 01b13ca)
+## 🪟 Windows Build Status (22 марта 2026 — 5e2df7c)
 
 ### Исправления совместимости (16 файлов) — ✅ Выполнено
 - [x] **CMakeLists.txt**: Temporarily disabled problematic modules for Windows build
@@ -686,7 +686,7 @@ mtproxy-0.02 compiled at Mar 19 2026 20:08:46 by gcc 13.3.0 64-bit
 - [x] **mtproto/mtproto-proxy.c** (a9decd6): Added 12 Windows stub functions for excluded modules
 - [x] **CMakeLists.txt** (a9decd6): Excluded mtproxy-fixes-simple.h on Windows (type conflicts)
 
-### Статус сборки Windows (01b13ca)
+### Статус сборки Windows (5e2df7c)
 | Компонент | Статус | Примечание |
 |-----------|--------|------------|
 | **kdb_crypto** | ✅ Собирается | Статическая библиотека |
@@ -868,7 +868,7 @@ git checkout master && git merge dev && git push origin master
 
 - **Правило:** Качество важнее количества ✅
 - **Workflow:** Улучшения в dev → проверка → merge в main ✅
-- **Текущий статус:** Ветки синхронизированы ✅ (01b13ca)
+- **Текущий статус:** Ветки синхронизированы ✅ (5e2df7c)
 - **Фокус:** Q2 2026 задачи выполнены (8/8 = 100%), Q4 2026 планирование, интеграции
 - **Новое:** API Reference, Deployment Guide, Docker, 3 performance теста, REST API
 - **Тесты:** 45/45 пройдено (100%)
@@ -879,13 +879,13 @@ git checkout master && git merge dev && git push origin master
 
 ---
 
-*Последнее обновление: 22 марта 2026 г. (стабильная версия 01b13ca, v1.0.1, ветки синхронизированы)*
+*Последнее обновление: 22 марта 2026 г. (стабильная версия 5e2df7c, v1.0.1, ветки синхронизированы)*
 
 ---
 
 ## 📅 Обновление статуса (22 марта 2026 — актуально)
 
-### Текущий коммит: 01b13ca
+### Текущий коммит: 5e2df7c
 - **Ветки**: dev = master = origin/dev = origin/master ✅
 - **Версия**: v1.0.1
 - **Статус**: Чистое дерево git, все изменения закоммичены
@@ -893,7 +893,7 @@ git checkout master && git merge dev && git push origin master
 ### Статистика проекта
 | Метрика | Значение |
 |---------|----------|
-| **Всего коммитов** | 304 |
+| **Всего коммитов** | 305 |
 | **C/H файлов** | 368 (187 .c + 181 .h) |
 | **Сетевых модулей** | 41 |
 | **Модулей system/** | 82 |
