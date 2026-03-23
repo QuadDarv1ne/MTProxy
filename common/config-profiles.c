@@ -37,10 +37,14 @@ int config_profiles_init(config_profiles_manager_t *mgr, const char *profiles_di
     mgr->profile_count = 0;
     mgr->active_profile = -1;
     mgr->auto_save = 1;
-    
+
     /* Создаём директорию */
+#ifdef _WIN32
+    mkdir(mgr->profiles_dir);
+#else
     mkdir(mgr->profiles_dir, 0755);
-    
+#endif
+
     return 0;
 }
 

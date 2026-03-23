@@ -136,19 +136,26 @@ static int tcp_connect_to_dc(const char *ip, int port, int timeout_ms) {
     if (fd < 0) {
         return -1;
     }
-    
+
     /* Устанавливаем таймаут */
+#ifdef _WIN32
+    /* Windows использует DWORD для таймаутов в setsockopt */
+    DWORD timeout = timeout_ms;
+    setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (const char *)&timeout, sizeof(timeout));
+    setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (const char *)&timeout, sizeof(timeout));
+#else
     struct timeval tv;
     tv.tv_sec = timeout_ms / 1000;
     tv.tv_usec = (timeout_ms % 1000) * 1000;
     setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
     setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
-    
+#endif
+
     if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
         close(fd);
         return -1;
     }
-    
+
     return fd;
 }
 

@@ -422,7 +422,7 @@ int apply_size_obfuscation(unsigned char *data, int len,
 }
 
 // Traffic analysis resistance - тайминг обфускация
-void apply_timing_obfuscation(void) {
+void apply_timing_obfuscation_shadowsocks(void) {
     if (!global_ta_params.enable_timing_obfuscation) {
         return;
     }
@@ -463,7 +463,7 @@ int shadowsocks_advanced_decrypt(struct ss_advanced_context *ctx,
     }
     
     // Применяем тайминг обфускацию
-    apply_timing_obfuscation();
+    apply_timing_obfuscation_shadowsocks();
     
     *plaintext_len = temp_len;
     ctx->packet_counter++;

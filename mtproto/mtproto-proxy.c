@@ -75,19 +75,10 @@
 #include "engine/engine-net.h"
 #include "common/vlog.h"
 
-// Windows stub functions for excluded modules
+// Windows stub functions for excluded modules - only stubs that don't conflict with declarations
 #ifdef _WIN32
-typedef struct async_job *connection_job_t;
-static inline connection_job_t connection_get_by_fd_generation(int fd, int gen) { (void)fd; (void)gen; return NULL; }
-static inline int fail_connection(connection_job_t C, int err) { (void)C; (void)err; return 0; }
-static inline int set_connection_timeout(connection_job_t C, double timeout) { (void)C; (void)timeout; return 0; }
-static inline int clear_connection_timeout(connection_job_t C) { (void)C; return 0; }
-static inline void *create_target(void) { return NULL; }
-static inline void destroy_target(void *target) { (void)target; }
-static inline void fetch_connections_stat(void *sb) { (void)sb; }
-static inline void fetch_aes_crypto_stat(void *sb) { (void)sb; }
-static inline int init_listening_tcpv6_connection(void *addr, int addr_len, int port, int backlog, int flags) { (void)addr; (void)addr_len; (void)port; (void)backlog; (void)flags; return -1; }
-static inline int server_socket(void *addr, int addr_len, int port, int backlog, int flags) { (void)addr; (void)addr_len; (void)port; (void)backlog; (void)flags; return -1; }
+// No inline stubs here - they conflict with actual function declarations in included headers
+// The actual implementations are in net-connections.c and other .c files
 #endif
 
 #ifndef COMMIT

@@ -135,6 +135,7 @@ typedef struct {
     const uint8_t* body;
     size_t body_length;
     int64_t content_length;
+    size_t headers_count;
 } http3_request_t;
 
 // HTTP/3 response
@@ -164,6 +165,11 @@ typedef struct {
     quic_data_callback_t on_data_received;
     quic_error_callback_t on_error;
     void* user_data;
+    // Server state
+    char* server_host;
+    uint16_t server_port;
+    void* server_socket;
+    bool server_running;
 } http3_context_t;
 
 // ============================================================================

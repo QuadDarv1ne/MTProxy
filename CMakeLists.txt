@@ -79,8 +79,11 @@ if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
     # Architecture-specific optimizations (single definition)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mpclmul -mfpmath=sse -mssse3")
 
-    # Advanced optimization flags (single definition)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto -funroll-loops -ftree-vectorize")
+    # Advanced optimization flags - disable LTO for Windows compatibility
+    # LTO causes type mismatch errors on Windows
+    # Remove all LTO flags completely
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -funroll-loops -ftree-vectorize -fno-lto")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fno-lto")
 
     # Profile-guided optimization support
     option(ENABLE_PGO "Enable Profile-Guided Optimization" OFF)
@@ -109,8 +112,9 @@ if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
     endif()
 
     # Link-time optimization and architecture tuning (single definition)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto=auto")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -flto=auto")
+    # Linux LTO support - disabled for cross-platform compatibility
+    # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto=auto")
+    # set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -flto=auto")
 
     # Security-specific flags
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fstack-protector-strong -D_FORTIFY_SOURCE=2")
@@ -276,6 +280,7 @@ set(COMMON_SOURCES
     common/platform_network.h
     common/platform_compat.h
     common/vlog.c
+    common/windows-stubs.c
     common/vlog.h
     common/cache-manager.c
     common/cache-manager.h
@@ -640,9 +645,11 @@ set(MTPROTO_SOURCES
 # Create a static library for crypto modules (compiled without -ffast-math for security)
 add_library(kdb_crypto STATIC ${CRYPTO_SOURCES})
 target_compile_options(kdb_crypto PRIVATE -fno-fast-math)
+target_include_directories(kdb_crypto PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/common)
 
 # Create a static library for common functionality
 add_library(kdb_common STATIC ${COMMON_SOURCES} ${JOBS_SOURCES} ${VV_SOURCES} ${CONN_POOL_SOURCES} ${GENERAL_SOURCES} ${INFRASTRUCTURE_SOURCES} ${THREAD_SYSTEM_SOURCES} ${SYSTEM_SOURCES} ${SECURITY_SOURCES} ${ADVANCED_OPTIMIZATION_SOURCES} ${OBFUSCATION_SOURCES} ${PERF_MONITOR_SOURCES})
+target_include_directories(kdb_common PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/common)
 
 # Target for the main mtproto-proxy executable
 add_executable(mtproto-proxy
@@ -661,6 +668,11 @@ target_link_libraries(mtproto-proxy
     ZLIB::ZLIB
     Threads::Threads
 )
+
+# Windows console application flags
+if(WIN32)
+    target_link_options(mtproto-proxy PRIVATE -mconsole)
+endif()
 
 # Parallel link optimization
 include(ProcessorCount)
@@ -844,6 +856,7 @@ if(BUILD_SHARED_LIB)
     target_include_directories(mtproxy PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/common>
         $<INSTALL_INTERFACE:include>
     )
     

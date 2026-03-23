@@ -125,11 +125,11 @@ static int dns_resolve_upstream(const char *domain, char *ips, int max_ips, uint
     
     for (p = res; p != NULL && ip_count < max_ips; p = p->ai_next) {
         if (p->ai_family == AF_INET) {
-            struct sockaddr_in *ipv4 = (struct sockaddr_in *)p->ai_sa;
+            struct sockaddr_in *ipv4 = (struct sockaddr_in *)p->ai_addr;
             inet_ntop(AF_INET, &ipv4->sin_addr, ips + (ip_count * 64), 64);
             ip_count++;
         } else if (p->ai_family == AF_INET6) {
-            struct sockaddr_in6 *ipv6 = (struct sockaddr_in6 *)p->ai_sa;
+            struct sockaddr_in6 *ipv6 = (struct sockaddr_in6 *)p->ai_addr;
             inet_ntop(AF_INET6, &ipv6->sin6_addr, ips + (ip_count * 64), 64);
             ip_count++;
         }

@@ -122,7 +122,7 @@ int obfs_base64_encrypt(unsigned char *data, int len,
 // Traffic analysis resistance функции
 int apply_size_obfuscation(unsigned char *data, int len,
                           unsigned char *output, int *output_len);
-void apply_timing_obfuscation(void);
+void apply_timing_obfuscation_shadowsocks(void);
 int check_replay_attack(struct ss_advanced_context *ctx,
                        const unsigned char *data, int len);
 

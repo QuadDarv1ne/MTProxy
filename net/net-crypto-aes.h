@@ -25,6 +25,9 @@
 
 */
 
+#ifndef _NET_CRYPTO_AES_H
+#define _NET_CRYPTO_AES_H
+
 #pragma once
 
 #include <openssl/aes.h>
@@ -95,3 +98,5 @@ static inline void aes_secret_decref (aes_secret_t *secret) { if (__sync_add_and
 static inline void aes_secret_incref (aes_secret_t *secret) { __sync_fetch_and_add (&secret->refcnt, 1); }
 void free_crypto_temp (void *crypto, int len);
 void *alloc_crypto_temp (int len);
+
+#endif /* _NET_CRYPTO_AES_H */

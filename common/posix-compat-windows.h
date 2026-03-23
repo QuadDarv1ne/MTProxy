@@ -22,6 +22,15 @@
 #include <string.h>
 #include <psapi.h>
 
+// Fake sys/socket.h for Windows (winsock2.h already included above)
+#ifdef _MSC_VER
+#define _SYS_SOCKET_H_
+#endif
+#ifndef _SYS_SOCKET_H
+#define _SYS_SOCKET_H
+// winsock2.h already provides socket functionality
+#endif
+
 // Define socklen_t if not already defined
 #ifndef socklen_t
 typedef int socklen_t;
@@ -579,8 +588,8 @@ static inline int windows_get_random(void *buf, size_t len) {
 }
 
 // Stub for /dev/random file descriptor
-#define DEV_RANDOM_FD_MAGIC 0xDEVRANDOM
-#define DEV_URANDOM_FD_MAGIC 0xDEVURANDOM
+#define DEV_RANDOM_FD_MAGIC 0xDEADBEEF
+#define DEV_URANDOM_FD_MAGIC 0xCAFEBABE
 
 static inline int open_dev_random(const char *pathname, int flags) {
     if (strcmp(pathname, "/dev/random") == 0 ||
@@ -620,11 +629,16 @@ static inline int close_dev_random(int fd) {
 #undef close
 #endif
 
-#define open(pathname, flags, ...) \
-    (strcmp((pathname), "/dev/random") == 0 || \
-     strcmp((pathname), "/dev/urandom") == 0 ? \
-     open_dev_random((pathname), (flags)) : \
-     _open((pathname), (flags), __VA_ARGS__))
+// Helper macros for open with variable arguments
+#define _OPEN_2_ARGS(pathname, flags) \
+    (strcmp((pathname), "/dev/random") == 0 || strcmp((pathname), "/dev/urandom") == 0 ? \
+     open_dev_random((pathname), (flags)) : _open((pathname), (flags), 0))
+#define _OPEN_3_ARGS(pathname, flags, mode) \
+    (strcmp((pathname), "/dev/random") == 0 || strcmp((pathname), "/dev/urandom") == 0 ? \
+     open_dev_random((pathname), (flags)) : _open((pathname), (flags), (mode)))
+#define _GET_OPEN_MACRO(_1, _2, _3, NAME, ...) NAME
+
+#define open(...) _GET_OPEN_MACRO(__VA_ARGS__, _OPEN_3_ARGS, _OPEN_2_ARGS)(__VA_ARGS__)
 
 #define read(fd, buf, count) \
     ((fd) == DEV_RANDOM_FD_MAGIC || (fd) == DEV_URANDOM_FD_MAGIC ? \
@@ -648,8 +662,8 @@ static inline int close_dev_random(int fd) {
 typedef struct stats_buffer stats_buffer_t;
 static inline int connections_prepare_stat(stats_buffer_t *sb) { return 0; }
 
-// Stub for crypto_aes_prepare_stat - correct signature
-static inline int crypto_aes_prepare_stat(stats_buffer_t *sb) { return 0; }
+// crypto_aes_prepare_stat is defined in net-crypto-aes.c via MODULE_STAT_FUNCTION
+// Don't define stub here to avoid redefinition error
 
 // Stub for assert_engine_thread
 static inline void assert_engine_thread(void) {}
@@ -663,44 +677,14 @@ static inline void incr_active_dh_connections(void) {}
 // Stub for nat_translate_ip
 static inline unsigned int nat_translate_ip(unsigned int ip) { return ip; }
 
-// Global variables stubs for excluded modules
-// Note: Types must match the original declarations (from net-events.c)
-extern double tot_idle_time;
-extern double a_idle_time;
-extern double a_idle_quotient;
-extern double last_epoll_wait_at;
-extern long long epoll_calls;
-extern long long epoll_intr;
-
-// main_secret is aes_secret_t (defined in net-crypto-aes.h)
-// Include the header for proper type definition
-#include "../net/net-crypto-aes.h"
-extern aes_secret_t main_secret;
-
-// main_thread_interrupt_status is volatile int
-extern volatile int main_thread_interrupt_status;
-
-static double _tot_idle_time_stub = 0.0;
-static double _a_idle_time_stub = 0.0;
-static double _a_idle_quotient_stub = 0.0;
-static double _last_epoll_wait_at_stub = 0.0;
-static long long _epoll_calls_stub = 0;
-static long long _epoll_intr_stub = 0;
-// Stub for main_secret - actual aes_secret_t structure
-static aes_secret_t _main_secret_stub = {0, 0, {0}};
-static volatile int _main_thread_interrupt_status_stub = 0;
-
-#define tot_idle_time _tot_idle_time_stub
-#define a_idle_time _a_idle_time_stub
-#define a_idle_quotient _a_idle_quotient_stub
-#define last_epoll_wait_at _last_epoll_wait_at_stub
-#define epoll_calls _epoll_calls_stub
-#define epoll_intr _epoll_intr_stub
-#define main_secret _main_secret_stub
-#define main_thread_interrupt_status _main_thread_interrupt_status_stub
+// Additional Windows stubs for missing functions
+// Only stub functions that are truly missing on Windows
+// Don't stub functions declared in net-connections.h, net-events.h etc. - they have real implementations
 
 // Stub for crc32c_partial (use crc32c_fast instead)
 #define crc32c_partial crc32c_fast
+
+// Global variables and stub functions are now defined in windows-stubs.c
 
 #endif // _WIN32
 

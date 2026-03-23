@@ -60,10 +60,14 @@ int socks5_server_start(socks5_server_t *server) {
     if (server->server_fd < 0) {
         return -1;
     }
-    
+
     /* Устанавливаем опции */
     int opt = 1;
+#ifdef _WIN32
+    setsockopt(server->server_fd, SOL_SOCKET, SO_REUSEADDR, (const char *)&opt, sizeof(opt));
+#else
     setsockopt(server->server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+#endif
     
     /* Bind */
     struct sockaddr_in addr;
@@ -413,15 +417,19 @@ int socks5_server_stop(socks5_server_t *server) {
     }
     
     server->running = 0;
-    
+
     if (server->server_fd >= 0) {
+#ifdef _WIN32
+        shutdown(server->server_fd, SD_BOTH);
+#else
         shutdown(server->server_fd, SHUT_RDWR);
+#endif
         close(server->server_fd);
         server->server_fd = -1;
     }
-    
+
     pthread_join(server->thread, NULL);
-    
+
     return 0;
 }
 
