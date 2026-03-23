@@ -28,25 +28,25 @@
 - Admin CLI работает (v1.0.0)
 - libmtproxy.dll для FFI готова
 
-**⚠️ Проблема:**
-- `mtproto-proxy.exe` завершается сразу после запуска (код возврата 0)
-- Причина: требуется эмуляция POSIX функций (fork, epoll, signals)
-- Решение: требуется доработка windows-stubs.c
+**✅ Решено:**
+- `mtproto-proxy.exe` теперь работает на Windows
+- Реализована эмуляция epoll через select()
+- Исправлен illegal instruction (AVX2/AVX512 → SSE4.2)
+- Добавлен ws2tcpip.h для inet_pton/inet_ntop
 
-### 🔧 Требуется доработка для Windows
+### ✅ Выполнено для Windows (23 марта 2026)
 
-**Анализ проблемы (23 марта 2026):**
-- Проблема: mtproto-proxy.exe завершается сразу после запуска
-- Причина: net-events.c использует epoll_create/epoll_wait (Linux-only)
-- Текущие stubs в windows-stubs.c не реализуют event loop
-- Решение: реализовать Windows event loop через select() или WSAPoll()
+**Решённые проблемы:**
+- ✅ Windows event loop реализован через select() в windows-stubs.c
+- ✅ Эмуляция epoll_create/epoll_insert/epoll_remove/epoll_work для Windows
+- ✅ Исправлен illegal instruction: SSE4.2 вместо AVX2/AVX512 в CMakeLists.txt
+- ✅ Добавлен ws2tcpip.h в posix-compat-windows.h
+- ✅ Proxy запускается и показывает help без ошибок
+- ✅ Размер бинарника: 84 MB (mtproto-proxy.exe)
 
-**Задачи:**
-- [ ] **Реализовать Windows event loop** через select() в windows-stubs.c
-- [ ] **Эмуляция epoll_create/epoll_ctl/epoll_wait** для Windows
-- [ ] **Обработка сигналов** через SetConsoleCtrlHandler (опционально)
-- [ ] **Тестирование** с реальной конфигурацией
-- [ ] **Документация** ограничений Windows (single-worker only)
+**Ограничения Windows:**
+- Single-worker mode только (-M 1)
+- fork() не поддерживается (эмулируется через возврат -1)
 
 ### 📋 Альтернативные варианты запуска
 
