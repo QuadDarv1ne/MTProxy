@@ -167,7 +167,7 @@ if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
 # Shared library for FFI (Flutter, mobile apps)
 option(BUILD_SHARED_LIB "Build shared library for FFI integration" OFF)
 if(BUILD_SHARED_LIB)
-    add_definitions(-DMTPROXY_EXPORTS)
+    add_definitions(-DMTPROXY_EXPORTS -DBUILD_SHARED_LIB)
 endif()
     
     # Memory optimization flags
