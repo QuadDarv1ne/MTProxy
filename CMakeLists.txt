@@ -329,23 +329,25 @@ set(NET_SOURCES
     # Дополнительные сетевые модули
     net/adaptive-protocol-manager.c
     net/adaptive-protocol-manager.h
-    # net/advanced-connection-pool.c
-    # net/advanced-network.c
+    net/advanced-connection-pool.c
+    # net/advanced-connection-pool.h - отсутствует
+    # net/advanced-network.c - requires epoll
     net/advanced-network.h
-    # net/async-network-optimizer.c
+    # net/async-network-optimizer.c - requires epoll
     net/async-network-optimizer.h
     net/enhanced-tls-obfuscation.c
     net/enhanced-tls-obfuscation.h
     net/multiproto-manager.c
     net/multiproto-manager.h
-    # net/net-buffer-manager.c
-    # net/net-connections-pool.c
-    # net/net-connections-pool.h
-    # net/net-enhanced-networking.c
-    # net/net-event-handler.c
+    net/net-buffer-manager.c
+    # net/net-buffer-manager.h - отсутствует
+    net/net-connections-pool.c
+    net/net-connections-pool.h
+    # net/net-enhanced-networking.c - requires epoll
+    # net/net-event-handler.c - requires epoll
     # net/net-performance-manager.c
     net/net-performance-manager.h
-    # net/net-quic-connections.c
+    net/net-quic-connections.c
     net/net-quic-connections.h
     # net/network-connection-optimizer.c
     net/network-connection-optimizer.h
