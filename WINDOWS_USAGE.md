@@ -1,6 +1,48 @@
 # Использование MTProxy на Windows
 
-## Быстрый старт
+## ⚠️ Статус Windows версии
+
+**Текущий статус (23 марта 2026):**
+- ✅ Компиляция успешна (84 MB)
+- ✅ Загрузка конфигурации работает
+- ✅ Загрузка секретов работает (CryptGenRandom)
+- ✅ Запуск сервера успешен
+- ❌ **Segmentation fault в event loop**
+
+**Проблема:** Windows epoll emulation через select() не полностью реализована. Proxy запускается, но падает при обработке событий.
+
+**Рекомендация:** Используйте WSL2 или Docker для полной функциональности.
+
+---
+
+## Рекомендуемые альтернативы
+
+### WSL2 (рекомендуется)
+
+```powershell
+# Установка WSL2
+wsl --install
+
+# Запуск Ubuntu
+wsl
+
+# В WSL2
+cd /mnt/c/Users/.../MTProxy
+make -j4
+./objs/bin/mtproto-proxy -M 4 -p 8888 --aes-pwd proxy-secret proxy-multi.conf
+```
+
+### Docker
+
+```powershell
+# Сборка образа
+docker build -t mtproxy .
+
+# Запуск
+docker run -d -p 8888:8888 mtproxy
+```
+
+---
 
 ### 1. Получение секретного ключа
 
