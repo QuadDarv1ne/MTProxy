@@ -1,10 +1,40 @@
 # MTProxy Project TODO
 
 > **Актуально на:** 23 марта 2026 г.
-> **Коммит:** 222757a (dev = master = origin/dev = origin/master)
+> **Коммит:** fb09866 (Windows support)
 > **Версия:** v1.0.1
-> **Статус:** ✅ Чистое дерево git, все изменения закоммичены и отправлены
-> **Оптимизации:** -34 строки дублирующегося кода, +12 строк forward declarations, +4 модуля включено
+> **Статус:** ✅ Windows сборка готова, динамический запуск реализован
+> **Оптимизации:** Полная поддержка Windows (MSYS2/UCRT64)
+
+## 🔴 Требуется после перезагрузки (23 марта 2026)
+
+### Запуск MTProxy на Windows
+- [ ] **Перезагрузить ноутбук**
+- [ ] После перезагрузки открыть терминал MSYS2 UCRT64
+- [ ] Перейти в папку проекта:
+  ```bash
+  cd /c/Users/maksi/OneDrive/Documents/GitHub/MTProxy/build/MTProxy-Windows
+  ```
+- [ ] Загрузить конфигурацию Telegram:
+  ```bash
+  curl -s https://core.telegram.org/getProxySecret -o proxy-secret
+  curl -s https://core.telegram.org/getProxyConfig -o proxy-multi.conf
+  ```
+- [ ] Запустить MTProxy:
+  ```bash
+  ./start-dynamic.ps1
+  ```
+- [ ] ИЛИ вручную:
+  ```bash
+  mtproto-proxy.exe -p 8888 -H 443 -S ddcafebabe12345678cafebabe12345678 --aes-pwd proxy-secret proxy-multi.conf -M 1
+  ```
+- [ ] Проверить работу:
+  ```bash
+  mtproxy-admin.exe status
+  mtproxy-admin.exe stats
+  ```
+- [ ] Проверить логи (если есть proxy.log)
+- [ ] Протестировать подключение через Telegram
 
 ## ✅ Выполнено (Март 2026)
 
