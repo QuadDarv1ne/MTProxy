@@ -528,25 +528,7 @@ static inline int fcntl(int fd, int cmd, ...) {
 
 // Stub implementations for excluded network functions
 // Only provide stubs for functions NOT declared in other headers
-
-// show_ip stub - returns static buffer with IP string
-static inline const char *show_ip(unsigned ip) {
-    static char buf[16];
-    struct in_addr addr;
-    addr.s_addr = ip;
-    strncpy(buf, inet_ntoa(addr), sizeof(buf) - 1);
-    buf[sizeof(buf) - 1] = '\0';
-    return buf;
-}
-
-// show_ipv6 stub - returns static buffer with IPv6 string
-static inline const char *show_ipv6(const unsigned char ipv6[16]) {
-    static char buf[64];
-    snprintf(buf, sizeof(buf), "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
-             ipv6[0], ipv6[1], ipv6[2], ipv6[3], ipv6[4], ipv6[5], ipv6[6], ipv6[7],
-             ipv6[8], ipv6[9], ipv6[10], ipv6[11], ipv6[12], ipv6[13], ipv6[14], ipv6[15]);
-    return buf;
-}
+// Note: show_ip, show_ipv6, assert_engine_thread, etc. are in windows-stubs.c
 
 // Stub for client_socket - not used in Windows build
 static inline int client_socket(unsigned int ip, int port, int use_ipv6) {
@@ -665,24 +647,17 @@ static inline int connections_prepare_stat(stats_buffer_t *sb) { return 0; }
 // crypto_aes_prepare_stat is defined in net-crypto-aes.c via MODULE_STAT_FUNCTION
 // Don't define stub here to avoid redefinition error
 
-// Stub for assert_engine_thread
-static inline void assert_engine_thread(void) {}
-
-// Stub for assert_net_cpu_thread
-static inline void assert_net_cpu_thread(void) {}
-
-// Stub for incr_active_dh_connections
-static inline void incr_active_dh_connections(void) {}
-
-// Stub for nat_translate_ip
-static inline unsigned int nat_translate_ip(unsigned int ip) { return ip; }
+// Note: assert_engine_thread, assert_net_cpu_thread, incr_active_dh_connections,
+//       nat_translate_ip are defined in windows-stubs.c
 
 // Additional Windows stubs for missing functions
 // Only stub functions that are truly missing on Windows
 // Don't stub functions declared in net-connections.h, net-events.h etc. - they have real implementations
 
-// Stub for crc32c_partial (use crc32c_fast instead)
+// Use crc32c_fast on Windows (crc32c_partial is in crc32c.c)
+#ifndef crc32c_partial
 #define crc32c_partial crc32c_fast
+#endif
 
 // Global variables and stub functions are now defined in windows-stubs.c
 

@@ -668,7 +668,9 @@ static unsigned int crc32c_partial_stub(const void *data, int len, unsigned int 
     return crc;
 }
 
+#ifdef __GNUC__
 __attribute__((constructor))
+#endif
 static void crc32c_init_windows(void) {
     crc32c_partial = crc32c_partial_stub;
 }

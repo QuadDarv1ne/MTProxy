@@ -77,7 +77,4 @@ void tcp_set_max_accept_rate(int rate) { (void)rate; }
 void net_add_nat_info(unsigned int ip, unsigned int mask) { (void)ip; (void)mask; }
 void tcp_set_max_connections(int max) { (void)max; }
 
-// CRC32 stub - declared as function pointer
-static unsigned int crc32c_fast_stub(const void *data, int len, unsigned int crc) { (void)data; (void)len; return crc; }
-
 #endif /* _WIN32 */
