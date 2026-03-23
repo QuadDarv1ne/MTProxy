@@ -23,6 +23,10 @@
 
 #include <time.h>
 
+#ifdef _WIN32
+#include <pthread.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

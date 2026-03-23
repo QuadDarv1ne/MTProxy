@@ -415,15 +415,41 @@ set(NET_SOURCES
 if(WIN32)
     # net-events.c and net-connections.c require epoll implementation for Windows
     # These are excluded until proper Windows compatibility is added
-    list(REMOVE_ITEM NET_SOURCES 
+    list(REMOVE_ITEM NET_SOURCES
         "net/net-events.c"
         "net/net-connections.c"
         "net/net-tcp-rpc-ext-server.c"
+        # Files with missing headers or Windows incompatibilities
+        "net/net-buffer-manager.c"
+        "net/net-connections-pool.c"
+        "net/advanced-connection-pool.c"
+        "net/net-quic-connections.c"
+        "net/net-quic-connections.h"
+        # Additional Windows exclusions
+        "net/net-thread.c"
+        "net/net-thread.h"
+        "net/multiproto-manager.c"
+        "net/multiproto-manager.h"
+        "net/adaptive-protocol-manager.c"
+        "net/adaptive-protocol-manager.h"
+        "net/enhanced-tls-obfuscation.c"
+        "net/enhanced-tls-obfuscation.h"
     )
-    list(REMOVE_ITEM NET_SOURCES 
+    list(REMOVE_ITEM NET_SOURCES
         "net/net-events.h"
         "net/net-connections.h"
         "net/net-tcp-rpc-ext-server.h"
+        "net/net-buffer-manager.h"
+        "net/net-thread.h"
+        "net/multiproto-manager.h"
+        "net/adaptive-protocol-manager.h"
+        "net/enhanced-tls-obfuscation.h"
+    )
+
+    # Exclude log-aggregator.c due to POSIX regex dependency
+    list(REMOVE_ITEM COMMON_SOURCES
+        "common/log-aggregator.c"
+        "common/log-aggregator.h"
     )
 endif()
 
@@ -734,7 +760,8 @@ set_target_properties(test-traffic-stats PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
-# FFI API test executable
+# FFI API test executable - not available on Windows (requires full FFI implementation)
+if(NOT WIN32)
 add_executable(test-ffi-api
     testing/test_ffi_api.c
 )
@@ -747,8 +774,10 @@ target_link_libraries(test-ffi-api
 set_target_properties(test-ffi-api PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
+endif()
 
-# Performance test executable
+# Performance test executable - not available on Windows
+if(NOT WIN32)
 add_executable(test-performance
     testing/test_performance.c
 )
@@ -761,8 +790,10 @@ target_link_libraries(test-performance
 set_target_properties(test-performance PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
+endif()
 
-# Admin CLI integration test executable
+# Admin CLI integration test executable - not available on Windows (requires config-manager API)
+if(NOT WIN32)
 add_executable(test-admin-cli-integration
     testing/test_admin_cli_integration.c
 )
@@ -775,8 +806,10 @@ target_link_libraries(test-admin-cli-integration
 set_target_properties(test-admin-cli-integration PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
+endif()
 
-# Cache performance test executable (Q2 2026)
+# Cache performance test executable (Q2 2026) - not available on Windows (API mismatch)
+if(NOT WIN32)
 add_executable(cache-performance-test
     testing/cache_performance_test.c
 )
@@ -789,8 +822,10 @@ target_link_libraries(cache-performance-test
 set_target_properties(cache-performance-test PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
+endif()
 
-# Rate limiter high-load test executable (Q2 2026)
+# Rate limiter high-load test executable (Q2 2026) - not available on Windows (API mismatch)
+if(NOT WIN32)
 add_executable(rate-limiter-highload-test
     testing/rate_limiter_highload_test.c
 )
@@ -803,8 +838,10 @@ target_link_libraries(rate-limiter-highload-test
 set_target_properties(rate-limiter-highload-test PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
+endif()
 
-# Integration tests executable (Q2 2026)
+# Integration tests executable (Q2 2026) - not available on Windows (requires config-manager API)
+if(NOT WIN32)
 add_executable(integration-tests
     testing/integration_tests.c
 )
@@ -817,11 +854,18 @@ target_link_libraries(integration-tests
 set_target_properties(integration-tests PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
+endif()
 
-# Installation rules
-install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-ffi-api test-performance test-admin-cli-integration cache-performance-test rate-limiter-highload-test integration-tests
-    RUNTIME DESTINATION bin
-)
+# Installation rules - Windows excludes some targets
+if(WIN32)
+    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats
+        RUNTIME DESTINATION bin
+    )
+else()
+    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-ffi-api test-performance test-admin-cli-integration cache-performance-test rate-limiter-highload-test integration-tests
+        RUNTIME DESTINATION bin
+    )
+endif()
 
 # ============================================================================
 # Shared Library for FFI Integration (Flutter, Mobile Apps)

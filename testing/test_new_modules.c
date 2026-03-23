@@ -9,7 +9,12 @@
 #include <string.h>
 #include <assert.h>
 #include <time.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <unistd.h>
+#endif
 
 #include "common/cache-manager.h"
 #include "common/rate-limiter.h"

@@ -34,9 +34,8 @@ __thread long long precise_now_rdtsc;
 long long precise_time;
 long long precise_time_rdtsc;
 
-double get_utime_monotonic (void) __attribute__ ((weak));
+#ifdef _WIN32
 double get_utime_monotonic (void) {
-#if defined(_WIN32)
   static LARGE_INTEGER frequency;
   static int initialized = 0;
   LARGE_INTEGER counter;
@@ -47,7 +46,11 @@ double get_utime_monotonic (void) {
   QueryPerformanceCounter(&counter);
   precise_now_rdtsc = rdtsc();
   return precise_now = (double)counter.QuadPart / frequency.QuadPart;
-#elif _POSIX_TIMERS
+}
+#else
+double get_utime_monotonic (void) __attribute__ ((weak));
+double get_utime_monotonic (void) {
+#if _POSIX_TIMERS
   struct timespec T;
   assert (clock_gettime (CLOCK_MONOTONIC, &T) >= 0);
   precise_now_rdtsc = rdtsc ();
@@ -58,6 +61,7 @@ double get_utime_monotonic (void) {
   return precise_now = time ();
 #endif
 }
+#endif
 
 double get_double_time (void) {
   static double last_double_time = -1;

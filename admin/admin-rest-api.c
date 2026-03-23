@@ -31,6 +31,7 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #define SHUT_WR SD_SEND
+#define close closesocket
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>

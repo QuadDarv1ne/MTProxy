@@ -34,6 +34,7 @@
 #include "jobs/jobs.h"
 #include "common/mp-queue.h"
 #include "common/pid.h"
+#include <stdio.h>
 
 #define MAX_CONNECTIONS	65536
 #define MAX_TARGETS	65536
@@ -329,7 +330,20 @@ struct connections_stat {
 #define SOCKET_CONN_INFO(_conn) ((struct socket_connection_info *)((_conn)->j_custom))
 #define CONN_TARGET_INFO(_conn_target) ((struct conn_target_info *)((_conn_target)->j_custom))
 
+#ifdef _WIN32
+static inline const char *show_ip46 (unsigned ip, const unsigned char ipv6[16]) {
+  static char buf[64];
+  if (ip) {
+    // show_ip on Windows prints directly, return a placeholder
+    snprintf(buf, sizeof(buf), "%u.%u.%u.%u", (ip >> 0) & 0xFF, (ip >> 8) & 0xFF, (ip >> 16) & 0xFF, (ip >> 24) & 0xFF);
+    return buf;
+  } else {
+    return show_ipv6 (ipv6);
+  }
+}
+#else
 static inline const char *show_ip46 (unsigned ip, const unsigned char ipv6[16]) { return ip ? show_ip (ip) : show_ipv6 (ipv6); }
+#endif
 static inline const char *show_our_ip (connection_job_t c) { return show_ip46 (CONN_INFO(c)->our_ip, CONN_INFO(c)->our_ipv6); }
 static inline const char *show_remote_ip (connection_job_t c) { return show_ip46 (CONN_INFO(c)->remote_ip, CONN_INFO(c)->remote_ipv6); }
 static inline const char *show_our_socket_ip (socket_connection_job_t c) { return show_ip46 (SOCKET_CONN_INFO(c)->our_ip, SOCKET_CONN_INFO(c)->our_ipv6); }

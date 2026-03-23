@@ -148,6 +148,21 @@ dnf install openssl-devel zlib-devel make automake gcc gcc-c++ cmake
 - MSYS2 с UCRT64 или MinGW-w64
 - CMake 3.20+
 - OpenSSL, ZLIB
+- pthread-win32
+
+**Быстрая сборка на Windows:**
+```bash
+# В MSYS2 UCRT64 терминале
+pacman -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-openssl
+
+mkdir build && cd build
+cmake -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIB=ON ..
+cmake --build . --parallel
+
+# Результат в build/bin/
+```
+
+📄 **Подробная документация**: [BUILD_WINDOWS.md](BUILD_WINDOWS.md)
 - ⚠️ Ограничение: single-worker mode (fork не поддерживается)
 
 **macOS:**

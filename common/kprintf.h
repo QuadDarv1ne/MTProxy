@@ -57,7 +57,7 @@ void nck_pwrite (int fd, const void *data, size_t len, off_t offset);
 
 // Windows stubs (defined in windows-stubs.c)
 #ifdef _WIN32
-void show_ip(unsigned int ip);
+void show_ip_print(unsigned int ip);
 const char *show_ipv6(const unsigned char ipv6[16]);
 void assert_engine_thread(void);
 void assert_net_cpu_thread(void);
