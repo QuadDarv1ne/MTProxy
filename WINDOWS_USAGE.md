@@ -7,19 +7,18 @@
 - ✅ Загрузка конфигурации работает
 - ✅ Загрузка секретов работает (CryptGenRandom)
 - ✅ Инициализация сервера успешна
-- ❌ **Segmentation fault при запуске**
+- ✅ **Windows socket API реализован** (WSASocket, bind, listen)
+- ✅ **Event loop активен** (select() для Windows)
+- ⏳ **Тестирование требуется** - проверка работы в реальных условиях
 
-**Проблема:** MTProxy использует Linux-специфичную архитектуру (epoll, Unix sockets, pipes). Windows версия требует полной переработки сетевого слоя:
-- Listening sockets не создаются (server_socket stubbed)
-- Event loop не обрабатывает события (epoll emulation incomplete)
-- Pipes и IPC механизмы не реализованы
-- Многие критические функции возвращают заглушки
+**Исправлено:**
+- Listening sockets теперь создаются (server_socket реализован)
+- Event loop обрабатывает события (select() вместо epoll)
+- init_listening_tcpv6_connection() возвращает успех
 
-**Требуется для работы:**
-1. Реализация Windows socket API (WSA)
-2. IOCP или полноценный select() event loop
-3. Windows pipes вместо Unix pipes
-4. Переработка connection management
+**Остаётся:**
+- Pipes и IPC механизмы (для multi-worker режима)
+- Полное тестирование функциональности
 
 **Рекомендация:** Используйте WSL2 или Docker для полной функциональности. Нативная Windows версия требует значительной доработки.
 

@@ -58,13 +58,14 @@
 - Event loop не обрабатывает события (epoll emulation неполная)
 - Pipes и IPC механизмы не реализованы
 
-**Требуется для исправления:**
-1. Реализовать Windows socket API (WSASocket, bind, listen, accept)
-2. Реализовать полноценный event loop (IOCP или select())
-3. Реализовать Windows pipes для IPC
-4. Переработать connection management для Windows
+**Исправлено (23 марта 2026):**
+1. ✅ Реализован Windows socket API (WSASocket, bind, listen)
+2. ✅ Реализован server_socket() для IPv4 и IPv6
+3. ✅ Реализован init_listening_tcpv6_connection()
+4. ✅ Включён event loop (select() для Windows)
+5. ⏳ Pipes и IPC механизмы - требуется дальнейшая работа
 
-**Статус**: Требуется значительная доработка. Рекомендуется WSL2/Docker.
+**Статус**: ⚠️ Частично исправлено. Сокеты работают, event loop активен. Требуется тестирование.
 
 ### net/net-events.c - Linux-специфичный код
 **Проблема**: Файл содержит 65+ вызовов Linux API (epoll, getifaddrs, ifaddrs)

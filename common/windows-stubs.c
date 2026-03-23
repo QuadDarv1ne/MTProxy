@@ -375,20 +375,11 @@ int epoll_work(int timeout) {
         init_epoll();
     }
 
-    // Temporary: disable event processing to isolate crash
-    // Just sleep and return 0 to keep the event loop running
-    if (timeout > 0) {
-        Sleep(timeout < 100 ? timeout : 100);
-    }
-    return 0;
-
-    /* Original implementation - disabled for debugging
     // Check if any file descriptors are registered
-    // On Windows, fd_set has fd_count field
     if (win_read_fds.fd_count == 0 && win_write_fds.fd_count == 0 && win_except_fds.fd_count == 0) {
         // No fds to monitor, just sleep
         if (timeout > 0) {
-            Sleep(timeout);
+            Sleep(timeout < 100 ? timeout : 100);
         }
         return 0;
     }
@@ -405,8 +396,8 @@ int epoll_work(int timeout) {
     int result = select(0, &read_fds, &write_fds, &except_fds,
                        timeout >= 0 ? &tv : NULL);
 
-    if (result < 0) {
-        // Error occurred
+    if (result == SOCKET_ERROR) {
+        printf("select() failed: %d\n", WSAGetLastError());
         return -1;
     }
 
@@ -416,19 +407,13 @@ int epoll_work(int timeout) {
     }
 
     // Process ready file descriptors and call handlers
-    // Iterate through Events array to find registered handlers
     int events_processed = 0;
 
     for (int i = 0; i < MAX_EVENTS && events_processed < result; i++) {
         event_t *ev = &Events[i];
 
         // Skip uninitialized entries
-        if (ev->fd < 0) {
-            continue;
-        }
-
-        // Skip entries without handlers
-        if (ev->work == NULL) {
+        if (ev->fd < 0 || ev->work == NULL) {
             continue;
         }
 
@@ -453,15 +438,14 @@ int epoll_work(int timeout) {
         events_processed++;
         ev->ready = ready_flags;
 
-        // Call the event handler with safety check
+        // Call the event handler
         event_handler_t handler = ev->work;
         void *handler_data = ev->data;
 
         if (handler != NULL) {
-            // Temporarily save handler info in case ev gets modified
             int handler_result = handler(fd, handler_data, ev);
 
-            // Handle return values - check if ev is still valid
+            // Handle return values
             if (Events[i].fd == fd) {
                 if (handler_result == -3) { // EVA_REMOVE
                     epoll_remove(fd);
@@ -477,7 +461,6 @@ int epoll_work(int timeout) {
     }
 
     return result;
-    */
 }
 
 // Notification event stubs
