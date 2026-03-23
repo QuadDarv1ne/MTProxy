@@ -8,33 +8,54 @@
 
 ## 🔴 Требуется после перезагрузки (23 марта 2026)
 
-### Запуск MTProxy на Windows
-- [ ] **Перезагрузить ноутбук**
-- [ ] После перезагрузки открыть терминал MSYS2 UCRT64
-- [ ] Перейти в папку проекта:
-  ```bash
-  cd /c/Users/maksi/OneDrive/Documents/GitHub/MTProxy/build/MTProxy-Windows
-  ```
-- [ ] Загрузить конфигурацию Telegram:
+### ✅ Выполнено после перезагрузки
+- [x] **Перезагрузить ноутбук**
+- [x] **Открыть терминал MSYS2 UCRT64**
+- [x] **Загрузить конфигурацию Telegram** (через Amnezia VPN):
   ```bash
   curl -s https://core.telegram.org/getProxySecret -o proxy-secret
   curl -s https://core.telegram.org/getProxyConfig -o proxy-multi.conf
   ```
-- [ ] Запустить MTProxy:
-  ```bash
-  ./start-dynamic.ps1
-  ```
-- [ ] ИЛИ вручную:
-  ```bash
-  mtproto-proxy.exe -p 8888 -H 443 -S ddcafebabe12345678cafebabe12345678 --aes-pwd proxy-secret proxy-multi.conf -M 1
-  ```
-- [ ] Проверить работу:
-  ```bash
-  mtproxy-admin.exe status
-  mtproxy-admin.exe stats
-  ```
-- [ ] Проверить логи (если есть proxy.log)
-- [ ] Протестировать подключение через Telegram
+- [x] **Конвертировать proxy-secret в текстовый формат**
+- [x] **Проверить запуск MTProxy**
+
+### 📊 Результаты запуска на Windows
+
+**✅ Успешно:**
+- Конфигурация загружена (proxy-secret: 318 байт, proxy-multi.conf: 821 байт)
+- Сборка работает (mtproto-proxy.exe: 84 MB)
+- Тесты проходят (test-traffic-stats: 10/10, test-new-modules: 43/45)
+- Admin CLI работает (v1.0.0)
+- libmtproxy.dll для FFI готова
+
+**⚠️ Проблема:**
+- `mtproto-proxy.exe` завершается сразу после запуска (код возврата 0)
+- Причина: требуется эмуляция POSIX функций (fork, epoll, signals)
+- Решение: требуется доработка windows-stubs.c
+
+### 🔧 Требуется доработка для Windows
+
+- [ ] **Реализовать эмуляцию fork()** через CreateProcess()
+- [ ] **Реализовать эмуляцию epoll()** через IOCP или select()
+- [ ] **Реализовать обработку сигналов** через SetConsoleCtrlHandler
+- [ ] **Добавить daemon mode** для Windows (служба)
+- [ ] **Тестировать запуск** с реальной конфигурацией
+
+### 📋 Альтернативные варианты запуска
+
+1. **Docker на Windows:**
+   ```powershell
+   docker run -d -p 443:443 mtproxy:latest
+   ```
+
+2. **WSL2:**
+   ```bash
+   wsl -d Ubuntu
+   cd /mnt/c/.../MTProxy
+   make && ./objs/bin/mtproto-proxy ...
+   ```
+
+3. **Linux сервер** (рекомендуется для продакшена)
 
 ## ✅ Выполнено (Март 2026)
 
