@@ -22,24 +22,37 @@
                    2016 Vitaly Valtman
 */
 
-#include <arpa/inet.h>
+#ifdef _WIN32
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
+#else
+    #include <arpa/inet.h>
+#endif
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
+#ifndef _WIN32
 #include <ifaddrs.h>
+#endif
 #include <limits.h>
+#ifndef _WIN32
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <pwd.h>
+#endif
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _WIN32
 #include <sys/epoll.h>
 #include <sys/io.h>
 #include <sys/socket.h>
+#endif
 #include <time.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 #include "engine/engine.h"
 #include "net/net-events.h"

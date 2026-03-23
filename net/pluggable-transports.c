@@ -367,9 +367,9 @@ int pt_get_available_transports(struct transport_info *transports, int max_count
     
     int count = (registered_transports < max_count) ? registered_transports : max_count;
     for (int i = 0; i < count; i++) {
-        strncpy(transports[i].name, transport_registry[i].name, 
-                sizeof(transports[i].name) - 1);
-        transports[i].name[sizeof(transports[i].name) - 1] = '\0';
+        size_t name_len = sizeof(transports[i].name) - 1;
+        strncpy(transports[i].name, transport_registry[i].name, name_len);
+        transports[i].name[name_len] = '\0';
         transports[i].type = transport_registry[i].type;
         transports[i].is_active = 0;
         

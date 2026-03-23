@@ -35,11 +35,18 @@
 
 ### 🔧 Требуется доработка для Windows
 
-- [ ] **Реализовать эмуляцию fork()** через CreateProcess()
-- [ ] **Реализовать эмуляцию epoll()** через IOCP или select()
-- [ ] **Реализовать обработку сигналов** через SetConsoleCtrlHandler
-- [ ] **Добавить daemon mode** для Windows (служба)
-- [ ] **Тестировать запуск** с реальной конфигурацией
+**Анализ проблемы (23 марта 2026):**
+- Проблема: mtproto-proxy.exe завершается сразу после запуска
+- Причина: net-events.c использует epoll_create/epoll_wait (Linux-only)
+- Текущие stubs в windows-stubs.c не реализуют event loop
+- Решение: реализовать Windows event loop через select() или WSAPoll()
+
+**Задачи:**
+- [ ] **Реализовать Windows event loop** через select() в windows-stubs.c
+- [ ] **Эмуляция epoll_create/epoll_ctl/epoll_wait** для Windows
+- [ ] **Обработка сигналов** через SetConsoleCtrlHandler (опционально)
+- [ ] **Тестирование** с реальной конфигурацией
+- [ ] **Документация** ограничений Windows (single-worker only)
 
 ### 📋 Альтернативные варианты запуска
 

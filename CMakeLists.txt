@@ -134,14 +134,23 @@ if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
 
     # Additional optimization flags for specific architectures (single definition)
     include(CheckCCompilerFlag)
-    CHECK_C_COMPILER_FLAG("-mavx2" HAS_AVX2)
-    if(HAS_AVX2)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx2")
-    endif()
 
-    CHECK_C_COMPILER_FLAG("-mavx512f" HAS_AVX512)
-    if(HAS_AVX512)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx512f")
+    # On Windows, use conservative SIMD flags for compatibility
+    if(WIN32)
+        CHECK_C_COMPILER_FLAG("-msse4.2" HAS_SSE42)
+        if(HAS_SSE42)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse4.2")
+        endif()
+    else()
+        CHECK_C_COMPILER_FLAG("-mavx2" HAS_AVX2)
+        if(HAS_AVX2)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx2")
+        endif()
+
+        CHECK_C_COMPILER_FLAG("-mavx512f" HAS_AVX512)
+        if(HAS_AVX512)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx512f")
+        endif()
     endif()
 
     # Enable link-time garbage collection

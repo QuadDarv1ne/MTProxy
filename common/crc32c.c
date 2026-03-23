@@ -662,7 +662,7 @@ crc32_combine_func_t compute_crc32c_combine;
 
 // Windows stub for crc32c_partial
 #ifdef _WIN32
-static unsigned int crc32c_partial_stub(const void *data, int len, unsigned int crc) {
+static unsigned crc32c_partial_stub(const void *data, long len, unsigned crc) {
     // Simple CRC32C stub - returns input for Windows compatibility
     (void)data; (void)len;
     return crc;

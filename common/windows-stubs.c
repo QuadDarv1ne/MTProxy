@@ -95,22 +95,130 @@ void unlock_job(JOB_REF_ARG(job)) { (void)job; }
 
 // POSIX regex stubs
 typedef struct { int dummy; } regex_t;
-int regcomp(regex_t *preg, const char *regex, int cflags) { (void)preg; (void)regex; (void)cflags; return 0; }
-int regexec(const regex_t *preg, const char *string, size_t nmatch, void *pmatch, int eflags) {
-  (void)preg; (void)string; (void)nmatch; (void)pmatch; (void)eflags;
-  return 0;
+int regcomp(regex_t *preg, const char *regex, int cflags) {
+    (void)preg; (void)regex; (void)cflags;
+    return 0;
 }
-void regfree(regex_t *preg) { (void)preg; }
+int regexec(const regex_t *preg, const char *string, size_t nmatch, void *pmatch, int eflags) {
+    (void)preg; (void)string; (void)nmatch; (void)pmatch; (void)eflags;
+    return 0;
+}
+void regfree(regex_t *preg) {
+    (void)preg;
+}
+
+// Network socket stubs
+int client_socket(unsigned int ip, int port, int use_ipv6) {
+    (void)ip; (void)port; (void)use_ipv6;
+    return -1;
+}
+
+int client_socket_ipv6(const unsigned char ipv6[16], int port, int flags) {
+    (void)ipv6; (void)port; (void)flags;
+    return -1;
+}
 
 // MTProto stubs - only if not already defined
 // mtproto_version_manager_* functions are defined in mtproto-version-manager.c
 // mtproto_init_connection is defined in mtproto-v3-adapter.c
 // mtproto_handshake_versioned, mtproto_encrypt_packet_versioned, etc. are in mtproto-version-manager.c
 
-// Epoll stubs (Linux-specific, not available on Windows)
-int epoll_insert(int fd, int flags) { (void)fd; (void)flags; return 0; }
-int epoll_work(int timeout) { (void)timeout; return 0; }
-int init_epoll(void) { return 0; }
+// Windows epoll emulation using select()
+// This provides basic event loop functionality for Windows
+
+#include <winsock2.h>
+#include <time.h>
+
+static fd_set win_read_fds, win_write_fds, win_except_fds;
+static int win_max_fd = 0;
+static int win_epoll_initialized = 0;
+
+// Event flags from net-events.h
+#define EVT_READ    4
+#define EVT_WRITE   2
+#define EVT_SPEC    1
+
+int init_epoll(void) {
+    if (win_epoll_initialized) {
+        return 1;
+    }
+    FD_ZERO(&win_read_fds);
+    FD_ZERO(&win_write_fds);
+    FD_ZERO(&win_except_fds);
+    win_max_fd = 0;
+    win_epoll_initialized = 1;
+    return 1;
+}
+
+int epoll_insert(int fd, int flags) {
+    if (!win_epoll_initialized) {
+        init_epoll();
+    }
+
+    if (fd < 0) return -1;
+
+    // Clear fd from all sets first
+    FD_CLR(fd, &win_read_fds);
+    FD_CLR(fd, &win_write_fds);
+    FD_CLR(fd, &win_except_fds);
+
+    // Add to appropriate sets based on flags
+    if (flags & EVT_READ) {
+        FD_SET(fd, &win_read_fds);
+    }
+    if (flags & EVT_WRITE) {
+        FD_SET(fd, &win_write_fds);
+    }
+    if (flags & EVT_SPEC) {
+        FD_SET(fd, &win_except_fds);
+    }
+
+    // Update max fd
+    if (fd > win_max_fd) {
+        win_max_fd = fd;
+    }
+
+    return 0;
+}
+
+int epoll_remove(int fd) {
+    if (fd < 0) return -1;
+
+    FD_CLR(fd, &win_read_fds);
+    FD_CLR(fd, &win_write_fds);
+    FD_CLR(fd, &win_except_fds);
+
+    return 0;
+}
+
+int epoll_work(int timeout) {
+    if (!win_epoll_initialized) {
+        init_epoll();
+    }
+
+    // Windows select() implementation
+    fd_set read_fds = win_read_fds;
+    fd_set write_fds = win_write_fds;
+    fd_set except_fds = win_except_fds;
+
+    struct timeval tv;
+    tv.tv_sec = timeout / 1000;
+    tv.tv_usec = (timeout % 1000) * 1000;
+
+    int result = select(win_max_fd + 1, &read_fds, &write_fds, &except_fds,
+                       timeout >= 0 ? &tv : NULL);
+
+    if (result < 0) {
+        // Error occurred
+        return -1;
+    }
+
+    // Process ready file descriptors
+    // Note: This is a simplified implementation
+    // Full implementation would need to call event handlers
+
+    return result;
+}
 
 // Notification event stubs
 void notification_event_insert_tcp_conn_close(void *c) { (void)c; }

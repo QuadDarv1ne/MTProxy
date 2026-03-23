@@ -11,6 +11,7 @@
 #ifdef _WIN32
 
 #include <winsock2.h>
+#include <ws2tcpip.h>
 #include <windows.h>
 #include <process.h>
 #include <signal.h>
@@ -351,72 +352,10 @@ static inline void windows_posix_cleanup(void) {
 
 // htons, htonl, ntohs, ntohl are already in winsock2.h
 
-// inet_pton for Windows (only if not provided by system)
-#ifndef HAVE_INET_PTON
-static inline int inet_pton(int af, const char *src, void *dst) {
-    struct sockaddr_storage ss;
-    int size = sizeof(ss);
-    char src_copy[INET6_ADDRSTRLEN + 1];
-
-    if (src == NULL || dst == NULL) {
-        errno = EAFNOSUPPORT;
-        return -1;
-    }
-
-    ZeroMemory(&ss, sizeof(ss));
-    strncpy(src_copy, src, INET6_ADDRSTRLEN);
-    src_copy[INET6_ADDRSTRLEN] = '\0';
-
-    if (af == AF_INET) {
-        if (WSAStringToAddressA(src_copy, af, NULL, (struct sockaddr *)&ss, &size) != 0) {
-            return 0;
-        }
-        struct sockaddr_in *sin = (struct sockaddr_in *)&ss;
-        memcpy(dst, &sin->sin_addr, sizeof(sin->sin_addr));
-        return 1;
-    } else if (af == AF_INET6) {
-        if (WSAStringToAddressA(src_copy, af, NULL, (struct sockaddr *)&ss, &size) != 0) {
-            return 0;
-        }
-        struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&ss;
-        memcpy(dst, &sin6->sin6_addr, sizeof(sin6->sin6_addr));
-        return 1;
-    }
-
-    errno = EAFNOSUPPORT;
-    return -1;
-}
-#endif
-
-// inet_ntop for Windows (only if not provided by system)
-#ifndef HAVE_INET_NTOP
-static inline const char *inet_ntop(int af, const void *src, char *dst, socklen_t size) {
-    struct sockaddr_storage ss;
-    unsigned long ssize = sizeof(ss);
-
-    ZeroMemory(&ss, sizeof(ss));
-    ss.ss_family = af;
-
-    if (af == AF_INET) {
-        struct sockaddr_in *sin = (struct sockaddr_in *)&ss;
-        memcpy(&sin->sin_addr, src, sizeof(sin->sin_addr));
-    } else if (af == AF_INET6) {
-        struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&ss;
-        memcpy(&sin6->sin6_addr, src, sizeof(sin6->sin6_addr));
-    } else {
-        errno = EAFNOSUPPORT;
-        return NULL;
-    }
-
-    if (WSAAddressToStringA((struct sockaddr *)&ss, sizeof(ss), NULL, dst, (unsigned long *)&size) != 0) {
-        errno = EINVAL;
-        return NULL;
-    }
-
-    return dst;
-}
-
-#endif // HAVE_INET_NTOP
+// inet_pton and inet_ntop are provided by ws2tcpip.h on Windows
+// We use InetPtonA and InetNtopA which are available in modern Windows
+#define inet_pton InetPtonA
+#define inet_ntop(af, src, dst, size) InetNtopA(af, src, dst, size)
 
 #endif // _ARPA_INET_H_
 
@@ -527,20 +466,24 @@ static inline int fcntl(int fd, int cmd, ...) {
 }
 
 // Stub implementations for excluded network functions
+// Memory alignment functions
+#ifndef _STDLIB_H
+#include <malloc.h>
+#endif
+
+static inline int posix_memalign(void **memptr, size_t alignment, size_t size) {
+    if (!memptr || alignment == 0 || (alignment & (alignment - 1)) != 0) {
+        return EINVAL;
+    }
+    *memptr = _aligned_malloc(size, alignment);
+    return (*memptr == NULL) ? ENOMEM : 0;
+}
+
+#define aligned_free _aligned_free
+
 // Only provide stubs for functions NOT declared in other headers
 // Note: show_ip, show_ipv6, assert_engine_thread, etc. are in windows-stubs.c
-
-// Stub for client_socket - not used in Windows build
-static inline int client_socket(unsigned int ip, int port, int use_ipv6) {
-    errno = ENOSYS;
-    return -1;
-}
-
-// Stub for client_socket_ipv6 - not used in Windows build
-static inline int client_socket_ipv6(const unsigned char *ipv6, int port, int flags) {
-    errno = ENOSYS;
-    return -1;
-}
+// Note: client_socket and client_socket_ipv6 are declared in net-events.h
 
 // /dev/random and /dev/urandom emulation for Windows
 // Uses CryptGenRandom for cryptographically secure random numbers
