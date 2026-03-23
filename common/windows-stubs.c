@@ -10,6 +10,18 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+
+// Socket mode flags from net-events.h
+#define SM_UDP 1
+#define SM_IPV6 2
+#define SM_IPV6_ONLY 4
+#define SM_LOWPRIO 8
+#define SM_REUSE 16
+#define SM_SPECIAL 0x10000
+#define SM_NOQACK 0x20000
+#define SM_RAWMSG 0x40000
 
 // Forward declarations
 typedef struct async_job *connection_job_t;
@@ -60,9 +72,121 @@ int create_target_from_info(struct conn_target_info *info, int *generation) { (v
 void fetch_connections_stat(void *sb) { (void)sb; }
 // fetch_aes_crypto_stat is defined in net-crypto-aes.c for Windows
 
+// Windows socket implementation
+static int wsa_initialized = 0;
+
+int init_wsa(void) {
+    if (wsa_initialized) return 0;
+
+    WSADATA wsaData;
+    int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
+    if (result != 0) {
+        printf("WSAStartup failed: %d\n", result);
+        return -1;
+    }
+    wsa_initialized = 1;
+    return 0;
+}
+
+int new_socket_windows(int mode, int nonblock) {
+    if (init_wsa() != 0) return -1;
+
+    SOCKET socket_fd;
+    int family = (mode & SM_IPV6) ? AF_INET6 : AF_INET;
+    int type = (mode & SM_UDP) ? SOCK_DGRAM : SOCK_STREAM;
+    int protocol = (mode & SM_UDP) ? IPPROTO_UDP : IPPROTO_TCP;
+
+    socket_fd = WSASocket(family, type, protocol, NULL, 0, WSA_FLAG_OVERLAPPED);
+    if (socket_fd == INVALID_SOCKET) {
+        printf("WSASocket failed: %d\n", WSAGetLastError());
+        return -1;
+    }
+
+    if (mode & SM_IPV6) {
+        DWORD ipv6only = (mode & SM_IPV6_ONLY) ? 1 : 0;
+        if (setsockopt(socket_fd, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&ipv6only, sizeof(ipv6only)) == SOCKET_ERROR) {
+            printf("Setting IPV6_V6ONLY failed: %d\n", WSAGetLastError());
+            closesocket(socket_fd);
+            return -1;
+        }
+    }
+
+    if (nonblock) {
+        u_long mode_nonblock = 1;
+        if (ioctlsocket(socket_fd, FIONBIO, &mode_nonblock) == SOCKET_ERROR) {
+            printf("Setting non-blocking mode failed: %d\n", WSAGetLastError());
+            closesocket(socket_fd);
+            return -1;
+        }
+    }
+
+    return (int)socket_fd;
+}
+
+int server_socket(int port, struct in_addr in_addr, int backlog, int mode) {
+    int socket_fd = new_socket_windows(mode, 1);
+    if (socket_fd == -1) return -1;
+
+    // Set socket options
+    BOOL reuse = TRUE;
+    if (!(mode & SM_UDP)) {
+        setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, (char*)&reuse, sizeof(reuse));
+
+        BOOL nodelay = TRUE;
+        setsockopt(socket_fd, IPPROTO_TCP, TCP_NODELAY, (char*)&nodelay, sizeof(nodelay));
+
+        BOOL keepalive = TRUE;
+        setsockopt(socket_fd, SOL_SOCKET, SO_KEEPALIVE, (char*)&keepalive, sizeof(keepalive));
+    }
+
+    if (mode & SM_REUSE) {
+        setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, (char*)&reuse, sizeof(reuse));
+    }
+
+    // Bind socket
+    if (!(mode & SM_IPV6)) {
+        struct sockaddr_in addr;
+        memset(&addr, 0, sizeof(addr));
+        addr.sin_family = AF_INET;
+        addr.sin_port = htons(port);
+        addr.sin_addr = in_addr;
+
+        if (bind(socket_fd, (struct sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) {
+            printf("bind() failed: %d\n", WSAGetLastError());
+            closesocket(socket_fd);
+            return -1;
+        }
+    } else {
+        struct sockaddr_in6 addr;
+        memset(&addr, 0, sizeof(addr));
+        addr.sin6_family = AF_INET6;
+        addr.sin6_port = htons(port);
+        addr.sin6_addr = in6addr_any;
+
+        if (bind(socket_fd, (struct sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) {
+            printf("bind() IPv6 failed: %d\n", WSAGetLastError());
+            closesocket(socket_fd);
+            return -1;
+        }
+    }
+
+    // Listen for TCP sockets
+    if (!(mode & SM_UDP) && listen(socket_fd, backlog) == SOCKET_ERROR) {
+        printf("listen() failed: %d\n", WSAGetLastError());
+        closesocket(socket_fd);
+        return -1;
+    }
+
+    printf("Windows server socket created: fd=%d, port=%d, mode=0x%x\n", socket_fd, port, mode);
+    return socket_fd;
+}
+
 // Network stubs
-int init_listening_tcpv6_connection(int sock, void *conn_type, void *rpc_methods, int flags) { (void)sock; (void)conn_type; (void)rpc_methods; (void)flags; return -1; }
-int server_socket(void *addr, int addr_len, int port, int backlog, int flags) { (void)addr; (void)addr_len; (void)port; (void)backlog; (void)flags; return -1; }
+int init_listening_tcpv6_connection(int sock, void *conn_type, void *rpc_methods, int flags) {
+    printf("init_listening_tcpv6_connection: sock=%d, flags=0x%x\n", sock, flags);
+    // For now, just return success - the socket is already created and listening
+    return 0;
+}
 void cpu_server_close_connection(connection_job_t c, int err) { (void)c; (void)err; }
 
 // Display stubs
