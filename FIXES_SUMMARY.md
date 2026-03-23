@@ -50,6 +50,22 @@
 
 ## Оставшиеся проблемы
 
+### Критическая проблема: Segmentation fault при запуске
+**Проблема**: Proxy падает сразу после "Server started"
+**Причина**: Отсутствие реализации критических функций:
+- `server_socket()` - создание listening socket (возвращает -1)
+- `init_listening_tcpv6_connection()` - инициализация соединений (возвращает -1)
+- Event loop не обрабатывает события (epoll emulation неполная)
+- Pipes и IPC механизмы не реализованы
+
+**Требуется для исправления:**
+1. Реализовать Windows socket API (WSASocket, bind, listen, accept)
+2. Реализовать полноценный event loop (IOCP или select())
+3. Реализовать Windows pipes для IPC
+4. Переработать connection management для Windows
+
+**Статус**: Требуется значительная доработка. Рекомендуется WSL2/Docker.
+
 ### net/net-events.c - Linux-специфичный код
 **Проблема**: Файл содержит 65+ вызовов Linux API (epoll, getifaddrs, ifaddrs)
 **Статус**: Уже исключен из Windows сборки в CMakeLists.txt (строки 415-419)
@@ -78,5 +94,5 @@ make -j4
 - Добавлено Windows-совместимых функций: 7 (epoll emulation, inet_pton/ntop)
 - Улучшено предупреждений компилятора: 5
 - Размер бинарника: 84 MB (mtproto-proxy.exe)
-- Статус: ✅ Proxy запускается и работает на Windows
+- Статус: ⚠️ Proxy компилируется, но падает при запуске (требуется доработка сетевого слоя)
 

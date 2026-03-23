@@ -6,12 +6,22 @@
 - ✅ Компиляция успешна (84 MB)
 - ✅ Загрузка конфигурации работает
 - ✅ Загрузка секретов работает (CryptGenRandom)
-- ✅ Запуск сервера успешен
-- ❌ **Segmentation fault в event loop**
+- ✅ Инициализация сервера успешна
+- ❌ **Segmentation fault при запуске**
 
-**Проблема:** Windows epoll emulation через select() не полностью реализована. Proxy запускается, но падает при обработке событий.
+**Проблема:** MTProxy использует Linux-специфичную архитектуру (epoll, Unix sockets, pipes). Windows версия требует полной переработки сетевого слоя:
+- Listening sockets не создаются (server_socket stubbed)
+- Event loop не обрабатывает события (epoll emulation incomplete)
+- Pipes и IPC механизмы не реализованы
+- Многие критические функции возвращают заглушки
 
-**Рекомендация:** Используйте WSL2 или Docker для полной функциональности.
+**Требуется для работы:**
+1. Реализация Windows socket API (WSA)
+2. IOCP или полноценный select() event loop
+3. Windows pipes вместо Unix pipes
+4. Переработка connection management
+
+**Рекомендация:** Используйте WSL2 или Docker для полной функциональности. Нативная Windows версия требует значительной доработки.
 
 ---
 

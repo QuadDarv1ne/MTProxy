@@ -15,6 +15,16 @@
 typedef struct async_job *connection_job_t;
 struct free_later;
 struct conn_target_info;
+
+// Job structure definition
+struct job_base {
+    int j_refcnt;
+    int j_flags;
+    int j_error;
+    void *j_custom;
+    int j_custom_bytes;
+};
+
 typedef struct job_base *job_t;
 #define JOB_REF_ARG(__name) int __name ## _tag_int, job_t __name
 
@@ -88,8 +98,22 @@ void job_decref(JOB_REF_ARG(job)) { (void)job; }
 void jobs_prepare_stat(void *st) { (void)st; }
 long int lrand48_j(void) { return rand(); }
 job_t create_async_job(int (*run)(job_t, int, void*), int flags, int job_class, int size, int have_timer, job_t parent) {
-  (void)run; (void)flags; (void)job_class; (void)size; (void)have_timer; (void)parent;
-  return NULL;
+  (void)run; (void)flags; (void)job_class; (void)have_timer; (void)parent;
+
+  // Allocate job structure with custom data
+  int total_size = sizeof(struct job_base) + size;
+  struct job_base *job = (struct job_base *)calloc(1, total_size);
+  if (!job) {
+    return NULL;
+  }
+
+  job->j_refcnt = 1;
+  job->j_flags = flags;
+  job->j_error = 0;
+  job->j_custom = (size > 0) ? (void *)(job + 1) : NULL;
+  job->j_custom_bytes = size;
+
+  return (job_t)job;
 }
 void unlock_job(JOB_REF_ARG(job)) { (void)job; }
 
@@ -129,6 +153,29 @@ int client_socket_ipv6(const unsigned char ipv6[16], int port, int flags) {
 #include <winsock2.h>
 #include <time.h>
 
+// Event system for Windows
+#define MAX_EVENTS 4096
+
+typedef struct event_descr event_t;
+typedef int (*event_handler_t)(int fd, void *data, event_t *ev);
+
+struct event_descr {
+  int fd;
+  int state;
+  int ready;
+  int epoll_state;
+  int epoll_ready;
+  int timeout;
+  int priority;
+  int in_queue;
+  long long timestamp;
+  long long refcnt;
+  event_handler_t work;
+  void *data;
+};
+
+event_t Events[MAX_EVENTS];
+
 static fd_set win_read_fds, win_write_fds, win_except_fds;
 static int win_max_fd = 0;
 static int win_epoll_initialized = 0;
@@ -142,6 +189,14 @@ int init_epoll(void) {
     if (win_epoll_initialized) {
         return 1;
     }
+
+    // Initialize Events array - mark all as unused
+    for (int i = 0; i < MAX_EVENTS; i++) {
+        Events[i].fd = -1;
+        Events[i].work = NULL;
+        Events[i].data = NULL;
+    }
+
     FD_ZERO(&win_read_fds);
     FD_ZERO(&win_write_fds);
     FD_ZERO(&win_except_fds);
@@ -196,6 +251,24 @@ int epoll_work(int timeout) {
         init_epoll();
     }
 
+    // Temporary: disable event processing to isolate crash
+    // Just sleep and return 0 to keep the event loop running
+    if (timeout > 0) {
+        Sleep(timeout < 100 ? timeout : 100);
+    }
+    return 0;
+
+    /* Original implementation - disabled for debugging
+    // Check if any file descriptors are registered
+    // On Windows, fd_set has fd_count field
+    if (win_read_fds.fd_count == 0 && win_write_fds.fd_count == 0 && win_except_fds.fd_count == 0) {
+        // No fds to monitor, just sleep
+        if (timeout > 0) {
+            Sleep(timeout);
+        }
+        return 0;
+    }
+
     // Windows select() implementation
     fd_set read_fds = win_read_fds;
     fd_set write_fds = win_write_fds;
@@ -205,7 +278,7 @@ int epoll_work(int timeout) {
     tv.tv_sec = timeout / 1000;
     tv.tv_usec = (timeout % 1000) * 1000;
 
-    int result = select(win_max_fd + 1, &read_fds, &write_fds, &except_fds,
+    int result = select(0, &read_fds, &write_fds, &except_fds,
                        timeout >= 0 ? &tv : NULL);
 
     if (result < 0) {
@@ -213,11 +286,74 @@ int epoll_work(int timeout) {
         return -1;
     }
 
-    // Process ready file descriptors
-    // Note: This is a simplified implementation
-    // Full implementation would need to call event handlers
+    if (result == 0) {
+        // Timeout, no events
+        return 0;
+    }
+
+    // Process ready file descriptors and call handlers
+    // Iterate through Events array to find registered handlers
+    int events_processed = 0;
+
+    for (int i = 0; i < MAX_EVENTS && events_processed < result; i++) {
+        event_t *ev = &Events[i];
+
+        // Skip uninitialized entries
+        if (ev->fd < 0) {
+            continue;
+        }
+
+        // Skip entries without handlers
+        if (ev->work == NULL) {
+            continue;
+        }
+
+        int fd = ev->fd;
+        int ready_flags = 0;
+
+        // Check if this fd is ready
+        if (FD_ISSET(fd, &read_fds)) {
+            ready_flags |= EVT_READ;
+        }
+        if (FD_ISSET(fd, &write_fds)) {
+            ready_flags |= EVT_WRITE;
+        }
+        if (FD_ISSET(fd, &except_fds)) {
+            ready_flags |= EVT_SPEC;
+        }
+
+        if (ready_flags == 0) {
+            continue;
+        }
+
+        events_processed++;
+        ev->ready = ready_flags;
+
+        // Call the event handler with safety check
+        event_handler_t handler = ev->work;
+        void *handler_data = ev->data;
+
+        if (handler != NULL) {
+            // Temporarily save handler info in case ev gets modified
+            int handler_result = handler(fd, handler_data, ev);
+
+            // Handle return values - check if ev is still valid
+            if (Events[i].fd == fd) {
+                if (handler_result == -3) { // EVA_REMOVE
+                    epoll_remove(fd);
+                    Events[i].fd = -1;
+                    Events[i].work = NULL;
+                } else if (handler_result < 0 && handler_result != -2) { // Error (not EVA_RERUN)
+                    epoll_remove(fd);
+                    Events[i].fd = -1;
+                    Events[i].work = NULL;
+                }
+            }
+        }
+    }
 
     return result;
+    */
 }
 
 // Notification event stubs
@@ -236,7 +372,12 @@ unsigned crc32c_partial(const void *data, long len, unsigned crc) {
 void *register_thread_callback(const char *name, void (*callback)(void)) {
   (void)name; (void)callback; return NULL;
 }
-void job_free(JOB_REF_ARG(job)) { (void)job; }
+void job_free(JOB_REF_ARG(job)) {
+  (void)job_tag_int;
+  if (job) {
+    free(job);
+  }
+}
 void schedule_job(JOB_REF_ARG(job)) { (void)job; }
 __thread void *this_job_thread = NULL;
 int max_job_thread_id = 0;
@@ -246,7 +387,14 @@ void *job_timer_insert(JOB_REF_ARG(job), double expire) { (void)job; (void)expir
 int job_timer_check(JOB_REF_ARG(job)) { (void)job; return 0; }
 void job_timer_remove(JOB_REF_ARG(job)) { (void)job; }
 void *job_timer_alloc(double timeout, void (*handler)(void)) {
-  (void)timeout; (void)handler; return NULL;
+  (void)timeout; (void)handler;
+
+  // Allocate a minimal timer structure
+  struct job_base *timer = (struct job_base *)calloc(1, sizeof(struct job_base));
+  if (timer) {
+    timer->j_refcnt = 1;
+  }
+  return timer;
 }
 void run_pending_main_jobs(void) {}
 void *alloc_timer_manager(void) { return NULL; }
@@ -264,7 +412,49 @@ int get_my_ipv6(unsigned char ipv6[16]) {
   return 0;
 }
 int epoll_sethandler(int fd, int prio, void *handler, void *data) {
-  (void)fd; (void)prio; (void)handler; (void)data; return 0;
+  if (fd < 0) {
+    return -1;
+  }
+
+  // On Windows, socket handles can be large values, not small integers
+  // So we can't use fd as array index directly. Instead, find a free slot.
+  event_t *ev = NULL;
+
+  // First, check if this fd is already registered
+  for (int i = 0; i < MAX_EVENTS; i++) {
+    if (Events[i].fd == fd) {
+      ev = &Events[i];
+      break;
+    }
+  }
+
+  // If not found, find a free slot
+  if (ev == NULL) {
+    for (int i = 0; i < MAX_EVENTS; i++) {
+      if (Events[i].fd < 0) {
+        ev = &Events[i];
+        break;
+      }
+    }
+  }
+
+  if (ev == NULL) {
+    // No free slots
+    return -1;
+  }
+
+  // Initialize event if needed
+  if (ev->fd != fd) {
+    memset(ev, 0, sizeof(*ev));
+    ev->fd = fd;
+  }
+
+  ev->priority = prio;
+  ev->work = (event_handler_t)handler;
+  ev->data = data;
+  ev->refcnt = 1;
+
+  return 0;
 }
 
 // Usage stub - defined in mtproto-proxy.c
@@ -293,7 +483,6 @@ int mtproxy_start(void); // Defined in src/mtproxy.c
 
 // Global variable stubs
 void *ct_tcp_rpc_ext_server = NULL;
-void *Events = NULL;
 
 // Usage stub - required for libmtproxy.dll (weak symbol doesn't work in DLL)
 #ifdef BUILD_SHARED_LIB
