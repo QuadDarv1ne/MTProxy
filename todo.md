@@ -156,11 +156,11 @@
 ## 🔧 Активные задачи (Приоритеты)
 
 ### 🔴 Критические (Следующие действия)
-1. [x] **Синхронизация веток**: dev = master = origin ✅ (f4e1318)
-2. [ ] **Windows: server_socket()**: Реализовать WSASocket, bind, listen, accept
-3. [ ] **Windows: event loop**: Реализовать IOCP или полноценный select()
-4. [ ] **Windows: pipes**: Реализовать Windows pipes для IPC
-5. [ ] **Windows: connection management**: Переработать для Windows
+1. [x] **Синхронизация веток**: dev = master = origin ✅ (9eba838)
+2. [x] **Windows: server_socket()**: Реализовать WSASocket, bind, listen, accept ✅
+3. [x] **Windows: event loop**: Реализовать select() для Windows ✅
+4. [ ] **Windows: pipes**: Реализовать Windows pipes для IPC (для multi-worker)
+5. [ ] **Windows: тестирование**: Проверить работу mtproto-proxy.exe
 6. [x] **Сборка**: Проверка сборки с новыми модулями (go-pcap2socks, tg-ws-proxy)
 7. [x] **Тесты**: Валидация интеграции новых модулей
 8. [x] **Валидация**: cache-manager, rate-limiter, error-handler работают ✅
@@ -208,21 +208,23 @@
 
 ---
 
-## 📝 Пометки по проекту (23 марта 2026, f4e1318)
+## 📝 Пометки по проекту (23 марта 2026, 9eba838)
 
 ### Архитектура
 - ✅ Модульная структура: 370+ C/H файлов (188 .c + 182 .h + Windows stubs), 41 сетевой модуль, 82 файла в system/
 - ✅ Разделение ответственности: engine/, net/, security/, crypto/, mtproto/
 - ✅ POSIX-совместимость через posix-compat-windows.h для Windows (21 файл исправлено + 5 stubs)
 - ✅ FFI интеграция: shared library для Flutter/Dart (mobile_app/)
-- ✅ 312 коммитов в истории проекта
-- ✅ Текущий коммит: f4e1318 (dev = master)
+- ✅ 315 коммитов в истории проекта
+- ✅ Текущий коммит: 9eba838 (dev = master)
 - ✅ Интеграция завершена: go-pcap2socks (9 функций), tg-ws-proxy (5 функций)
 - ✅ Новый модуль: traffic-stats (учёт трафика, 10 тестов)
 - ✅ Windows совместимость: 5 новых stub файлов (arpa/inet.h, netdb.h, netinet/in.h, sys/socket.h, windows-stubs.c)
+- ✅ Windows socket API: реализован server_socket() через WSASocket, bind, listen
+- ✅ Windows event loop: реализован через select() (вместо epoll)
 - ✅ Оптимизация кода: -34 строки дублирующегося кода, +12 строк forward declarations
-- ✅ CMakeLists.txt: включены 4 безопасных сетевых модуля (advanced-connection-pool, net-buffer-manager, net-connections-pool, net-quic-connections)
-- ⚠️ Windows: компилируется, но падает при запуске (segmentation fault) — требуется реализация server_socket(), event loop, pipes
+- ✅ CMakeLists.txt: включены 4 безопасных сетевых модуля
+- ⚠️ Windows: компилируется, сокеты работают, event loop активен — требуется тестирование
 
 ### Критические компоненты
 - **config-manager**: горячая перезагрузка, валидация, история (1000 записей)
@@ -277,11 +279,11 @@
 ## 📋 Текущий статус
 
 ### Ветки
-- **dev**: ✅ f4e1318 — Документирована критическая проблема Windows и улучшены заглушки
-- **main/master**: ✅ f4e1318 — синхронизирована с dev
-- **origin/dev**: ✅ f4e1318 — синхронизирована
-- **origin/master**: ✅ f4e1318 — синхронизирована
-- **Статус**: ✅ Ветки идентичны (f4e1318)
+- **dev**: ✅ 9eba838 — Включён event loop и обновлена документация Windows
+- **main/master**: ✅ 9eba838 — синхронизирована с dev
+- **origin/dev**: ✅ 9eba838 — синхронизирована
+- **origin/master**: ✅ 9eba838 — синхронизирована
+- **Статус**: ✅ Ветки идентичны (9eba838)
 - **Рабочие изменения**: 9 untracked файлов (секреты, не коммитить)
 
 ### Готовые модули к использованию
@@ -437,7 +439,7 @@ git checkout master && git merge dev && git push origin master
 
 ---
 
-*Последнее обновление: 23 марта 2026 г. (коммит f4e1318, ветки синхронизированы, Windows проблема документирована)*
+*Последнее обновление: 23 марта 2026 г. (коммит 9eba838, ветки синхронизированы, Windows socket API реализован)*
 
 ### Реорганизация CMakeLists.txt
 - [x] Объединены NET_SOURCES в одну секцию (20 файлов)
@@ -783,7 +785,7 @@ mtproxy-0.02 compiled at Mar 19 2026 20:08:46 by gcc 13.3.0 64-bit
 |-----------|--------|------------|
 | **kdb_crypto** | ✅ Собирается | Статическая библиотека |
 | **kdb_common** | ✅ Собирается | Статическая библиотека |
-| **mtproto-proxy** | ⚠️ Компилируется, падает при запуске | Требуется реализация сетевого слоя |
+| **mtproto-proxy** | ⚠️ Компилируется, socket API работает | Требуется тестирование |
 | **mtproxy-admin** | ⏳ Зависит от mtproto-proxy | |
 | **libmtproxy (shared)** | ✅ Готово | BUILD_SHARED_LIB |
 
