@@ -187,8 +187,8 @@ int mtproxy_start(void); // Defined in src/mtproxy.c
 void *ct_tcp_rpc_ext_server = NULL;
 void *Events = NULL;
 
-// Usage stub - defined in mtproto-proxy.c, excluded here
-// void usage(void) {}
+// Usage stub - required for libmtproxy.dll (weak symbol in server-functions.c)
+void usage(void) {}
 
 // Shadowsocks stubs
 int shadowsocks_set_config(void *config) { (void)config; return 0; }
