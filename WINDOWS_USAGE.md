@@ -172,7 +172,9 @@ New-NetFirewallRule -DisplayName "MTProxy" -Direction Inbound -Protocol TCP -Loc
 
 - ⚠️ **Single-worker режим** (`-M 1`) - обязательно
 - ⚠️ **fork() не поддерживается** - нельзя использовать multi-process режим
-- ✅ **Все остальные функции работают** - кэширование, rate limiting, статистика
+- ⚠️ **Загрузка секретов требует доработки** - функция `aes_load_pwd_file()` использует Unix API
+- ⚠️ **Рекомендуется WSL2 или Docker** для полной функциональности
+- ✅ **Proxy компилируется и запускается** - базовая функциональность работает
 
 ## Troubleshooting
 
