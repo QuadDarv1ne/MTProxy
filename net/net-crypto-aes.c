@@ -137,6 +137,16 @@ static char rand_buf[64];
 // filename = 0 -- use DEFAULT_PWD_FILE
 // 1 = init ok, else < 0
 int aes_load_pwd_file (const char *filename) {
+#ifdef _WIN32
+  // Windows: use CryptGenRandom for entropy
+  int r = windows_get_random(rand_buf, 16);
+  if (r < 0) {
+    vkprintf (1, "failed to get random data on Windows\n");
+    main_secret.secret_len = 0;
+    return -1;
+  }
+  vkprintf (2, "added %d bytes of entropy to the AES security key (Windows CryptGenRandom)\n", r);
+#else
   int h = open ("/dev/random", O_RDONLY | O_NONBLOCK);
   int r = 0;
 
@@ -169,6 +179,7 @@ int aes_load_pwd_file (const char *filename) {
     }
     close (h);
   }
+#endif
 
   *(long *) rand_buf ^= lrand48_j();
 
@@ -178,7 +189,7 @@ int aes_load_pwd_file (const char *filename) {
     filename = DEFAULT_PWD_FILE;
   }
 
-  h = open (filename, O_RDONLY);
+  int h = open (filename, O_RDONLY);
 
   if (h < 0) {
     vkprintf (1, "cannot open password file %s: %m\n", filename);
@@ -210,7 +221,7 @@ int aes_load_pwd_file (const char *filename) {
   }
 
   md5_hex (pwd_config_buf, pwd_config_len, pwd_config_md5);
-  
+
   memcpy (main_secret.secret, pwd_config_buf, r);
   main_secret.secret_len = r;
 
