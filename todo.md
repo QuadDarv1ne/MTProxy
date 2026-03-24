@@ -203,6 +203,7 @@
 - [x] API Reference — ✅ создана (API_REFERENCE.md)
 - [x] Deployment Guide — ✅ создан (DEPLOYMENT.md)
 - [x] Docker документация — ✅ готова
+- [x] Testing документация — ✅ testing/README.md
 - [ ] Troubleshooting Guide — ⏳ ожидается
 - [ ] Performance Tuning Guide — ⏳ ожидается
 
