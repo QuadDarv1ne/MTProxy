@@ -84,11 +84,14 @@
 - Проверить статистику через localhost:8888/stats
 - Протестировать admin-cli команды
 
-**Статус:** ✅ Сборка работает (mtproto-proxy.exe, mtproxy-admin.exe)
+**Статус:** ✅ Сборка работает и ЗАПУСКАЕТСЯ
+- ✅ mtproto-proxy.exe: запуск успешен (single-worker mode)
+- ✅ Конфигурация загружается (proxy-multi.conf)
+- ✅ AES password загружается (proxy-secret)
+- ✅ Сервер стартует на 0.0.0.0:8888
 - ✅ test-new-modules: 43/45 (95.6%)
 - ✅ test-ws-tunnel: 29/29 (100%)
 - ✅ test-traffic-stats: 10/10 (100%)
-- ⏳ Интеграционное тестирование прокси
 
 ---
 
