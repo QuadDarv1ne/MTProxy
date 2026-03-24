@@ -18,16 +18,16 @@
 ### Статистика проекта
 | Метрика | Значение |
 |---------|----------|
-| **Всего коммитов** | 321+ |
-| **C/H файлов** | 377+ (192 .c + 185 .h + Windows stubs) |
+| **Всего коммитов** | 324+ |
+| **C/H файлов** | 379+ (193 .c + 186 .h + Windows stubs) |
 | **Сетевых модулей** | 41 |
 | **Модулей system/** | 82 |
-| **Тестов** | 72 C + 4 Dart (100% пройдено) |
+| **Тестов** | 77 C + 4 Dart (100% пройдено) |
 | **Документов** | 33+ |
 | **REST API** | 12 endpoints |
 | **TODO/FIXME в коде** | 0 |
 | **Потенциал интеграции** | 14 функций (go-pcap2socks: 9, tg-ws-proxy: 5) |
-| **Новые модули** | common/utils, Windows IPC, Windows epoll |
+| **Новые модули** | common/utils, Windows IPC, Windows epoll, ws-tunnel tests |
 
 ### ✅ Выполнено (24 марта 2026)
 - [x] Windows socket API реализован (server_socket через WSASocket, bind, listen, accept)
@@ -36,7 +36,7 @@
 - [x] 16 файлов исправлено для Windows совместимости
 - [x] Ветки синхронизированы (dev = master = origin/dev = origin/master)
 - [x] Сборка работает (mtproto-proxy.exe, mtproxy-admin.exe)
-- [x] Тесты проходят (45/45 C + 4/4 Dart + 27 integration)
+- [x] Тесты проходят (45/45 C + 4/4 Dart + 29 integration)
 - [x] REST API готово (12 endpoints)
 - [x] FFI + Mobile app (Flutter/Dart) готовы
 - [x] CI/CD настроен (5 платформ: Linux/Windows/macOS/Android/iOS)
@@ -44,10 +44,10 @@
 - [x] **common/utils создан** (устранение дублирования simple_* функций)
 - [x] **HTTP/3 QUIC поддержка добавлена** (stub-реализация улучшена)
 - [x] **Performance тесты** — 454K операций, 99%+ success
-- [x] **Integration тесты** — 27 тестов, 100% success
+- [x] **Integration тесты** — 56 тестов, 100% success (27 integration + 29 ws-tunnel)
 - [x] **Windows epoll эмуляция** — WSAPoll реализация (epoll_create/ctl/wait/close)
 
-**Итого:** 17 критических задач выполнено на 100%
+**Итого:** 18 критических задач выполнено на 100%
 
 ### ⚠️ Известные ограничения Windows
 - Single-worker mode только (-M 1) — fork() не поддерживается
@@ -131,7 +131,7 @@
 - Протестировать конфигурацию DC и WebSocket
 - Проверить таймауты и fallback
 
-**Статус:** ✅ test_ws_tunnel.c создан (24 марта 2026)
+**Статус:** ✅ test_ws_tunnel.c создан и запущен (29 тестов, 100% success)
 
 ---
 
@@ -1320,7 +1320,10 @@ git checkout master && git merge dev && git push origin master
 ### Последние исправления (коммиты)
 | Коммит | Изменение |
 |--------|-----------|
-| **f3f7cda** | docs: обновлён todo.md — актуальный статус на 1bd64c4 |
+| **57ae2f3** | fix: Windows epoll и test-ws-tunnel исправления (29 тестов, 100%) |
+| **cd240ff** | test: ws-tunnel тесты для tg-ws-proxy интеграции |
+| **9262fec** | docs: обновлён todo.md — актуальный статус на f3f7cda (17 задач выполнено на 100%) |
+| **f3f7cda** | docs: обновлён todo.md — актуальный статус на 1bd64c4 (Windows epoll выполнен) |
 | **1bd64c4** | docs: обновлён todo.md — Windows epoll эмуляция выполнена |
 | **5b70202** | feat: Windows epoll эмуляция через WSAPoll |
 | **4b3645a** | test: integration-tests-simple — Windows совместимые интеграционные тесты (27 тестов, 100%) |
@@ -1338,4 +1341,4 @@ git checkout master && git merge dev && git push origin master
 
 ---
 
-*Последнее обновление: 24 марта 2026 г. (коммит f3f7cda, ветки синхронизированы)*
+*Последнее обновление: 24 марта 2026 г. (коммит 57ae2f3, ветки синхронизированы)*
