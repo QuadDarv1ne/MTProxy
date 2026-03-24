@@ -1,19 +1,19 @@
 # MTProxy Project TODO
 
 > **Актуально на:** 24 марта 2026 г.
-> **Коммит:** 5665c9b (feat: добавлены Windows IPC, HTTP/3 QUIC поддержка и common/utils)
-> **Версия:** v1.0.2
-> **Статус:** ✅ Windows IPC реализован, HTTP/3 QUIC поддержка добавлена, common/utils создан
+> **Коммит:** 1bd64c4 (docs: обновлён todo.md — Windows epoll эмуляция выполнена)
+> **Версия:** v1.0.3
+> **Статус:** ✅ Windows epoll эмуляция через WSAPoll реализована
 > **Оптимизации:** Полная поддержка Windows (MSYS2/UCRT64)
 > **Ветки:** dev = master = origin/dev = origin/master ✅ (синхронизированы)
 
 ## 📊 Актуальный статус (24 марта 2026)
 
 ### Текущее состояние
-- **Коммит:** 5665c9b (HEAD -> master, origin/master, origin/dev, dev)
+- **Коммит:** 1bd64c4 (HEAD -> master, origin/master, origin/dev, dev)
 - **Ветки синхронизированы:** ✅ dev = master = origin/dev = origin/master
 - **Рабочие изменения:** 9 untracked файлов (секреты — не коммитить)
-- **Последние изменения:** feat: добавлены Windows IPC, HTTP/3 QUIC поддержка и common/utils
+- **Последние изменения:** docs: обновлён todo.md — Windows epoll эмуляция выполнена
 
 ### Статистика проекта
 | Метрика | Значение |
@@ -66,13 +66,13 @@
 **Статус:** ✅ Реализовано (5665c9b)
 
 ### 2. Windows epoll эмуляция через IOCP
-**Файлы:** `net/net-events.c`, `net/net-connections.c`, `common/windows-stubs.c`
+**Файлы:** `net/net-events.c`, `net/net-connections.c`, `common/windows-stubs.c`, `common/windows-epoll.c/h`
 **Проблема:** epoll отсутствует на Windows, текущая select() эмуляция ограничена
 **Решение:**
 - Реализовать IOCP (I/O Completion Ports) для высокопроизводительного event loop
 - Альтернатива: WSAPoll для совместимости с epoll API
 
-**Статус:** ⏳ select() эмуляция работает, IOCP требует доработки
+**Статус:** ✅ WSAPoll эмуляция реализована (5b70202) — windows-epoll.c/h (355 строк)
 
 ### 3. Тестирование Windows сборки
 **Файлы:** `mtproto-proxy.exe`, `mtproxy-admin.exe`
@@ -1308,6 +1308,7 @@ git checkout master && git merge dev && git push origin master
 ### Последние исправления (коммиты)
 | Коммит | Изменение |
 |--------|-----------|
+| **1bd64c4** | docs: обновлён todo.md — Windows epoll эмуляция выполнена |
 | **5b70202** | feat: Windows epoll эмуляция через WSAPoll |
 | **4b3645a** | test: integration-tests-simple — Windows совместимые интеграционные тесты (27 тестов, 100%) |
 | **1b8a10d** | test: Windows совместимые performance тесты для cache-manager и rate-limiter |
@@ -1324,4 +1325,4 @@ git checkout master && git merge dev && git push origin master
 
 ---
 
-*Последнее обновление: 24 марта 2026 г. (коммит 5b70202, ветки синхронизированы)*
+*Последнее обновление: 24 марта 2026 г. (коммит 1bd64c4, ветки синхронизированы)*
