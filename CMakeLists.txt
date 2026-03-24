@@ -310,6 +310,8 @@ set(COMMON_SOURCES
     common/platform_compat.h
     common/vlog.c
     common/windows-stubs.c
+    common/windows-epoll.c
+    common/windows-epoll.h
     common/vlog.h
     common/cache-manager.c
     common/cache-manager.h
