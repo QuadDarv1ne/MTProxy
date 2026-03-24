@@ -1,19 +1,19 @@
 # MTProxy Project TODO
 
 > **Актуально на:** 24 марта 2026 г.
-> **Коммит:** 1bd64c4 (docs: обновлён todo.md — Windows epoll эмуляция выполнена)
+> **Коммит:** f3f7cda (docs: обновлён todo.md — актуальный статус на 1bd64c4)
 > **Версия:** v1.0.3
-> **Статус:** ✅ Windows epoll эмуляция через WSAPoll реализована
+> **Статус:** ✅ Все критические задачи выполнены (Windows IPC, epoll, тесты)
 > **Оптимизации:** Полная поддержка Windows (MSYS2/UCRT64)
 > **Ветки:** dev = master = origin/dev = origin/master ✅ (синхронизированы)
 
 ## 📊 Актуальный статус (24 марта 2026)
 
 ### Текущее состояние
-- **Коммит:** 1bd64c4 (HEAD -> master, origin/master, origin/dev, dev)
+- **Коммит:** f3f7cda (HEAD -> master, origin/master, origin/dev, dev)
 - **Ветки синхронизированы:** ✅ dev = master = origin/dev = origin/master
 - **Рабочие изменения:** 9 untracked файлов (секреты — не коммитить)
-- **Последние изменения:** docs: обновлён todo.md — Windows epoll эмуляция выполнена
+- **Последние изменения:** docs: обновлён todo.md — актуальный статус на 1bd64c4
 
 ### Статистика проекта
 | Метрика | Значение |
@@ -46,6 +46,8 @@
 - [x] **Performance тесты** — 454K операций, 99%+ success
 - [x] **Integration тесты** — 27 тестов, 100% success
 - [x] **Windows epoll эмуляция** — WSAPoll реализация (epoll_create/ctl/wait/close)
+
+**Итого:** 17 критических задач выполнено на 100%
 
 ### ⚠️ Известные ограничения Windows
 - Single-worker mode только (-M 1) — fork() не поддерживается
@@ -1308,6 +1310,7 @@ git checkout master && git merge dev && git push origin master
 ### Последние исправления (коммиты)
 | Коммит | Изменение |
 |--------|-----------|
+| **f3f7cda** | docs: обновлён todo.md — актуальный статус на 1bd64c4 |
 | **1bd64c4** | docs: обновлён todo.md — Windows epoll эмуляция выполнена |
 | **5b70202** | feat: Windows epoll эмуляция через WSAPoll |
 | **4b3645a** | test: integration-tests-simple — Windows совместимые интеграционные тесты (27 тестов, 100%) |
@@ -1325,4 +1328,4 @@ git checkout master && git merge dev && git push origin master
 
 ---
 
-*Последнее обновление: 24 марта 2026 г. (коммит 1bd64c4, ветки синхронизированы)*
+*Последнее обновление: 24 марта 2026 г. (коммит f3f7cda, ветки синхронизированы)*
