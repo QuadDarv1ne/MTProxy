@@ -18,8 +18,8 @@
 ### Статистика проекта
 | Метрика | Значение |
 |---------|----------|
-| **Всего коммитов** | 320+ |
-| **C/H файлов** | 375+ (191 .c + 184 .h + Windows stubs) |
+| **Всего коммитов** | 321+ |
+| **C/H файлов** | 377+ (192 .c + 185 .h + Windows stubs) |
 | **Сетевых модулей** | 41 |
 | **Модулей system/** | 82 |
 | **Тестов** | 72 C + 4 Dart (100% пройдено) |
@@ -27,7 +27,7 @@
 | **REST API** | 12 endpoints |
 | **TODO/FIXME в коде** | 0 |
 | **Потенциал интеграции** | 14 функций (go-pcap2socks: 9, tg-ws-proxy: 5) |
-| **Новые модули** | common/utils, Windows IPC |
+| **Новые модули** | common/utils, Windows IPC, Windows epoll |
 
 ### ✅ Выполнено (24 марта 2026)
 - [x] Windows socket API реализован (server_socket через WSASocket, bind, listen, accept)
@@ -45,6 +45,7 @@
 - [x] **HTTP/3 QUIC поддержка добавлена** (stub-реализация улучшена)
 - [x] **Performance тесты** — 454K операций, 99%+ success
 - [x] **Integration тесты** — 27 тестов, 100% success
+- [x] **Windows epoll эмуляция** — WSAPoll реализация (epoll_create/ctl/wait/close)
 
 ### ⚠️ Известные ограничения Windows
 - Single-worker mode только (-M 1) — fork() не поддерживается
@@ -1307,6 +1308,7 @@ git checkout master && git merge dev && git push origin master
 ### Последние исправления (коммиты)
 | Коммит | Изменение |
 |--------|-----------|
+| **5b70202** | feat: Windows epoll эмуляция через WSAPoll |
 | **4b3645a** | test: integration-tests-simple — Windows совместимые интеграционные тесты (27 тестов, 100%) |
 | **1b8a10d** | test: Windows совместимые performance тесты для cache-manager и rate-limiter |
 | **d8f3fb2** | fix: Windows сборка — добавлены stdint.h и time.h для windows-ipc.c и utils.c |
@@ -1322,4 +1324,4 @@ git checkout master && git merge dev && git push origin master
 
 ---
 
-*Последнее обновление: 24 марта 2026 г. (коммит 4b3645a, ветки синхронизированы)*
+*Последнее обновление: 24 марта 2026 г. (коммит 5b70202, ветки синхронизированы)*
