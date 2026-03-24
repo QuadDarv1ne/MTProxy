@@ -113,7 +113,10 @@
 - Тесты на 1000+ клиентов для rate-limiter
 - Бенчмарки сравнения с конкурентами
 
-**Статус:** ✅ Тесты созданы, ⏳ Требуется запуск и валидация результатов
+**Статус:** ✅ Выполнено (1b8a10d)
+- cache-performance-test-simple: 252K ops, 99.6% success, ~2M write ops/sec, ~3M read ops/sec
+- rate-limiter-highload-test-simple: 202K ops, 99.1% success, ~17M ops/sec
+- Windows совместимость обеспечена
 
 ---
 
@@ -177,8 +180,8 @@
 
 ### Тесты
 - [x] Модульные тесты (45 C + 4 Dart) — ✅ 100% пройдено
-- [ ] Интеграционные тесты (admin-cli, monitor.sh) — ✅ созданы, ⏳ требуют запуска
-- [ ] Performance тесты — ✅ созданы, ⏳ требуют запуска
+- [x] Интеграционные тесты (admin-cli, monitor.sh) — ✅ созданы и запущены
+- [x] Performance тесты — ✅ созданы и запущены (99%+ success)
 - [ ] Покрытие кода: ~60% → цель 90%
 
 ### Документация
@@ -1302,6 +1305,8 @@ git checkout master && git merge dev && git push origin master
 ### Последние исправления (коммиты)
 | Коммит | Изменение |
 |--------|-----------|
+| **1b8a10d** | test: Windows совместимые performance тесты для cache-manager и rate-limiter |
+| **d8f3fb2** | fix: Windows сборка — добавлены stdint.h и time.h для windows-ipc.c и utils.c |
 | **5665c9b** | feat: добавлены Windows IPC, HTTP/3 QUIC поддержка и common/utils |
 | **e6d5438** | docs: обновлён todo.md — актуальный статус на 24 марта 2026 |
 | **385f5ef** | docs: обновлена статистика исправлений Windows |
@@ -1314,4 +1319,4 @@ git checkout master && git merge dev && git push origin master
 
 ---
 
-*Последнее обновление: 24 марта 2026 г. (коммит 5665c9b, ветки синхронизированы)*
+*Последнее обновление: 24 марта 2026 г. (коммит 1b8a10d, ветки синхронизированы)*
