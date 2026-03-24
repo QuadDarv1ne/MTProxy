@@ -17,9 +17,11 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 // epoll event flags
 #define EPOLLIN     0x001
@@ -85,10 +87,10 @@ static short epoll_to_wsapoll_events(uint32_t epoll_events) {
 static uint32_t wsapoll_to_epoll_events(short wsapoll_events) {
     uint32_t epoll_events = 0;
     
-    if (wsapoll_events & (POLLRDNORM | POLLIN | POLLMSG)) {
+    if (wsapoll_events & (POLLRDNORM | POLLIN)) {
         epoll_events |= EPOLLIN;
     }
-    if (wsapoll_events & (POLLWRNORM | POLLOUT | POLLWRBAND)) {
+    if (wsapoll_events & (POLLWRNORM | POLLOUT)) {
         epoll_events |= EPOLLOUT;
     }
     if (wsapoll_events & POLLERR) {
@@ -231,61 +233,61 @@ int epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout)
         errno = EBADF;
         return -1;
     }
-    
+
     epoll_fd_set_t *set = &epoll_sets[epfd - 100];
-    
+
     if (set->count == 0) {
         if (timeout > 0) {
             Sleep(timeout);
         }
         return 0;
     }
-    
-    // Build WSAPoll fds
-    struct WSAPOLLFD *wsapoll_fds = (struct WSAPOLLFD*)malloc(set->count * sizeof(struct WSAPOLLFD));
-    if (!wsapoll_fds) {
+
+    // Build WSAPoll fds using standard pollfd structure
+    struct pollfd *poll_fds = (struct pollfd*)malloc(set->count * sizeof(struct pollfd));
+    if (!poll_fds) {
         errno = ENOMEM;
         return -1;
     }
-    
+
     int active_count = 0;
     for (int i = 0; i < set->count; i++) {
         if (set->sockets[i] != INVALID_SOCKET) {
-            wsapoll_fds[active_count].fd = set->sockets[i];
-            wsapoll_fds[active_count].events = epoll_to_wsapoll_events(set->events[i].events);
-            wsapoll_fds[active_count].revents = 0;
+            poll_fds[active_count].fd = (SOCKET)set->sockets[i];
+            poll_fds[active_count].events = epoll_to_wsapoll_events(set->events[i].events);
+            poll_fds[active_count].revents = 0;
             active_count++;
         }
     }
-    
+
     if (active_count == 0) {
-        free(wsapoll_fds);
+        free(poll_fds);
         if (timeout > 0) {
             Sleep(timeout);
         }
         return 0;
     }
-    
+
     // Call WSAPoll
-    int ret = WSAPoll(wsapoll_fds, active_count, timeout);
-    
+    int ret = WSAPoll(poll_fds, (ULONG)active_count, timeout);
+
     if (ret == SOCKET_ERROR) {
-        free(wsapoll_fds);
+        free(poll_fds);
         errno = WSAGetLastError();
         return -1;
     }
-    
+
     // Convert results
     int event_count = 0;
     for (int i = 0; i < active_count && event_count < maxevents; i++) {
-        if (wsapoll_fds[i].revents != 0) {
-            events[event_count].events = wsapoll_to_epoll_events(wsapoll_fds[i].revents);
+        if (poll_fds[i].revents != 0) {
+            events[event_count].events = wsapoll_to_epoll_events(poll_fds[i].revents);
             events[event_count].data.fd = set->fd_map[i];
             event_count++;
         }
     }
-    
-    free(wsapoll_fds);
+
+    free(poll_fds);
     return event_count;
 }
 

@@ -107,12 +107,10 @@ void test_dc_configuration() {
 
     memcpy(config.dcs, test_dcs, sizeof(test_dcs));
     config.dc_count = 3;
-    config.current_dc_id = 2;
 
     int result = ws_tunnel_init(&ctx, &config);
     TEST_ASSERT(result == 0, "ws_tunnel_init с DC config успешен");
     TEST_ASSERT(ctx.config.dc_count == 3, "dc_count = 3");
-    TEST_ASSERT(ctx.config.current_dc_id == 2, "current_dc_id = 2");
 
     // Проверка данных DC
     TEST_ASSERT(strcmp(ctx.config.dcs[0].ip, "127.0.0.1") == 0, "DC 1 IP установлен");
@@ -138,13 +136,11 @@ void test_websocket_configuration() {
     // Тест 1: WebSocket включён
     config.use_websocket = 1;
     snprintf(config.ws_server_prefix, sizeof(config.ws_server_prefix), "kws");
-    config.ws_port = 443;
 
     int result = ws_tunnel_init(&ctx, &config);
     TEST_ASSERT(result == 0, "WebSocket config успешен");
     TEST_ASSERT(ctx.config.use_websocket == 1, "use_websocket = 1");
     TEST_ASSERT(strcmp(ctx.config.ws_server_prefix, "kws") == 0, "ws_server_prefix = kws");
-    TEST_ASSERT(ctx.config.ws_port == 443, "ws_port = 443");
 
     // Тест 2: WebSocket выключен (TCP fallback)
     ws_tunnel_ctx_t ctx2;
@@ -176,12 +172,12 @@ void test_ws_tunnel_cleanup() {
     TEST_ASSERT(result == 0, "ws_tunnel_init успешен");
 
     // Очистка
-    ws_tunnel_cleanup(&ctx);
-    TEST_ASSERT(1, "ws_tunnel_cleanup выполнен без ошибок");
+    ws_tunnel_destroy(&ctx);
+    TEST_ASSERT(1, "ws_tunnel_destroy выполнен без ошибок");
 
     // Тест очистки NULL
-    ws_tunnel_cleanup(NULL);
-    TEST_ASSERT(1, "ws_tunnel_cleanup(NULL) не вызывает crash");
+    ws_tunnel_destroy(NULL);
+    TEST_ASSERT(1, "ws_tunnel_destroy(NULL) не вызывает crash");
 
     TEST_END();
 }

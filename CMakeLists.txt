@@ -814,11 +814,14 @@ set_target_properties(test-utils PROPERTIES
 # WS Tunnel test executable (tg-ws-proxy integration)
 add_executable(test-ws-tunnel
     testing/test_ws_tunnel.c
+    net/ws-tunnel.c
 )
 
 target_link_libraries(test-ws-tunnel
     kdb_common
     ${PLATFORM_LIBS}
+    OpenSSL::SSL
+    OpenSSL::Crypto
 )
 
 set_target_properties(test-ws-tunnel PROPERTIES
