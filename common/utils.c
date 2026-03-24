@@ -21,11 +21,11 @@
 #include <stdint.h>
 #include <limits.h>
 #include <errno.h>
+#include <time.h>
 
 #ifdef _WIN32
 #include <windows.h>
 #else
-#include <time.h>
 #include <sys/time.h>
 #endif
 
