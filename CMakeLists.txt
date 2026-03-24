@@ -61,6 +61,26 @@ find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(Threads REQUIRED)
 
+# HTTP/3 (QUIC) support - optional
+option(ENABLE_HTTP3 "Enable HTTP/3 (QUIC) support with nghttp3/ngtcp2" OFF)
+if(ENABLE_HTTP3)
+    find_package(PkgConfig QUIET)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(NGHTTP3 libnghttp3)
+        pkg_check_modules(NGTCP2 libngtcp2)
+        pkg_check_modules(NGTCP2_CRYPTO libngtcp2_crypto_openssl)
+    endif()
+    
+    if(NGHTTP3_FOUND AND NGTCP2_FOUND AND NGTCP2_CRYPTO_FOUND)
+        add_definitions(-DHAVE_NGHTTP3 -DHAVE_NGTCP2)
+        include_directories(${NGHTTP3_INCLUDE_DIRS} ${NGTCP2_INCLUDE_DIRS})
+        message(STATUS "HTTP/3 (QUIC) enabled with nghttp3/ngtcp2")
+    else()
+        message(STATUS "HTTP/3 (QUIC) disabled - nghttp3/ngtcp2 not found")
+        message(STATUS "  To enable: apt install libnghttp3-dev libngtcp2-dev libngtcp2-crypto-openssl-dev")
+    endif()
+endif()
+
 # Cache compiler checks to speed up reconfiguration
 set(CMAKE_C_COMPILER_LAUNCHER "" CACHE STRING "C compiler launcher")
 if(CMAKE_GENERATOR STREQUAL "Ninja")
@@ -297,6 +317,12 @@ set(COMMON_SOURCES
     common/rate-limiter.h
     common/error-handler.c
     common/error-handler.h
+    # Windows IPC (Named Pipes)
+    common/windows-ipc.c
+    common/windows-ipc.h
+    # Common utilities (refactored)
+    common/utils.c
+    common/utils.h
 )
 
 set(JOBS_SOURCES
@@ -769,6 +795,20 @@ set_target_properties(test-traffic-stats PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# Utils module test executable
+add_executable(test-utils
+    testing/test_utils.c
+    common/utils.c
+)
+
+target_link_libraries(test-utils
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-utils PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # FFI API test executable - not available on Windows (requires full FFI implementation)
 if(NOT WIN32)
 add_executable(test-ffi-api
@@ -867,11 +907,11 @@ endif()
 
 # Installation rules - Windows excludes some targets
 if(WIN32)
-    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats
+    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils
         RUNTIME DESTINATION bin
     )
 else()
-    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-ffi-api test-performance test-admin-cli-integration cache-performance-test rate-limiter-highload-test integration-tests
+    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils test-ffi-api test-performance test-admin-cli-integration cache-performance-test rate-limiter-highload-test integration-tests
         RUNTIME DESTINATION bin
     )
 endif()
