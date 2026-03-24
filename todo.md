@@ -1,25 +1,25 @@
 # MTProxy Project TODO
 
 > **Актуально на:** 24 марта 2026 г.
-> **Коммит:** 385f5ef (docs: обновлена статистика исправлений Windows)
-> **Версия:** v1.0.1
-> **Статус:** ✅ Windows сборка готова, socket API реализован
+> **Коммит:** 5665c9b (feat: добавлены Windows IPC, HTTP/3 QUIC поддержка и common/utils)
+> **Версия:** v1.0.2
+> **Статус:** ✅ Windows IPC реализован, HTTP/3 QUIC поддержка добавлена, common/utils создан
 > **Оптимизации:** Полная поддержка Windows (MSYS2/UCRT64)
 > **Ветки:** dev = master = origin/dev = origin/master ✅ (синхронизированы)
 
 ## 📊 Актуальный статус (24 марта 2026)
 
 ### Текущее состояние
-- **Коммит:** 385f5ef (HEAD -> dev, origin/master, origin/dev, master)
+- **Коммит:** 5665c9b (HEAD -> master, origin/master, origin/dev, dev)
 - **Ветки синхронизированы:** ✅ dev = master = origin/dev = origin/master
 - **Рабочие изменения:** 9 untracked файлов (секреты — не коммитить)
-- **Последние изменения:** docs: обновлена статистика исправлений Windows
+- **Последние изменения:** feat: добавлены Windows IPC, HTTP/3 QUIC поддержка и common/utils
 
 ### Статистика проекта
 | Метрика | Значение |
 |---------|----------|
-| **Всего коммитов** | 315+ |
-| **C/H файлов** | 370+ (188 .c + 182 .h + Windows stubs) |
+| **Всего коммитов** | 318+ |
+| **C/H файлов** | 372+ (190 .c + 182 .h + Windows stubs) |
 | **Сетевых модулей** | 41 |
 | **Модулей system/** | 82 |
 | **Тестов** | 45 C + 4 Dart (100% пройдено) |
@@ -27,6 +27,7 @@
 | **REST API** | 12 endpoints |
 | **TODO/FIXME в коде** | 0 |
 | **Потенциал интеграции** | 14 функций (go-pcap2socks: 9, tg-ws-proxy: 5) |
+| **Новые модули** | common/utils, Windows IPC |
 
 ### ✅ Выполнено (24 марта 2026)
 - [x] Windows socket API реализован (server_socket через WSASocket, bind, listen, accept)
@@ -39,6 +40,9 @@
 - [x] REST API готово (12 endpoints)
 - [x] FFI + Mobile app (Flutter/Dart) готовы
 - [x] CI/CD настроен (5 платформ: Linux/Windows/macOS/Android/iOS)
+- [x] **Windows IPC реализован** (Named Pipes для multi-worker mode)
+- [x] **common/utils создан** (устранение дублирования simple_* функций)
+- [x] **HTTP/3 QUIC поддержка добавлена** (stub-реализация улучшена)
 
 ### ⚠️ Известные ограничения Windows
 - Single-worker mode только (-M 1) — fork() не поддерживается
@@ -56,7 +60,7 @@
 - Реализовать эмуляцию IPC через Windows Named Pipes
 - Альтернатива: использовать Windows Job Objects для управления процессами
 
-**Статус:** ⏳ Ожидает реализации
+**Статус:** ✅ Реализовано (5665c9b)
 
 ### 2. Windows epoll эмуляция через IOCP
 **Файлы:** `net/net-events.c`, `net/net-connections.c`, `common/windows-stubs.c`
@@ -89,7 +93,7 @@
 - Заменить дублирующиеся функции на единые реализации
 - Добавить макросы для часто используемых операций
 
-**Статус:** ⏳ Ожидает рефакторинга
+**Статус:** ✅ Реализовано (5665c9b) — common/utils создан
 
 ### 5. HTTP/3 QUIC полная реализация
 **Файлы:** `net/http3-quic.c`, `net/http3-quic.h`
@@ -1298,6 +1302,9 @@ git checkout master && git merge dev && git push origin master
 ### Последние исправления (коммиты)
 | Коммит | Изменение |
 |--------|-----------|
+| **5665c9b** | feat: добавлены Windows IPC, HTTP/3 QUIC поддержка и common/utils |
+| **e6d5438** | docs: обновлён todo.md — актуальный статус на 24 марта 2026 |
+| **385f5ef** | docs: обновлена статистика исправлений Windows |
 | **5dedeb9** | feat: добавлены новые модули интеграции (go-pcap2socks, tg-ws-proxy) |
 | **fe52ca1** | docs: обновлён todo.md — 306 коммитов, 370 C/H файлов, traffic-stats добавлен |
 | **8857c82** | feat: добавлен модуль учёта трафика (traffic-stats) |
@@ -1306,3 +1313,5 @@ git checkout master && git merge dev && git push origin master
 | **07ebe73** | feat: REST API для управления и мониторинга (admin-rest-api) — 12 endpoints |
 
 ---
+
+*Последнее обновление: 24 марта 2026 г. (коммит 5665c9b, ветки синхронизированы)*
