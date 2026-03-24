@@ -857,8 +857,7 @@ set_target_properties(test-admin-cli-integration PROPERTIES
 )
 endif()
 
-# Cache performance test executable (Q2 2026) - not available on Windows (API mismatch)
-if(NOT WIN32)
+# Cache performance test executable (Q2 2026)
 add_executable(cache-performance-test
     testing/cache_performance_test.c
 )
@@ -871,10 +870,22 @@ target_link_libraries(cache-performance-test
 set_target_properties(cache-performance-test PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
-endif()
 
-# Rate limiter high-load test executable (Q2 2026) - not available on Windows (API mismatch)
-if(NOT WIN32)
+# Cache performance test simple (Windows compatible)
+add_executable(cache-performance-test-simple
+    testing/cache_performance_test_simple.c
+)
+
+target_link_libraries(cache-performance-test-simple
+    kdb_common
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(cache-performance-test-simple PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# Rate limiter high-load test executable (Q2 2026)
 add_executable(rate-limiter-highload-test
     testing/rate_limiter_highload_test.c
 )
@@ -887,10 +898,22 @@ target_link_libraries(rate-limiter-highload-test
 set_target_properties(rate-limiter-highload-test PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
-endif()
 
-# Integration tests executable (Q2 2026) - not available on Windows (requires config-manager API)
-if(NOT WIN32)
+# Rate limiter high-load test simple (Windows compatible)
+add_executable(rate-limiter-highload-test-simple
+    testing/rate_limiter_highload_test_simple.c
+)
+
+target_link_libraries(rate-limiter-highload-test-simple
+    kdb_common
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(rate-limiter-highload-test-simple PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# Integration tests executable (Q2 2026)
 add_executable(integration-tests
     testing/integration_tests.c
 )
@@ -903,11 +926,10 @@ target_link_libraries(integration-tests
 set_target_properties(integration-tests PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
-endif()
 
 # Installation rules - Windows excludes some targets
 if(WIN32)
-    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils
+    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils cache-performance-test-simple rate-limiter-highload-test-simple integration-tests
         RUNTIME DESTINATION bin
     )
 else()

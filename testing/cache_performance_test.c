@@ -241,7 +241,7 @@ void test_cache_batch_operations() {
         .default_ttl_sec = 300,
         .enable_locking = 0,
         .enable_partitioning = 1,
-        .num_partitions = 4
+        .partition_count = 4
     };
 
     cache_manager_t *cache = cache_manager_init(&config);
@@ -366,11 +366,12 @@ void test_cache_lru_stress() {
     BENCH_END(lru_write);
 
     // Проверка статистики
-    cache_stats_t stats = cache_get_stats(cache);
+    cache_stats_t stats;
+    cache_get_stats(cache, &stats);
     printf("\n  LRU Statistics:\n");
-    printf("    Total entries: %d (max: %d)\n", stats.total_entries, config.max_entries);
-    printf("    Evictions: %d\n", stats.evictions);
-    printf("    Expected evictions: ~%d\n", TOTAL_WRITES - config.max_entries);
+    printf("    Total entries: %zu (max: %zu)\n", stats.current_entries, config.max_entries);
+    printf("    Evictions: %lld\n", stats.evictions);
+    printf("    Expected evictions: ~%d\n", TOTAL_WRITES - (int)config.max_entries);
 
     // Чтение последних записей (должны быть в кэше)
     int recent_hit = 0;
