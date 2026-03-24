@@ -123,6 +123,16 @@
 - rate-limiter-highload-test-simple: 202K ops, 99.1% success, ~17M ops/sec
 - Windows совместимость обеспечена
 
+### 7. go-pcap2socks / tg-ws-proxy интеграция тесты
+**Файлы:** `testing/test_ws_tunnel.c`, `net/ws-tunnel.c`
+**Проблема:** Интеграция выполнена (5dedeb9), но тесты отсутствуют
+**Решение:**
+- Создать тесты для ws-tunnel модуля (tg-ws-proxy)
+- Протестировать конфигурацию DC и WebSocket
+- Проверить таймауты и fallback
+
+**Статус:** ✅ test_ws_tunnel.c создан (24 марта 2026)
+
 ---
 
 ## 🟢 Плановые задачи (Приоритет 3)

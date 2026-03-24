@@ -811,6 +811,20 @@ set_target_properties(test-utils PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# WS Tunnel test executable (tg-ws-proxy integration)
+add_executable(test-ws-tunnel
+    testing/test_ws_tunnel.c
+)
+
+target_link_libraries(test-ws-tunnel
+    kdb_common
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-ws-tunnel PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # FFI API test executable - not available on Windows (requires full FFI implementation)
 if(NOT WIN32)
 add_executable(test-ffi-api
@@ -945,7 +959,7 @@ set_target_properties(integration-tests-simple PROPERTIES
 
 # Installation rules - Windows excludes some targets
 if(WIN32)
-    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils cache-performance-test-simple rate-limiter-highload-test-simple integration-tests-simple
+    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils test-ws-tunnel cache-performance-test-simple rate-limiter-highload-test-simple integration-tests-simple
         RUNTIME DESTINATION bin
     )
 else()
