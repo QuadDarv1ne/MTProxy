@@ -18,11 +18,11 @@
 ### Статистика проекта
 | Метрика | Значение |
 |---------|----------|
-| **Всего коммитов** | 318+ |
-| **C/H файлов** | 372+ (190 .c + 182 .h + Windows stubs) |
+| **Всего коммитов** | 320+ |
+| **C/H файлов** | 375+ (191 .c + 184 .h + Windows stubs) |
 | **Сетевых модулей** | 41 |
 | **Модулей system/** | 82 |
-| **Тестов** | 45 C + 4 Dart (100% пройдено) |
+| **Тестов** | 72 C + 4 Dart (100% пройдено) |
 | **Документов** | 33+ |
 | **REST API** | 12 endpoints |
 | **TODO/FIXME в коде** | 0 |
@@ -32,17 +32,19 @@
 ### ✅ Выполнено (24 марта 2026)
 - [x] Windows socket API реализован (server_socket через WSASocket, bind, listen, accept)
 - [x] Windows event loop реализован через select() (вместо epoll)
-- [x] 5 Windows stub файлов добавлены (arpa/inet.h, netdb.h, netinet/in.h, sys/socket.h, windows-stubs.c)
+- [x] 5 Windows stub файлов добавлено (arpa/inet.h, netdb.h, netinet/in.h, sys/socket.h, windows-stubs.c)
 - [x] 16 файлов исправлено для Windows совместимости
 - [x] Ветки синхронизированы (dev = master = origin/dev = origin/master)
 - [x] Сборка работает (mtproto-proxy.exe, mtproxy-admin.exe)
-- [x] Тесты проходят (45/45 C + 4/4 Dart)
+- [x] Тесты проходят (45/45 C + 4/4 Dart + 27 integration)
 - [x] REST API готово (12 endpoints)
 - [x] FFI + Mobile app (Flutter/Dart) готовы
 - [x] CI/CD настроен (5 платформ: Linux/Windows/macOS/Android/iOS)
 - [x] **Windows IPC реализован** (Named Pipes для multi-worker mode)
 - [x] **common/utils создан** (устранение дублирования simple_* функций)
 - [x] **HTTP/3 QUIC поддержка добавлена** (stub-реализация улучшена)
+- [x] **Performance тесты** — 454K операций, 99%+ success
+- [x] **Integration тесты** — 27 тестов, 100% success
 
 ### ⚠️ Известные ограничения Windows
 - Single-worker mode только (-M 1) — fork() не поддерживается
@@ -180,8 +182,8 @@
 
 ### Тесты
 - [x] Модульные тесты (45 C + 4 Dart) — ✅ 100% пройдено
-- [x] Интеграционные тесты (admin-cli, monitor.sh) — ✅ созданы и запущены
-- [x] Performance тесты — ✅ созданы и запущены (99%+ success)
+- [x] Интеграционные тесты — ✅ 27 тестов, 100% success
+- [x] Performance тесты — ✅ 454K ops, 99%+ success
 - [ ] Покрытие кода: ~60% → цель 90%
 
 ### Документация
@@ -1305,6 +1307,7 @@ git checkout master && git merge dev && git push origin master
 ### Последние исправления (коммиты)
 | Коммит | Изменение |
 |--------|-----------|
+| **4b3645a** | test: integration-tests-simple — Windows совместимые интеграционные тесты (27 тестов, 100%) |
 | **1b8a10d** | test: Windows совместимые performance тесты для cache-manager и rate-limiter |
 | **d8f3fb2** | fix: Windows сборка — добавлены stdint.h и time.h для windows-ipc.c и utils.c |
 | **5665c9b** | feat: добавлены Windows IPC, HTTP/3 QUIC поддержка и common/utils |
@@ -1319,4 +1322,4 @@ git checkout master && git merge dev && git push origin master
 
 ---
 
-*Последнее обновление: 24 марта 2026 г. (коммит 1b8a10d, ветки синхронизированы)*
+*Последнее обновление: 24 марта 2026 г. (коммит 4b3645a, ветки синхронизированы)*
