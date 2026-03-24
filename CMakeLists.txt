@@ -927,9 +927,23 @@ set_target_properties(integration-tests PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# Integration tests simple (Windows compatible)
+add_executable(integration-tests-simple
+    testing/integration_tests_simple.c
+)
+
+target_link_libraries(integration-tests-simple
+    kdb_common
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(integration-tests-simple PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # Installation rules - Windows excludes some targets
 if(WIN32)
-    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils cache-performance-test-simple rate-limiter-highload-test-simple integration-tests
+    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils cache-performance-test-simple rate-limiter-highload-test-simple integration-tests-simple
         RUNTIME DESTINATION bin
     )
 else()
