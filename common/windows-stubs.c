@@ -592,8 +592,9 @@ int mtproxy_start(void); // Defined in src/mtproxy.c
 void *ct_tcp_rpc_ext_server = NULL;
 
 // Usage stub - required for libmtproxy.dll (weak symbol doesn't work in DLL)
+// Empty implementation for shared library builds
 #ifdef BUILD_SHARED_LIB
-void usage(void) {}
+void usage(void) { /* stub for shared library */ }
 #endif
 
 // Shadowsocks stubs

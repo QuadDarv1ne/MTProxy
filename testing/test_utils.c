@@ -10,6 +10,14 @@
 #include <string.h>
 #include <stdint.h>
 #include <assert.h>
+
+#ifdef _WIN32
+    #include <windows.h>
+    #define sleep(x) Sleep((x) * 1000)
+#else
+    #include <unistd.h>
+#endif
+
 #include "../common/utils.h"
 
 #define TEST_PASS 1
