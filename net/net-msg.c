@@ -109,15 +109,21 @@ static int msg_part_decref (struct msg_part *mp) /* {{{ */{
         break;
       }
     }
-  
-    assert (mp->magic == MSG_PART_MAGIC);
-    assert (!mp->refcnt);    
-    msg_buffer_decref (mp->part);    
 
+    assert (mp->magic == MSG_PART_MAGIC);
+    assert (!mp->refcnt);
+    
+    // Исправление: сохраняем next pointer до освобождения для предотвращения use-after-free
     mpn = mp->next;
+    barrier();  // Гарантируем порядок операций
+    
+    msg_buffer_decref (mp->part);
+
     mp->part = 0;
     mp->next = 0;
-    free_msg_part (mp); 
+    free_msg_part (mp);
+    
+    // Переходим к следующему элементу (который уже сохранен)
     mp = mpn;
 
     cnt ++;

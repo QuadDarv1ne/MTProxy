@@ -34,8 +34,10 @@ typedef struct mp_semaphore {
 
 #define THREAD_HPTRS	16
 
+// Оптимизация: уменьшенный размер блока для лучшей кэш-локальности
+// 512 элементов × 16 байт = 8KB (помещается в L1 кэш)
 #define MPQ_SMALL_BLOCK_SIZE	64
-#define	MPQ_BLOCK_SIZE	4096	// must be a power of 2
+#define	MPQ_BLOCK_SIZE	512	// уменьшено с 4096 для лучшей локальности (must be a power of 2)
 #define MPQ_BLOCK_ALIGNMENT	64
 
 #ifdef _LP64

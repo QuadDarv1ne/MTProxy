@@ -76,6 +76,9 @@ int cpu_tcp_server_writer (connection_job_t C) /* {{{ */ {
   c->type->flush (C);
 
   struct raw_message *raw = malloc (sizeof (*raw));
+  if (!raw) {
+    return -1;  // Исправление: проверка на NULL после malloc
+  }
 
   if (c->type->crypto_encrypt_output && c->crypto) {
     c->type->crypto_encrypt_output (C);
@@ -85,14 +88,21 @@ int cpu_tcp_server_writer (connection_job_t C) /* {{{ */ {
     *raw = c->out;
     rwm_init (&c->out, 0);
   }
- 
-  if (raw->total_bytes && c->io_conn) {        
-    mpq_push_w (SOCKET_CONN_INFO(c->io_conn)->out_packet_queue, raw, 0);
+
+  // Исправление: проверка на NULL и обработка ошибок
+  if (raw->total_bytes && c->io_conn) {
+    if (mpq_push_w (SOCKET_CONN_INFO(c->io_conn)->out_packet_queue, raw, 0) < 0) {
+      // Ошибка при добавлении в очередь - освобождаем память
+      rwm_free (raw);
+      free (raw);
+      return -1;
+    }
     if (stop) {
       __sync_fetch_and_or (&SOCKET_CONN_INFO(c->io_conn)->flags, C_STOPWRITE);
     }
     job_signal (JOB_REF_CREATE_PASS (c->io_conn), JS_RUN);
   } else {
+    // Нет данных или io_conn - освобождаем память
     rwm_free (raw);
     free (raw);
   }
@@ -118,7 +128,11 @@ int cpu_tcp_server_reader (connection_job_t C) /* {{{ */ {
   }
         
   if (c->crypto) {
-    assert (c->type->crypto_decrypt_input (C) >= 0);
+    // Исправление: замена assert на проверку с обработкой ошибки
+    if (c->type->crypto_decrypt_input (C) < 0) {
+      vkprintf (1, "Crypto decrypt failed for connection %d\n", c->fd);
+      return -1;
+    }
   }
 
   int r = c->in.total_bytes;
