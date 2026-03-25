@@ -17,8 +17,8 @@
     Copyright 2009-2013 Vkontakte Ltd
               2008-2013 Nikolai Durov
               2008-2013 Andrey Lopatin
-    
-    Copyright 2014      Telegram Messenger Inc             
+
+    Copyright 2014      Telegram Messenger Inc
               2014      Nikolai Durov
               2014      Andrey Lopatin
 
@@ -232,6 +232,49 @@ static int tcp_recv_buffers_total_size;
 static struct iovec tcp_recv_iovec[MAX_TCP_RECV_BUFFERS + 1];
 static struct msg_buffer *tcp_recv_buffers[MAX_TCP_RECV_BUFFERS];
 
+// Оптимизация: пул буферов для raw_message для предотвращения malloc в горячем пути
+#define RAW_MESSAGE_POOL_SIZE 256
+static struct raw_message *raw_message_pool[RAW_MESSAGE_POOL_SIZE];
+static int raw_message_pool_count = 0;
+static pthread_mutex_t raw_message_pool_lock = PTHREAD_MUTEX_INITIALIZER;
+
+// Выделение из пула (быстрее чем malloc)
+static inline struct raw_message *alloc_raw_message_fast (void) {
+  struct raw_message *rm = NULL;
+  
+  // Пробуем получить из пула без блокировки (быстрый путь)
+  if (raw_message_pool_count > 0) {
+    pthread_mutex_lock(&raw_message_pool_lock);
+    if (raw_message_pool_count > 0) {
+      rm = raw_message_pool[--raw_message_pool_count];
+      raw_message_pool[raw_message_pool_count] = NULL;
+    }
+    pthread_mutex_unlock(&raw_message_pool_lock);
+  }
+  
+  // Если пул пуст - выделяем через malloc
+  if (!rm) {
+    rm = (struct raw_message *) malloc (sizeof (*rm));
+  }
+  
+  return rm;
+}
+
+// Возврат в пул (быстрее чем free)
+static inline void free_raw_message_fast (struct raw_message *rm) {
+  pthread_mutex_lock(&raw_message_pool_lock);
+  
+  // Если пул полон - освобождаем через free
+  if (raw_message_pool_count >= RAW_MESSAGE_POOL_SIZE) {
+    pthread_mutex_unlock(&raw_message_pool_lock);
+    free (rm);
+    return;
+  }
+  
+  raw_message_pool[raw_message_pool_count++] = rm;
+  pthread_mutex_unlock(&raw_message_pool_lock);
+}
+
 int prealloc_tcp_buffers (void) /* {{{ */ {
   assert (!tcp_recv_buffers_num);   
 
@@ -424,25 +467,30 @@ int cpu_server_free_connection (connection_job_t C) /* {{{ */ {
  
   vkprintf (1, "Closing connection socket #%d\n", c->fd);
 
-  while (1) {
-    struct raw_message *raw = mpq_pop_nw (c->out_queue, 4);
-    if (!raw) { break; }
-    rwm_free (raw);
-    free (raw);
+  // Исправление: проверка на NULL для предотвращения crash
+  if (c->out_queue) {
+    while (1) {
+      struct raw_message *raw = mpq_pop_nw (c->out_queue, 4);
+      if (!raw) { break; }
+      rwm_free (raw);
+      free (raw);
+    }
+
+    free_mp_queue (c->out_queue);
+    c->out_queue = NULL;
   }
 
-  free_mp_queue (c->out_queue);
-  c->out_queue = NULL;
+  if (c->in_queue) {
+    while (1) {
+      struct raw_message *raw = mpq_pop_nw (c->in_queue, 4);
+      if (!raw) { break; }
+      rwm_free (raw);
+      free (raw);
+    }
 
-  while (1) {
-    struct raw_message *raw = mpq_pop_nw (c->in_queue, 4);
-    if (!raw) { break; }
-    rwm_free (raw);
-    free (raw);
+    free_mp_queue (c->in_queue);
+    c->in_queue = NULL;
   }
-
-  free_mp_queue (c->in_queue);
-  c->in_queue = NULL;
 
   if (c->type->crypto_free) {
     c->type->crypto_free (C);
@@ -865,7 +913,8 @@ int net_server_socket_reader (socket_connection_job_t C) /* {{{ */ {
       prealloc_tcp_buffers ();
     }
 
-    struct raw_message *in = malloc (sizeof (*in));
+    // Оптимизация: используем пул вместо malloc для производительности
+    struct raw_message *in = alloc_raw_message_fast ();
     rwm_init (in, 0);
     
     int s = tcp_recv_buffers_total_size;
@@ -900,7 +949,7 @@ int net_server_socket_reader (socket_connection_job_t C) /* {{{ */ {
 
     if (r <= 0) {
       rwm_free (in);
-      free (in);
+      free_raw_message_fast (in);  // Оптимизация: возврат в пул вместо free
       break;
     }
 
@@ -945,8 +994,15 @@ int net_server_socket_reader (socket_connection_job_t C) /* {{{ */ {
     }
 
     assert (c->conn);
-    mpq_push_w (CONN_INFO(c->conn)->in_queue, in, 0);
-    job_signal (JOB_REF_CREATE_PASS (c->conn), JS_RUN);
+    // Исправление: проверка на NULL и обработка ошибок mpq_push_w
+    if (c->conn && mpq_push_w (CONN_INFO(c->conn)->in_queue, in, 0) >= 0) {
+      job_signal (JOB_REF_CREATE_PASS (c->conn), JS_RUN);
+    } else {
+      // Ошибка - освобождаем память
+      vkprintf (1, "Warning: Failed to push message to connection %p\n", c->conn);
+      rwm_free (in);
+      free_raw_message_fast (in);  // Оптимизация: возврат в пул вместо free
+    }
   }
   return 0;
 }
@@ -1243,7 +1299,10 @@ int net_accept_new_connections (listening_connection_job_t LCJ) /* {{{ */ {
   unsigned peer_addrlen;
   int cfd, acc = 0;
 
-  while (Events[LC->fd].state & EVT_IN_EPOLL) {   
+  // Исправление: лимит на количество accept за один вызов для предотвращения блокировки
+  #define MAX_ACCEPT_PER_ITERATION 100
+
+  while ((Events[LC->fd].state & EVT_IN_EPOLL) && (acc < MAX_ACCEPT_PER_ITERATION)) {
     peer_addrlen = sizeof (peer);
     memset (&peer, 0, sizeof (peer));
     cfd = accept (LC->fd, (struct sockaddr *) &peer, &peer_addrlen);
@@ -1258,7 +1317,7 @@ int net_accept_new_connections (listening_connection_job_t LCJ) /* {{{ */ {
       }
       break;
     }
-    
+
     acc ++;
     MODULE_STAT->inbound_connections_accepted ++;
     

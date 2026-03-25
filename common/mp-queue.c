@@ -365,6 +365,12 @@ mqn_value_t mpq_block_pop (struct mp_queue_block *QB) {
 long mpq_block_push (struct mp_queue_block *QB, mqn_value_t val) {
   int iterations = 0;
   long size = QB->mqb_size;
+  // Исправление: проверка что size является степенью двойки
+  assert ((size & (size - 1)) == 0 && size > 0);
+
+  // Оптимизация: экспоненциальная задержка для уменьшения contention
+  int backoff = 1;
+
   // fprintf (stderr, "%d:mpq_block_push(%p)\n", mpq_this_thread_id, QB);
   while (1) {
     long t = __sync_fetch_and_add (&QB->mqb_tail, 1);
@@ -372,14 +378,17 @@ long mpq_block_push (struct mp_queue_block *QB, mqn_value_t val) {
     if (t & MQN_SAFE) {
       return -1L; // bad luck
     }
-    mpq_node_t *node = &QB->mqb_nodes[t & (size - 1)];
+    // Исправление: безопасный расчет индекса с проверкой границ
+    long idx = t & (size - 1);
+    assert (idx >= 0 && idx < size);
+    mpq_node_t *node = &QB->mqb_nodes[idx];
     barrier();
     mqn_value_t old_val = node->val;
     barrier();
     long safe_idx = node->idx;
     barrier();
-    long idx = safe_idx & MQN_IDX_MASK;
-    if (!old_val && idx <= t && ((safe_idx & MQN_SAFE) || QB->mqb_head <= t)) {
+    long idx2 = safe_idx & MQN_IDX_MASK;
+    if (!old_val && idx2 <= t && ((safe_idx & MQN_SAFE) || QB->mqb_head <= t)) {
       mpq_node_t d, e;
       d.idx = safe_idx;
       d.val = 0;
@@ -396,6 +405,17 @@ long mpq_block_push (struct mp_queue_block *QB, mqn_value_t val) {
     if (t - h >= size || ++iterations > 10) {
       __sync_fetch_and_or (&QB->mqb_tail, MQN_SAFE); // closing queue
       return -1L; // bad luck
+    }
+    
+    // Оптимизация: экспоненциальная задержка при retry для уменьшения contention
+    if (iterations > 3) {
+      // Экспоненциальный backoff: 1, 2, 4, 8, ... циклов
+      int delay;
+      for (delay = 0; delay < backoff && delay < 32; delay++) {
+        barrier();  // CPU barrier для предотвращения оптимизации
+      }
+      backoff *= 2;  // Увеличиваем задержку
+      if (backoff > 32) backoff = 32;  // Максимальная задержка
     }
   }
 }
@@ -474,8 +494,8 @@ mqn_value_t mpq_pop (struct mp_queue *MQ, int flags) {
     QB = MQ->mq_head;
     barrier ();
     hptr[r] = QB;
-    barrier ();
-    __sync_synchronize ();
+    // Исправление: усиленный барьер памяти для предотвращения race condition
+    __atomic_thread_fence(__ATOMIC_SEQ_CST);
     if (MQ->mq_head != QB) {
       continue;
     }
