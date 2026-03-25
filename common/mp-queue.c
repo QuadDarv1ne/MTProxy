@@ -26,6 +26,7 @@
 #include <pthread.h>
 #include <signal.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -229,7 +230,7 @@ struct mp_queue_block *alloc_mpq_block (mqn_value_t first_val, int allow_recursi
     char *new_block = malloc (offsetof (struct mp_queue_block, mqb_nodes) + size * (2 * sizeof (void *)) + MPQ_BLOCK_ALIGNMENT - sizeof (void *));
     assert (new_block);
     assert (!((long) new_block & (sizeof (void *) - 1)));
-    align_bytes = -(int)(long) new_block & (MPQ_BLOCK_ALIGNMENT - 1);
+    align_bytes = -(uintptr_t)(new_block) & (MPQ_BLOCK_ALIGNMENT - 1);  // Исправление: cast через uintptr_t
     QB = (struct mp_queue_block *) (new_block + align_bytes);
 
     __sync_fetch_and_add (&mpq_blocks_true_allocations, 1);

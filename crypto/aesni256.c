@@ -35,7 +35,5 @@ EVP_CIPHER_CTX *evp_cipher_ctx_init (const EVP_CIPHER *cipher, unsigned char *ke
 }
 
 void evp_crypt (EVP_CIPHER_CTX *evp_ctx, const void *in, void *out, int size) {
-  int len;
-  assert (EVP_CipherUpdate(evp_ctx, out, &len, in, size) == 1);
-  assert (len == size);
+  assert (EVP_CipherUpdate(evp_ctx, out, &size, in, size) == 1);
 }

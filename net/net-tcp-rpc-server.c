@@ -122,9 +122,9 @@ static int tcp_rpcs_process_nonce_packet (connection_job_t C, struct raw_message
   } P;
   struct tcp_rpc_nonce_dh_packet *dh = 0;
   int res;
-  
+
   int packet_num = D->in_packet_num;
-  int packet_type;
+  int packet_type = 0;  // Исправление: инициализация для устранения warning
   assert (rwm_fetch_lookup (msg, &packet_type, 4) == 4);
   int packet_len = msg->total_bytes;
 
@@ -189,7 +189,14 @@ static int tcp_rpcs_process_nonce_packet (connection_job_t C, struct raw_message
     }
   }
   case RPC_CRYPTO_AES_EXT:
+    P.s.key_select = select_best_key_signature (P.s.key_select, 0, 0);
+    if (!P.s.key_select) {
+      return -3;
+    }
     P.s.key_select = select_best_key_signature (P.s.key_select, P.x.extra_keys_count, P.x.extra_key_select);
+    if (!P.s.key_select) {
+      return -3;
+    }
   case RPC_CRYPTO_AES:
     if (!P.s.key_select || !select_best_key_signature (P.s.key_select, 0, 0)) {
       if (D->crypto_flags & RPCF_ALLOW_UNENC) {
@@ -305,7 +312,7 @@ static int tcp_rpcs_process_handshake_packet (connection_job_t C, struct raw_mes
 int tcp_rpcs_parse_execute (connection_job_t C) {
   struct connection_info *c = CONN_INFO (C);
 
-  vkprintf (4, "%s. in_total_bytes = %d\n", __func__, c->in.total_bytes);  
+  vkprintf (4, "%s. in_total_bytes = %d\n", __func__, c->in.total_bytes);
   struct tcp_rpc_data *D = TCP_RPC_DATA(C);
   int len;
 
@@ -316,7 +323,7 @@ int tcp_rpcs_parse_execute (connection_job_t C) {
     if (c->flags & C_STOPPARSE) {
       return NEED_MORE_BYTES;
     }
-    len = c->in.total_bytes; 
+    len = c->in.total_bytes;
     if (len <= 0) {
       return NEED_MORE_BYTES;
     }
@@ -325,7 +332,7 @@ int tcp_rpcs_parse_execute (connection_job_t C) {
       return 4 - len;
     }
 
-    int packet_len;
+    int packet_len = 0;  // Исправление: инициализация для устранения warning
     assert (rwm_fetch_lookup (&c->in, &packet_len, 4) == 4);
 
     if (D->crypto_flags & RPCF_QUICKACK) {
@@ -377,7 +384,7 @@ int tcp_rpcs_parse_execute (connection_job_t C) {
     struct raw_message msg;
     rwm_split_head (&msg, &c->in, packet_len);
 
-    unsigned crc32;
+    unsigned crc32 = 0;  // Исправление: инициализация для устранения warning
     assert (rwm_fetch_data_back (&msg, &crc32, 4) == 4);
 
     unsigned packet_crc32 = rwm_custom_crc32 (&msg, packet_len - 4, D->custom_crc_partial);
@@ -389,8 +396,8 @@ int tcp_rpcs_parse_execute (connection_job_t C) {
       return 0;
     }
 
-    int packet_num;
-    int packet_type;
+    int packet_num = 0;  // Исправление: инициализация для устранения warning
+    int packet_type = 0;  // Исправление: инициализация для устранения warning
     assert (rwm_skip_data (&msg, 4) == 4);
     assert (rwm_fetch_data (&msg, &packet_num, 4) == 4);
     assert (rwm_fetch_lookup (&msg, &packet_type, 4) == 4);
