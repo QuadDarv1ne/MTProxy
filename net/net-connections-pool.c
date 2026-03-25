@@ -92,17 +92,17 @@ void init_connection_pool(void) {
 
 // Get a reusable connection from the pool for the given target
 connection_job_t get_pooled_connection(conn_target_job_t target) {
-  pthread_mutex_lock(&conn_pool.mutex);
-
+  // Оптимизация: быстрая проверка без блокировки для cache hit
   struct connection_entry *entry = NULL;
   time_t now = time(NULL);
-
+  
   // Look for a matching connection in the pool
-  // Исправление: используем атомарную операцию для ref_count
+  // Оптимизация: используем атомарную операцию для ref_count
   for (int i = 0; i < conn_pool.total_entries; i++) {
+    // Оптимизация: проверка target без блокировки (read-only)
     if (conn_pool.entries[i].target == target &&
         (now - conn_pool.entries[i].last_used) < CONNECTION_REUSE_TIMEOUT) {
-
+      
       // Атомарно пытаемся захватить ссылку
       int old_ref = __sync_val_compare_and_swap(&conn_pool.entries[i].ref_count, 0, 1);
       if (old_ref == 0) {
@@ -110,7 +110,6 @@ connection_job_t get_pooled_connection(conn_target_job_t target) {
         conn_pool.hits++;
         connection_job_t conn = job_incref(entry->conn);
 
-        pthread_mutex_unlock(&conn_pool.mutex);
         vkprintf(2, "Reusing pooled connection for target %p\n", target);
         return conn;
       }
@@ -118,7 +117,6 @@ connection_job_t get_pooled_connection(conn_target_job_t target) {
   }
 
   conn_pool.misses++;
-  pthread_mutex_unlock(&conn_pool.mutex);
   return NULL;
 }
 

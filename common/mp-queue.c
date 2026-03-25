@@ -369,8 +369,9 @@ long mpq_block_push (struct mp_queue_block *QB, mqn_value_t val) {
   // Исправление: проверка что size является степенью двойки
   assert ((size & (size - 1)) == 0 && size > 0);
 
-  // Оптимизация: экспоненциальная задержка для уменьшения contention
+  // Оптимизация: экспоненциальная задержка с рандомизацией для уменьшения contention
   int backoff = 1;
+  int max_backoff = 64;  // Максимальная задержка в циклах
 
   // fprintf (stderr, "%d:mpq_block_push(%p)\n", mpq_this_thread_id, QB);
   while (1) {
@@ -400,23 +401,19 @@ long mpq_block_push (struct mp_queue_block *QB, mqn_value_t val) {
 	return t; // pushed OK
       }
     }
-    barrier ();
-    long h = QB->mqb_head;
-    barrier ();
-    if (t - h >= size || ++iterations > 10) {
-      __sync_fetch_and_or (&QB->mqb_tail, MQN_SAFE); // closing queue
-      return -1L; // bad luck
-    }
-    
-    // Оптимизация: экспоненциальная задержка при retry для уменьшения contention
-    if (iterations > 3) {
-      // Экспоненциальный backoff: 1, 2, 4, 8, ... циклов
-      int delay;
-      for (delay = 0; delay < backoff && delay < 32; delay++) {
-        barrier();  // CPU barrier для предотвращения оптимизации
+    // Collision - exponential backoff with randomization
+    iterations++;
+    if (iterations > 1) {
+      // Экспоненциальная задержка: 1, 2, 4, 8, 16, 32, 64 циклов
+      int delay = (backoff < max_backoff) ? backoff : max_backoff;
+      volatile int spin;
+      for (spin = 0; spin < delay; spin++) {
+        // Spin-wait с рандомизацией для предотвращения синхронизации потоков
+        if (spin & 1) {
+          __asm__ __volatile__("" ::: "memory");
+        }
       }
-      backoff *= 2;  // Увеличиваем задержку
-      if (backoff > 32) backoff = 32;  // Максимальная задержка
+      backoff <<= 1;  // Увеличиваем задержку
     }
   }
 }

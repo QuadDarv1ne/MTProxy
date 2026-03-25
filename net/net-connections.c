@@ -745,6 +745,20 @@ connection_job_t alloc_new_connection (int cfd, conn_target_job_t CTJ, listening
   c->out_queue = alloc_mp_queue_w ();
   //c->out_packet_queue = alloc_mp_queue_w ();
   
+  // Проверка успешного выделения памяти для очередей
+  if (!c->in_queue || !c->out_queue) {
+    vkprintf (0, "Failed to allocate queues for connection #%d\n", c->fd);
+    if (c->in_queue) {
+      free_mp_queue (c->in_queue);
+    }
+    if (c->out_queue) {
+      free_mp_queue (c->out_queue);
+    }
+    close (cfd);
+    free (c);
+    return 0;
+  }
+
   if (basic_type == ct_outbound) {
     vkprintf (1, "New outbound connection #%d %s:%d -> %s:%d\n", c->fd, show_our_ip (C), c->our_port, show_remote_ip (C), c->remote_port);
   } else {

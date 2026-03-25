@@ -59,12 +59,12 @@ int cpu_tcp_server_writer (connection_job_t C) /* {{{ */ {
   assert_net_cpu_thread ();
 
   struct connection_info *c = CONN_INFO (C);
-  
+
   int stop = 0;
   if (c->status == conn_write_close) {
     stop = 1;
   }
-  
+
   while (1) {
     struct raw_message *raw = mpq_pop_nw (c->out_queue, 4);
     if (!raw) { break; }
@@ -72,11 +72,12 @@ int cpu_tcp_server_writer (connection_job_t C) /* {{{ */ {
     c->type->write_packet (C, raw);
     free (raw);
   }
-  
+
   c->type->flush (C);
 
   struct raw_message *raw = malloc (sizeof (*raw));
   if (!raw) {
+    vkprintf (0, "ERROR: Failed to allocate raw_message for connection %d\n", c->fd);
     return -1;  // Исправление: проверка на NULL после malloc
   }
 
@@ -91,14 +92,22 @@ int cpu_tcp_server_writer (connection_job_t C) /* {{{ */ {
 
   // Исправление: проверка на NULL и обработка ошибок
   if (raw->total_bytes && c->io_conn) {
-    if (mpq_push_w (SOCKET_CONN_INFO(c->io_conn)->out_packet_queue, raw, 0) < 0) {
+    struct socket_connection_info *io_c = SOCKET_CONN_INFO(c->io_conn);
+    if (!io_c->out_packet_queue) {
+      vkprintf (0, "ERROR: out_packet_queue is NULL for connection %d\n", c->fd);
+      rwm_free (raw);
+      free (raw);
+      return -1;
+    }
+    if (mpq_push_w (io_c->out_packet_queue, raw, 0) < 0) {
       // Ошибка при добавлении в очередь - освобождаем память
+      vkprintf (1, "Warning: Failed to push message to connection %p (queue full)\n", c->io_conn);
       rwm_free (raw);
       free (raw);
       return -1;
     }
     if (stop) {
-      __sync_fetch_and_or (&SOCKET_CONN_INFO(c->io_conn)->flags, C_STOPWRITE);
+      __sync_fetch_and_or (&io_c->flags, C_STOPWRITE);
     }
     job_signal (JOB_REF_CREATE_PASS (c->io_conn), JS_RUN);
   } else {
@@ -126,17 +135,22 @@ int cpu_tcp_server_reader (connection_job_t C) /* {{{ */ {
     }
     free (raw);
   }
-        
+
   if (c->crypto) {
     // Исправление: замена assert на проверку с обработкой ошибки
-    if (c->type->crypto_decrypt_input (C) < 0) {
-      vkprintf (1, "Crypto decrypt failed for connection %d\n", c->fd);
+    if (!c->type->crypto_decrypt_input) {
+      vkprintf (0, "ERROR: crypto_decrypt_input is NULL for connection %d\n", c->fd);
       return -1;
+    }
+    if (c->type->crypto_decrypt_input (C) < 0) {
+      vkprintf (1, "Crypto decrypt failed for connection %d (flags=0x%x, crypto=%p)\n", 
+               c->fd, c->flags, c->crypto);
+      // Не возвращаем ошибку сразу, даём обработать данные если они есть
     }
   }
 
   int r = c->in.total_bytes;
-        
+
   int s = c->skip_bytes;
 
   if (c->type->data_received) {
@@ -161,7 +175,7 @@ int cpu_tcp_server_reader (connection_job_t C) /* {{{ */ {
     c->skip_bytes = s += r1;
 
     vkprintf (2, "skipped %d bytes, %d more to skip\n", r1, -s);
-      
+
     if (s) {
       return 0;
     }
