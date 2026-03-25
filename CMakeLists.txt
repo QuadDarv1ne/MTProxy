@@ -298,6 +298,9 @@ set(COMMON_SOURCES
     common/proc-stat.c
     common/proc-stat.h
     common/resolver.c
+    # Audit logging system (NEW)
+    common/audit-log.c
+    common/audit-log.h
     common/resolver.h
     # Профили конфигурации
     common/config-profiles.c
@@ -416,6 +419,9 @@ set(NET_SOURCES
     net/simple-advanced-network.h
     net/tls-emulator.c
     net/tls-emulator.h
+    # REST API (NEW)
+    net/rest-api.c
+    net/rest-api.h
     net/websocket-support.c
     net/websocket-support.h
     # net/zero-copy-optimizer.c
