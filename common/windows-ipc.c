@@ -35,8 +35,17 @@
 #define IPC_DEBUG(fmt, ...)
 #endif
 
+// Error logging macro with Windows error code
+#define IPC_ERROR(fmt, ...) fprintf(stderr, "[IPC-ERROR] " fmt " (Error: %lu)\n", ##__VA_ARGS__, GetLastError())
+
 // Named pipe prefix for MTProxy
 #define MTPIPE_PREFIX "\\\\.\\pipe\\mtproxy_"
+
+// Pipe timeout in milliseconds
+#define IPC_PIPE_TIMEOUT_MS     10000
+#define IPC_CONNECT_TIMEOUT_MS  5000
+#define IPC_RETRY_ATTEMPTS      10
+#define IPC_RETRY_DELAY_MS      100
 
 // IPC message types
 typedef enum {
@@ -86,11 +95,16 @@ static inline uint32_t ipc_checksum(const void *data, size_t len) {
 
 // Initialize IPC for parent process
 int ipc_parent_init(const char *worker_id) {
+    if (!worker_id) {
+        IPC_ERROR("worker_id is NULL");
+        return -EINVAL;
+    }
+
     char pipe_name[256];
     snprintf(pipe_name, sizeof(pipe_name), "%sworker_%s", MTPIPE_PREFIX, worker_id);
-    
+
     IPC_DEBUG("Creating parent pipe: %s", pipe_name);
-    
+
     HANDLE pipe = CreateNamedPipeA(
         pipe_name,
         PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
@@ -98,51 +112,61 @@ int ipc_parent_init(const char *worker_id) {
         1,
         4096,  // Output buffer size
         4096,  // Input buffer size
-        5000,  // Timeout in ms
+        IPC_PIPE_TIMEOUT_MS,  // Timeout in ms
         NULL
     );
-    
+
     if (pipe == INVALID_HANDLE_VALUE) {
-        IPC_DEBUG("Failed to create pipe: %lu", GetLastError());
+        DWORD err = GetLastError();
+        IPC_ERROR("Failed to create pipe '%s': %lu", pipe_name, err);
         return -1;
     }
-    
+
     g_ipc_parent.pipe_handle = pipe;
     strncpy(g_ipc_parent.pipe_name, pipe_name, sizeof(g_ipc_parent.pipe_name) - 1);
     g_ipc_parent.pipe_name[sizeof(g_ipc_parent.pipe_name) - 1] = '\0';
     g_ipc_parent.is_connected = FALSE;
-    
+    g_ipc_parent.last_error = 0;
+
+    IPC_DEBUG("Parent pipe created successfully");
     return 0;
 }
 
 // Wait for worker connection (parent side)
 int ipc_parent_wait_for_connection(void) {
     IPC_DEBUG("Waiting for worker connection...");
-    
+
     if (!ConnectNamedPipe(g_ipc_parent.pipe_handle, NULL)) {
         DWORD err = GetLastError();
+        // ERROR_PIPE_CONNECTED means client connected before ConnectNamedPipe was called
         if (err != ERROR_PIPE_CONNECTED) {
-            IPC_DEBUG("ConnectNamedPipe failed: %lu", err);
+            IPC_ERROR("ConnectNamedPipe failed: %lu", err);
             g_ipc_parent.last_error = err;
             return -1;
         }
+        IPC_DEBUG("Client already connected (ERROR_PIPE_CONNECTED)");
     }
-    
+
     g_ipc_parent.is_connected = TRUE;
     IPC_DEBUG("Worker connected successfully");
-    
+
     return 0;
 }
 
 // Initialize IPC for worker process
 int ipc_worker_init(const char *worker_id) {
+    if (!worker_id) {
+        IPC_ERROR("worker_id is NULL");
+        return -EINVAL;
+    }
+
     char pipe_name[256];
     snprintf(pipe_name, sizeof(pipe_name), "%sworker_%s", MTPIPE_PREFIX, worker_id);
-    
+
     IPC_DEBUG("Connecting to worker pipe: %s", pipe_name);
-    
-    // Wait for pipe to be available
-    for (int i = 0; i < 10; i++) {
+
+    // Wait for pipe to be available with retry logic
+    for (int i = 0; i < IPC_RETRY_ATTEMPTS; i++) {
         HANDLE pipe = CreateFileA(
             pipe_name,
             GENERIC_READ | GENERIC_WRITE,
@@ -152,66 +176,81 @@ int ipc_worker_init(const char *worker_id) {
             FILE_ATTRIBUTE_NORMAL,
             NULL
         );
-        
+
         if (pipe != INVALID_HANDLE_VALUE) {
             g_ipc_worker.pipe_handle = pipe;
             strncpy(g_ipc_worker.pipe_name, pipe_name, sizeof(g_ipc_worker.pipe_name) - 1);
             g_ipc_worker.pipe_name[sizeof(g_ipc_worker.pipe_name) - 1] = '\0';
             g_ipc_worker.is_connected = TRUE;
-            IPC_DEBUG("Connected to parent successfully");
+            g_ipc_worker.last_error = 0;
+            IPC_DEBUG("Connected to parent successfully (attempt %d/%d)", i + 1, IPC_RETRY_ATTEMPTS);
             return 0;
         }
-        
+
         DWORD err = GetLastError();
-        if (err != ERROR_PIPE_BUSY) {
-            IPC_DEBUG("CreateFile failed: %lu", err);
+        if (err != ERROR_PIPE_BUSY && err != ERROR_FILE_NOT_FOUND) {
+            IPC_ERROR("CreateFile failed: %lu", err);
             g_ipc_worker.last_error = err;
             return -1;
         }
-        
-        // Pipe is busy, wait and retry
-        IPC_DEBUG("Pipe busy, waiting... (attempt %d)", i + 1);
-        Sleep(100);
+
+        // Pipe is busy or not ready, wait and retry
+        IPC_DEBUG("Pipe busy/not ready, waiting... (attempt %d/%d)", i + 1, IPC_RETRY_ATTEMPTS);
+        Sleep(IPC_RETRY_DELAY_MS);
     }
-    
-    IPC_DEBUG("Failed to connect after 10 attempts");
+
+    IPC_ERROR("Failed to connect after %d attempts", IPC_RETRY_ATTEMPTS);
     return -1;
 }
 
 // Send IPC message
 int ipc_send(ipc_context_t *ctx, ipc_msg_type_t type, const void *data, size_t len) {
+    if (!ctx) {
+        IPC_ERROR("NULL context");
+        errno = EINVAL;
+        return -1;
+    }
+
     if (!ctx->is_connected) {
         IPC_DEBUG("Not connected, cannot send");
         errno = ENOTCONN;
         return -1;
     }
-    
+
+    if (len > UINT32_MAX) {
+        IPC_ERROR("Message too large: %zu bytes", len);
+        errno = EMSGSIZE;
+        return -1;
+    }
+
     ipc_msg_header_t header;
     header.magic = IPC_MAGIC;
     header.type = type;
     header.length = (uint32_t)len;
     header.checksum = ipc_checksum(data, len);
-    
+
     // Send header
     DWORD bytes_written;
     if (!WriteFile(ctx->pipe_handle, &header, sizeof(header), &bytes_written, NULL)) {
-        IPC_DEBUG("Failed to send header: %lu", GetLastError());
-        ctx->last_error = GetLastError();
+        DWORD err = GetLastError();
+        IPC_ERROR("Failed to send header: %lu", err);
+        ctx->last_error = err;
         return -1;
     }
-    
+
     // Send payload
     if (len > 0) {
         if (!WriteFile(ctx->pipe_handle, data, (DWORD)len, &bytes_written, NULL)) {
-            IPC_DEBUG("Failed to send payload: %lu", GetLastError());
-            ctx->last_error = GetLastError();
+            DWORD err = GetLastError();
+            IPC_ERROR("Failed to send payload: %lu", err);
+            ctx->last_error = err;
             return -1;
         }
     }
-    
+
     ctx->messages_sent++;
     ctx->bytes_sent += sizeof(header) + len;
-    
+
     IPC_DEBUG("Sent message type=%u, len=%u", type, (unsigned)len);
     return 0;
 }

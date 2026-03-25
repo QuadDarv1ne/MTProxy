@@ -99,11 +99,34 @@ if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
     # Architecture-specific optimizations (single definition)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mpclmul -mfpmath=sse -mssse3")
 
-    # Advanced optimization flags - disable LTO for Windows compatibility
-    # LTO causes type mismatch errors on Windows
-    # Remove all LTO flags completely
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -funroll-loops -ftree-vectorize -fno-lto")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fno-lto")
+    # Advanced optimization flags
+    # LTO enabled for Unix platforms (Linux/macOS), disabled for Windows
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -funroll-loops -ftree-vectorize")
+    
+    # Link-time optimization (LTO) for Unix platforms
+    # Disabled for Windows due to cross-platform compatibility issues
+    if(NOT WIN32)
+        CHECK_C_COMPILER_FLAG("-flto=auto" HAS_LTO)
+        if(HAS_LTO)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto=auto")
+            set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto=auto")
+            message(STATUS "LTO enabled for Unix builds (performance optimization)")
+        endif()
+    else()
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-lto")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fno-lto")
+    endif()
+
+    # AddressSanitizer for Debug builds (optional)
+    option(ENABLE_ASAN "Enable AddressSanitizer for Debug builds" OFF)
+    if(ENABLE_ASAN AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+        CHECK_C_COMPILER_FLAG("-fsanitize=address" HAS_ASAN)
+        if(HAS_ASAN)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer")
+            set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+            message(STATUS "AddressSanitizer enabled for Debug builds")
+        endif()
+    endif()
 
     # Profile-guided optimization support
     option(ENABLE_PGO "Enable Profile-Guided Optimization" OFF)
@@ -130,11 +153,6 @@ if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
             message(WARNING "First build with ENABLE_PGO=ON, run the binary, then rebuild with USE_PGO_PROFILE=ON")
         endif()
     endif()
-
-    # Link-time optimization and architecture tuning (single definition)
-    # Linux LTO support - disabled for cross-platform compatibility
-    # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto=auto")
-    # set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -flto=auto")
 
     # Security-specific flags
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fstack-protector-strong -D_FORTIFY_SOURCE=2")
