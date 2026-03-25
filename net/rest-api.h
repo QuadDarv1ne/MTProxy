@@ -220,13 +220,15 @@ typedef struct {
     api_route_t *routes;
     int route_count;
     int route_capacity;
-    
+
     // Connection tracking
     int *active_fds;
     int active_fd_count;
     int max_fd;
+#ifndef _WIN32
     fd_set read_fds;
-    
+#endif
+
     // Rate limiting
     uint64_t *request_timestamps;
     int request_timestamp_count;

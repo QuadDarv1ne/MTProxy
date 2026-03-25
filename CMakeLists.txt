@@ -419,9 +419,9 @@ set(NET_SOURCES
     net/simple-advanced-network.h
     net/tls-emulator.c
     net/tls-emulator.h
-    # REST API (NEW)
-    net/rest-api.c
-    net/rest-api.h
+    # REST API (NEW) - отключено для Windows из-за проблем совместимости
+    # net/rest-api.c
+    # net/rest-api.h
     net/websocket-support.c
     net/websocket-support.h
     # net/zero-copy-optimizer.c

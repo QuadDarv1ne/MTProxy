@@ -38,6 +38,11 @@
 #include <sys/syscall.h>
 #endif
 
+// Windows compatibility for aligned allocation
+#ifdef _WIN32
+#include <malloc.h>
+#endif
+
 #include "server-functions.h"
 #include "kprintf.h"
 #include "precise-time.h"
@@ -132,6 +137,9 @@ int mp_sem_post (mp_sem_t *sem) {
 
 int mp_sem_wait (mp_sem_t *sem) {
   int v = sem->value, q = 0;
+  int max_iterations = 1000000;  // Максимум итераций для предотвращения бесконечного цикла
+  int iterations = 0;
+  
   while (1) {
     if (v > 0) {
       v = __sync_fetch_and_add (&sem->value, -1);
@@ -146,10 +154,38 @@ int mp_sem_wait (mp_sem_t *sem) {
 	continue;
       }
       __sync_fetch_and_add (&sem->waiting, 1);
-      syscall (__NR_futex, &sem->value, FUTEX_WAIT, v, NULL, 0, 0);
+      
+      // Используем futex с timeout (1 секунда) для предотвращения бесконечного ожидания
+      struct timespec timeout;
+      clock_gettime (CLOCK_REALTIME, &timeout);
+      timeout.tv_sec += 1;  // Timeout через 1 секунду
+      
+      long ret = syscall (__NR_futex, &sem->value, FUTEX_WAIT, v, &timeout, 0, 0);
+      
+      // Проверяем не истекло ли время или не было ли ошибки
+      if (ret < 0 && (errno == ETIMEDOUT || errno == EINTR)) {
+        __sync_fetch_and_add (&sem->waiting, -1);
+        iterations++;
+        if (iterations >= max_iterations) {
+          // Превышено максимальное количество итераций - логируем и возвращаем ошибку
+          kprintf ("[WARNING] mp_sem_wait: timeout after %d iterations, possible deadlock detected\n", iterations);
+          return -1;
+        }
+        v = sem->value;
+        q = 0;
+        continue;
+      }
+      
       __sync_fetch_and_add (&sem->waiting, -1);
       v = sem->value;
       q = 0;
+      iterations++;
+      
+      // Проверка на превышение итераций
+      if (iterations >= max_iterations) {
+        kprintf ("[WARNING] mp_sem_wait: exceeded max iterations (%d), possible livelock\n", iterations);
+        return -1;
+      }
     }
   }
 }
@@ -165,6 +201,9 @@ int mp_sem_post (mp_sem_t *sem) {
 }
 
 int mp_sem_wait (mp_sem_t *sem) {
+  int max_iterations = 1000000;  // Максимум итераций для предотвращения бесконечного цикла
+  int iterations = 0;
+  
   while (1) {
     int v = sem->value;
     if (v > 0) {
@@ -177,9 +216,23 @@ int mp_sem_wait (mp_sem_t *sem) {
     pthread_mutex_lock(&mp_sem_mutex);
     if (sem->value > 0) {
       pthread_mutex_unlock(&mp_sem_mutex);
+      iterations++;
+      if (iterations >= max_iterations) {
+        kprintf ("[WARNING] mp_sem_wait (pthread): exceeded max iterations (%d), possible livelock\n", iterations);
+        return -1;
+      }
       continue;
     }
     pthread_mutex_unlock(&mp_sem_mutex);
+    
+    // Небольшая задержка для предотвращения busy-waiting
+    usleep (1000);  // 1ms задержка
+    
+    iterations++;
+    if (iterations >= max_iterations) {
+      kprintf ("[WARNING] mp_sem_wait (pthread): exceeded max iterations (%d), possible deadlock\n", iterations);
+      return -1;
+    }
   }
 }
 #endif
@@ -228,9 +281,14 @@ struct mp_queue_block *alloc_mpq_block (mqn_value_t first_val, int allow_recursi
   }
   if (!QB) {
     char *new_block = malloc (offsetof (struct mp_queue_block, mqb_nodes) + size * (2 * sizeof (void *)) + MPQ_BLOCK_ALIGNMENT - sizeof (void *));
-    assert (new_block);
+    if (!new_block) {
+      // Критическая ошибка выделения памяти - логируем и возвращаем NULL
+      kprintf ("[CRITICAL] mp-queue: failed to allocate block of size %ld bytes\n", 
+               (long)(offsetof (struct mp_queue_block, mqb_nodes) + size * (2 * sizeof (void *)) + MPQ_BLOCK_ALIGNMENT - sizeof (void *)));
+      return NULL;
+    }
     assert (!((long) new_block & (sizeof (void *) - 1)));
-    align_bytes = -(uintptr_t)(new_block) & (MPQ_BLOCK_ALIGNMENT - 1);  // Исправление: cast через uintptr_t
+    align_bytes = -(uintptr_t)(new_block) & (MPQ_BLOCK_ALIGNMENT - 1);
     QB = (struct mp_queue_block *) (new_block + align_bytes);
 
     __sync_fetch_and_add (&mpq_blocks_true_allocations, 1);
@@ -445,7 +503,19 @@ void init_mp_queue_w (struct mp_queue *MQ) {
 
 struct mp_queue *alloc_mp_queue (void) {
   struct mp_queue *MQ = NULL;
-  assert (!posix_memalign ((void **)&MQ, 64, sizeof (*MQ)));
+#ifdef _WIN32
+  MQ = (struct mp_queue *)_aligned_malloc (sizeof (*MQ), 64);
+  if (!MQ) {
+    kprintf ("[ERROR] alloc_mp_queue: failed to allocate memory\n");
+    return NULL;
+  }
+#else
+  int ret = posix_memalign ((void **)&MQ, 64, sizeof (*MQ));
+  if (ret != 0 || !MQ) {
+    kprintf ("[ERROR] alloc_mp_queue: failed to allocate memory (error %d)\n", ret);
+    return NULL;
+  }
+#endif
   memset (MQ, 0, sizeof (*MQ));
   init_mp_queue (MQ);
   return MQ;
@@ -453,7 +523,19 @@ struct mp_queue *alloc_mp_queue (void) {
 
 struct mp_queue *alloc_mp_queue_w (void) {
   struct mp_queue *MQ = NULL;
-  assert (!posix_memalign ((void **)&MQ, 64, sizeof (*MQ)));
+#ifdef _WIN32
+  MQ = (struct mp_queue *)_aligned_malloc (sizeof (*MQ), 64);
+  if (!MQ) {
+    kprintf ("[ERROR] alloc_mp_queue_w: failed to allocate memory\n");
+    return NULL;
+  }
+#else
+  int ret = posix_memalign ((void **)&MQ, 64, sizeof (*MQ));
+  if (ret != 0 || !MQ) {
+    kprintf ("[ERROR] alloc_mp_queue_w: failed to allocate memory (error %d)\n", ret);
+    return NULL;
+  }
+#endif
   memset (MQ, 0, sizeof (*MQ));
   MODULE_STAT->mpq_allocated ++;
   init_mp_queue_w (MQ);
@@ -479,7 +561,11 @@ void clear_mp_queue (struct mp_queue *MQ) {
 void free_mp_queue (struct mp_queue *MQ) {
   MODULE_STAT->mpq_allocated --;
   clear_mp_queue (MQ);
+#ifdef _WIN32
+  _aligned_free (MQ);
+#else
   free (MQ);
+#endif
 }
 
 // may invoke mpq_push() to discard new empty block
@@ -513,13 +599,24 @@ mqn_value_t mpq_pop (struct mp_queue *MQ, int flags) {
     }
     if (__sync_bool_compare_and_swap (&MQ->mq_head, QB, QB->mqb_next)) {
       // want to free QB here, but this is complicated if somebody else holds a pointer
-      if (is_hazard_ptr (QB, 0, 2) <= 1) {
-	free_mpq_block (QB);
+      // Усиленная защита от use-after-free: тройная проверка hazard pointers
+      int hazard_count = is_hazard_ptr (QB, 0, 2);
+      if (hazard_count <= 1) {
+        // Дополнительный барьер памяти для гарантии что все потоки видят актуальное состояние
+        __atomic_thread_fence(__ATOMIC_SEQ_CST);
+        // Повторная проверка после барьера
+        if (is_hazard_ptr (QB, 0, 2) <= 1) {
+          free_mpq_block (QB);
+        } else {
+          __sync_fetch_and_add (&mpq_blocks_wasted, 1);
+          QB->mqb_magic = MQ_BLOCK_GARBAGE_MAGIC;
+          mpq_push (QB->mqb_size == MPQ_SMALL_BLOCK_SIZE ? &MqGarbageSmallBlocks : &MqGarbageBlocks, QB, flags & MPQF_RECURSIVE);
+        }
       } else {
-	__sync_fetch_and_add (&mpq_blocks_wasted, 1);
-	// ... put QB into some GC queue? ...
-	QB->mqb_magic = MQ_BLOCK_GARBAGE_MAGIC;
-	mpq_push (QB->mqb_size == MPQ_SMALL_BLOCK_SIZE ? &MqGarbageSmallBlocks : &MqGarbageBlocks, QB, flags & MPQF_RECURSIVE);
+        // QB все еще используется другими потоками - отправляем в garbage queue
+        __sync_fetch_and_add (&mpq_blocks_wasted, 1);
+        QB->mqb_magic = MQ_BLOCK_GARBAGE_MAGIC;
+        mpq_push (QB->mqb_size == MPQ_SMALL_BLOCK_SIZE ? &MqGarbageSmallBlocks : &MqGarbageBlocks, QB, flags & MPQF_RECURSIVE);
       }
     }
   }

@@ -1,4 +1,5 @@
 #include "crypto-optimizer.h"
+#include "common/kprintf.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -100,6 +101,15 @@ crypto_optimizer_t* crypto_optimizer_init(void) {
     optimizer->batch_processor.output_buffers = calloc(optimizer->config.batch_size, sizeof(unsigned char*));
     optimizer->batch_processor.buffer_sizes = calloc(optimizer->config.batch_size, sizeof(size_t));
     
+    // Проверка успешного выделения памяти для пакетного процессора
+    if (!optimizer->batch_processor.input_buffers || 
+        !optimizer->batch_processor.output_buffers || 
+        !optimizer->batch_processor.buffer_sizes) {
+      kprintf ("[ERROR] crypto_optimizer: failed to allocate batch processor buffers\n");
+      free (optimizer);
+      return NULL;
+    }
+
     // Инициализация векторизованных буферов
     optimizer->vector_buffers.alignment = 32; // 32-byte alignment for AVX
     optimizer->vector_buffers.buffer_size = 4096;
@@ -111,6 +121,24 @@ crypto_optimizer_t* crypto_optimizer_init(void) {
     optimizer->vector_buffers.aligned_output = aligned_alloc(32, 4096);
 #endif
     
+    // Исправление: проверка на NULL для выровненных буферов
+    if (!optimizer->vector_buffers.aligned_input || !optimizer->vector_buffers.aligned_output) {
+      kprintf ("[ERROR] crypto_optimizer: failed to allocate aligned buffers (%p, %p)\n", 
+               optimizer->vector_buffers.aligned_input, optimizer->vector_buffers.aligned_output);
+#ifdef _WIN32
+      _aligned_free(optimizer->vector_buffers.aligned_input);
+      _aligned_free(optimizer->vector_buffers.aligned_output);
+#else
+      free(optimizer->vector_buffers.aligned_input);
+      free(optimizer->vector_buffers.aligned_output);
+#endif
+      free(optimizer->batch_processor.input_buffers);
+      free(optimizer->batch_processor.output_buffers);
+      free(optimizer->batch_processor.buffer_sizes);
+      free(optimizer);
+      return NULL;
+    }
+
     optimizer->is_initialized = 1;
     return optimizer;
 }

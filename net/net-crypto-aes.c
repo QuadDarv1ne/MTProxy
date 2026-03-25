@@ -250,7 +250,7 @@ int aes_generate_nonce (char res[16]) {
 // iv  := MD5(str+2)
 
 int aes_create_keys (struct aes_key_data *R, int am_client, const char nonce_server[16], const char nonce_client[16], int client_timestamp,
-		     unsigned server_ip, unsigned short server_port, const unsigned char server_ipv6[16], 
+		     unsigned server_ip, unsigned short server_port, const unsigned char server_ipv6[16],
 		     unsigned client_ip, unsigned short client_port, const unsigned char client_ipv6[16],
 		     const aes_secret_t *key, const unsigned char *temp_key, int temp_key_len) {
   unsigned char str[16+16+4+4+2+6+4+2+MAX_PWD_LEN+16+16+4+16*2 + 256];
@@ -286,8 +286,17 @@ int aes_create_keys (struct aes_key_data *R, int am_client, const char nonce_ser
   memcpy (str + str_len, nonce_client, 16);
   str_len += 16;
 
-  if (temp_key_len > sizeof (str)) {
-    temp_key_len = sizeof (str);
+  // Исправление: проверка что temp_key_len не превышает размер буфера
+  int max_str_len = sizeof (str) - str_len;
+  if (temp_key_len > max_str_len) {
+    kprintf ("[WARNING] aes_create_keys: temp_key_len (%d) exceeds buffer space (%d), truncating\n", temp_key_len, max_str_len);
+    temp_key_len = max_str_len;
+  }
+  
+  // Дополнительная проверка на разумные пределы
+  if (temp_key_len < 0 || temp_key_len > 1024) {
+    kprintf ("[ERROR] aes_create_keys: invalid temp_key_len=%d\n", temp_key_len);
+    return -1;
   }
 
   int first_len = str_len < temp_key_len ? str_len : temp_key_len;
@@ -297,11 +306,11 @@ int aes_create_keys (struct aes_key_data *R, int am_client, const char nonce_ser
   }
 
   for (i = first_len; i < temp_key_len; i++) {
-    str[i] = temp_key[i];
+    str[str_len + (i - first_len)] = temp_key[i];
   }
 
   if (str_len < temp_key_len) {
-    str_len = temp_key_len;
+    str_len += temp_key_len - first_len;
   }
 
   md5 (str + 1, str_len - 1, R->write_key);

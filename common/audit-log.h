@@ -18,6 +18,7 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include <time.h>
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
