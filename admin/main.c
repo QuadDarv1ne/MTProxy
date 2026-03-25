@@ -9,6 +9,7 @@
 #include <getopt.h>
 
 #include "admin/admin-cli.h"
+#include "../common/utils.h"
 
 static void print_usage(const char *program_name) {
     printf("MTProxy Admin CLI - Administration Utility\n\n");
@@ -130,13 +131,13 @@ int main(int argc, char *argv[]) {
         } else {
             // Выполнение одной команды
             char command[1024] = "";
-            
-            // Сборка команды из аргументов
+
+            // Сборка команды из аргументов с безопасной конкатенацией
             for (int i = optind; i < argc; i++) {
-                if (i > optind) strcat(command, " ");
-                strcat(command, argv[i]);
+                if (i > optind) utils_strcat(command, " ", sizeof(command));
+                utils_strcat(command, argv[i], sizeof(command));
             }
-            
+
             ret = admin_cli_run_command(&ctx, command);
         }
     } else {
