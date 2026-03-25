@@ -280,7 +280,7 @@ static int tcp_rpcs_process_handshake_packet (connection_job_t C, struct raw_mes
   }
   
   int packet_num = D->in_packet_num;
-  int packet_type;
+  int packet_type = 0;  // Исправление: инициализация для устранения warning
   assert (rwm_fetch_lookup (msg, &packet_type, 4) == 4);
   int packet_len = msg->total_bytes;
 
