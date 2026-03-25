@@ -1,37 +1,78 @@
 # MTProxy Project TODO
 
-> **Актуально на:** 26 марта 2026 г.
+> **Актуально на:** 25 марта 2026 г. (обновление 25.03.2026 — Docker, CodeQL, Audit Logging, REST API, Plugin System)
 > **Коммит:** HEAD (dev) — критические исправления безопасности и оптимизации производительности
 > **Версия:** v1.0.5-dev
-> **Статус:** ✅ Критические исправления безопасности выполнены ✅ Оптимизации производительности выполнены
+> **Статус:** ✅ Критические исправления безопасности выполнены ✅ Оптимизации производительности выполнены ✅ Новые модули (Docker/CodeQL/Audit/REST/Plugin) добавлены
 > **Ветки:** dev (активная разработка) → main (после проверки)
 
-## 📊 Актуальный статус (26 марта 2026)
+## 📊 Актуальный статус (25 марта 2026 — обновление 25.03.2026)
 
 ### Текущее состояние
-- **Коммит:** HEAD -> dev (критические исправления + оптимизации)
+- **Коммит:** HEAD -> dev (критические исправления + оптимизации + новые модули)
 - **Ветки:** dev (активная разработка), main (ожидает синхронизации)
-- **Последние изменения:** 
+- **Последние изменения:**
   - ✅ Исправлено 8 критических проблем безопасности
   - ✅ Выполнено 8 оптимизаций производительности
   - ✅ Отключен Telegram функционал (ws-tunnel) для стабильности
   - ✅ Сборка работает (mtproto-proxy.exe, тесты 100%)
+  - ✅ **НОВЫЕ МОДУЛИ (25.03.2026):**
+    - 🐳 Docker Multi-Arch образы (amd64, arm64, arm/v7)
+    - 🔍 CodeQL Security Analysis (автоматический поиск уязвимостей)
+    - 📝 Audit Logging System (12 категорий событий, JSON формат)
+    - 🌐 REST API (13 endpoints, Prometheus метрики)
+    - 🔌 Plugin System (20+ точек расширения, динамическая загрузка)
 
 ### Статистика проекта
 | Метрика | Значение |
 |---------|----------|
 | **Всего коммитов** | 330+ |
-| **C/H файлов** | 379+ (193 .c + 186 .h + Windows stubs) |
-| **Сетевых модулей** | 41 |
+| **C/H файлов** | 390+ (199 .c + 191 .h + Windows stubs + новые модули) |
+| **Сетевых модулей** | 43 (+2: rest-api) |
 | **Модулей system/** | 82 |
 | **Тестов** | 77 C + 4 Dart (100% пройдено) |
-| **Документов** | 35+ (PERFORMANCE_TUNING.md, TROUBLESHOOTING.md) |
-| **REST API** | 12 endpoints |
+| **Документов** | 37+ (добавлено 3: PLUGIN_SYSTEM.md, IMPROVEMENTS_MARCH_2026.md, Docker/CodeQL docs) |
+| **REST API** | 13 endpoints |
 | **TODO/FIXME в коде** | 0 |
 | **Критических исправлений** | 8 (утечки памяти, race conditions, NULL dereference) |
 | **Оптимизаций** | 8 (пулы памяти, backoff, кэш-локальность) |
+| **Docker образы** | ✅ Multi-arch (amd64, arm64, arm/v7) |
+| **CodeQL анализ** | ✅ Автоматический (push/PR/weekly) |
+| **Audit Logging** | ✅ 12 категорий, JSON формат |
+| **Плагинов** | ✅ Example plugin (logger) |
 
-### ✅ Выполнено (25 марта 2026)
+### ✅ Выполнено (25 марта 2026 — обновление 25.03.2026)
+
+#### Новые модули (25.03.2026)
+- [x] **Docker Multi-Arch образы** — linux/amd64, linux/arm64, linux/arm/v7 ✅
+  - Multi-stage сборка (builder, runtime, debug)
+  - Production-ready docker-compose с мониторингом
+  - Security hardening (non-root, cap_drop, read-only fs)
+  - OCI метки для соответствия стандартам
+- [x] **CodeQL Security Analysis** — автоматический поиск уязвимостей ✅
+  - Анализ при каждом push/PR
+  - Еженедельный scheduled scan
+  - SARIF отчеты в GitHub Security
+- [x] **Audit Logging System** — детальное логирование событий ✅
+  - 12 категорий событий (аутентификация, доступ, безопасность, конфигурация)
+  - JSON формат для SIEM интеграции (Splunk, ELK, Graylog)
+  - Асинхронная запись (минимальное влияние на производительность)
+  - Rotation логов с архивацией
+- [x] **REST API** — HTTP API для управления прокси ✅
+  - 13 endpoints (status, stats, config, connections, secrets, admin, metrics)
+  - Bearer token аутентификация
+  - Prometheus метрики
+  - CORS поддержка
+  - Rate limiting
+- [x] **Plugin System** — система плагинов для расширения функциональности ✅
+  - Динамическая загрузка .so файлов
+  - 20+ точек расширения (хуки)
+  - Приоритеты выполнения
+  - Статистика плагинов
+  - Горячая перезагрузка
+  - Example plugin (logger)
+
+#### Инфраструктура
 - [x] Windows socket API реализован (server_socket через WSASocket, bind, listen, accept)
 - [x] Windows event loop реализован через select() (вместо epoll)
 - [x] 5 Windows stub файлов добавлено (arpa/inet.h, netdb.h, netinet/in.h, sys/socket.h, windows-stubs.c)
@@ -115,6 +156,38 @@
 **Результат:** Устранен технический долг по замене unsafe функций
 
 **Итого:** 22 задачи выполнены на 100%
+
+### ✅ Выполнено (25 марта 2026 — обновление 25.03.2026) — Новые модули
+
+#### Docker и контейнеризация (4 задачи)
+- [x] **Dockerfile обновлен** — multi-arch сборка (amd64, arm64, arm/v7)
+- [x] **docker-compose.yml обновлен** — production конфигурация с мониторингом
+- [x] **Multi-stage сборка** — builder, runtime, debug стадии
+- [x] **Security hardening** — non-root пользователь, cap_drop, read-only fs
+
+#### Безопасность и анализ (2 задачи)
+- [x] **CodeQL workflow** — `.github/workflows/codeql-analysis.yml`
+- [x] **Docker build workflow** — `.github/workflows/docker-build.yml`
+
+#### Audit Logging (2 задачи)
+- [x] **Audit logging API** — `common/audit-log.h`
+- [x] **Audit logging реализация** — `common/audit-log.c`
+
+#### REST API (2 задачи)
+- [x] **REST API API** — `net/rest-api.h`
+- [x] **REST API реализация** — `net/rest-api.c`
+
+#### Plugin System (3 задачи)
+- [x] **Plugin API** — `include/plugin-system.h`
+- [x] **Example plugin** — `plugins/example-logger.c`
+- [x] **Plugin документация** — `docs/PLUGIN_SYSTEM.md`
+
+#### Документация и интеграция (3 задачи)
+- [x] **IMPROVEMENTS_MARCH_2026.md** — сводка всех улучшений
+- [x] **CMakeLists.txt обновлен** — добавлены audit-log и rest-api
+- [x] **README.md обновлен** — секция "Обновления (25 марта 2026)"
+
+**Итого:** 38 задач выполнены на 100%
 
 ### ⚠️ Известные ограничения Windows
 - Single-worker mode только (-M 1) — fork() не поддерживается
