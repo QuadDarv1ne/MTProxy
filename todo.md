@@ -1,24 +1,24 @@
 # MTProxy Project TODO
 
-> **Актуально на:** 25 марта 2026 г.
-> **Коммит:** ec8d9cc (docs: Windows запуск подтверждён ✅)
+> **Актуально на:** 26 марта 2026 г.
+> **Коммит:** 63d2a37 (feat: CMake LTO для Unix + ASAN опционально + Windows IPC улучшения)
 > **Версия:** v1.0.3
-> **Статус:** ✅ Все критические задачи выполнены (Windows IPC, epoll, тесты, запуск)
-> **Оптимизации:** Полная поддержка Windows (MSYS2/UCRT64) + LTO для Unix
-> **Ветки:** dev = master = origin/dev = origin/master ✅ (синхронизированы)
+> **Статус:** ✅ Все критические задачи выполнены (Windows IPC, epoll, тесты, запуск, LTO)
+> **Оптимизации:** Полная поддержка Windows (MSYS2/UCRT64) + LTO для Unix + ASAN для Debug
+> **Ветки:** dev = master = origin/dev = origin/master ✅ (синхронизированы, 63d2a37)
 
-## 📊 Актуальный статус (25 марта 2026)
+## 📊 Актуальный статус (26 марта 2026)
 
 ### Текущее состояние
-- **Коммит:** ec8d9cc (HEAD -> master, origin/master, origin/dev, dev)
+- **Коммит:** 63d2a37 (HEAD -> dev, master, origin/master, origin/dev)
 - **Ветки синхронизированы:** ✅ dev = master = origin/dev = origin/master
-- **Рабочие изменения:** 2 modified (CMakeLists.txt, windows-ipc.c), 9 untracked (секреты — не коммитить)
-- **Последние изменения:** docs: Windows запуск подтверждён ✅ (mtproto-proxy работает)
+- **Рабочие изменения:** 0 modified, 9 untracked (секреты — не коммитить)
+- **Последние изменения:** feat: CMake LTO для Unix + ASAN опционально + Windows IPC улучшения
 
 ### Статистика проекта
 | Метрика | Значение |
 |---------|----------|
-| **Всего коммитов** | 326+ |
+| **Всего коммитов** | 328+ |
 | **C/H файлов** | 379+ (193 .c + 186 .h + Windows stubs) |
 | **Сетевых модулей** | 41 |
 | **Модулей system/** | 82 |
@@ -30,8 +30,9 @@
 | **Новые модули** | common/utils, Windows IPC, Windows epoll, ws-tunnel tests |
 | **LTO поддержка** | ✅ Unix (Linux/macOS), ❌ Windows (отключено) |
 | **AddressSanitizer** | ✅ Опционально для Debug (ENABLE_ASAN) |
+| **CMake оптимизации** | ✅ LTO для Unix, ✅ ASAN для Debug, ✅ PGO опционально |
 
-### ✅ Выполнено (25 марта 2026)
+### ✅ Выполнено (26 марта 2026)
 - [x] Windows socket API реализован (server_socket через WSASocket, bind, listen, accept)
 - [x] Windows event loop реализован через select() (вместо epoll)
 - [x] 5 Windows stub файлов добавлено (arpa/inet.h, netdb.h, netinet/in.h, sys/socket.h, windows-stubs.c)
@@ -50,9 +51,10 @@
 - [x] **Windows epoll эмуляция** — WSAPoll реализация (epoll_create/ctl/wait/close)
 - [x] **Windows запуск подтверждён** — mtproto-proxy.exe работает ✅
 - [x] **LTO для Unix** — автоматическое включение для Linux/macOS
-- [x] **AddressSanitizer** — опционально для Debug сборок
+- [x] **AddressSanitizer** — опционально для Debug сборок (ENABLE_ASAN)
+- [x] **CMake оптимизации** — LTO, ASAN, PGO поддержка ✅
 
-**Итого:** 20 критических задач выполнено на 100%
+**Итого:** 21 критическая задача выполнена на 100%
 
 ### ⚠️ Известные ограничения Windows
 - Single-worker mode только (-M 1) — fork() не поддерживается
@@ -258,12 +260,12 @@
 
 ## 🔧 Активные задачи (Следующие действия)
 
-### Немедленно (25-26 марта 2026)
-1. [x] **Синхронизация веток**: Проверить dev = master = origin — ✅ уже синхронизированы (ec8d9cc)
-2. [x] **Тестирование Windows**: Запустить mtproto-proxy.exe — ✅ **запуск подтверждён** (ec8d9cc)
+### Немедленно (26-27 марта 2026)
+1. [x] **Синхронизация веток**: Проверить dev = master = origin — ✅ уже синхронизированы (63d2a37)
+2. [x] **Тестирование Windows**: Запустить mtproto-proxy.exe — ✅ **запуск подтверждён**
 3. [ ] **Тестирование admin-cli**: Проверить команды — ⏳ Ожидает
 4. [x] **Performance тесты**: Запустить cache/rate-limiter тесты — ✅ выполнены (454K ops, 99%+ success)
-5. [ ] **CMake оптимизация**: LTO для Unix, ASAN для Debug — ✅ выполнено (ec8d9cc)
+5. [x] **CMake оптимизация**: LTO для Unix, ASAN для Debug — ✅ выполнено (63d2a37)
 
 ### В процессе
 - [x] Интеграция go-pcap2socks модулей — ✅ выполнено (5dedeb9)
@@ -271,8 +273,8 @@
 - [x] Windows совместимость новых модулей — ✅ 5 stubs добавлено
 - [ ] Тестирование интеграции go-pcap2socks/tg-ws-proxy — ⏳ Ожидает
 - [x] Оптимизация кода — ✅ -34 строки дублирующегося кода
-- [x] CMakeLists.txt оптимизация — ✅ 4 модуля включено
-- [x] Windows IPC улучшен — ✅ в процессе (ec8d9cc)
+- [x] CMakeLists.txt оптимизация — ✅ LTO/ASAN/PGO поддержка (63d2a37)
+- [x] Windows IPC улучшен — ✅ IPC_ERROR макрос, таймауты, обработка ошибок (63d2a37)
 
 ### Плановые
 - [ ] FreeBSD поддержка — ⏳ Ожидает
@@ -299,17 +301,17 @@
 
 - **Правило:** Качество важнее количества ✅
 - **Workflow:** Улучшения в dev → проверка → merge в main ✅
-- **Текущий статус:** Ветки синхронизированы ✅ (ec8d9cc)
-- **Фокус:** Windows совместимость, performance оптимизации, LTO для Unix
-- **Новое:** Windows socket API, event loop, 5 stub файлов, Windows запуск подтверждён ✅
+- **Текущий статус:** Ветки синхронизированы ✅ (63d2a37)
+- **Фокус:** Windows совместимость, performance оптимизации, LTO для Unix, ASAN для Debug
+- **Новое:** Windows socket API, event loop, 5 stub файлов, Windows запуск подтверждён ✅, IPC улучшения ✅
 - **Тесты:** 77 C + 4 Dart (100%)
 - **CI/CD:** ✅ Автоматическая сборка (5 платформ)
 - **TODO/FIXME в коде:** 0 (все реализовано или удалено)
-- **CMake оптимизации:** LTO для Unix ✅, AddressSanitizer опционально ✅
+- **CMake оптимизации:** LTO для Unix ✅, AddressSanitizer опционально ✅, PGO поддержка ✅
 
 ---
 
-*Последнее обновление: 25 марта 2026 г. (коммит ec8d9cc, ветки синхронизированы, Windows запуск подтверждён)*
+*Последнее обновление: 26 марта 2026 г. (коммит 63d2a37, ветки синхронизированы, CMake оптимизации)*
 
 ## ✅ Выполнено (Март 2026)
 
@@ -455,23 +457,24 @@
 
 ---
 
-## 📝 Пометки по проекту (25 марта 2026, ec8d9cc)
+## 📝 Пометки по проекту (26 марта 2026, 63d2a37)
 
 ### Архитектура
 - ✅ Модульная структура: 379+ C/H файлов (193 .c + 186 .h + Windows stubs), 41 сетевой модуль, 82 файла в system/
 - ✅ Разделение ответственности: engine/, net/, security/, crypto/, mtproto/
 - ✅ POSIX-совместимость через posix-compat-windows.h для Windows (21 файл исправлено + 5 stubs)
 - ✅ FFI интеграция: shared library для Flutter/Dart (mobile_app/)
-- ✅ 326+ коммитов в истории проекта
-- ✅ Текущий коммит: ec8d9cc (dev = master)
+- ✅ 328+ коммитов в истории проекта
+- ✅ Текущий коммит: 63d2a37 (dev = master)
 - ✅ Интеграция завершена: go-pcap2socks (9 функций), tg-ws-proxy (5 функций)
 - ✅ Новый модуль: traffic-stats (учёт трафика, 10 тестов)
 - ✅ Windows совместимость: 5 новых stub файлов (arpa/inet.h, netdb.h, netinet/in.h, sys/socket.h, windows-stubs.c)
 - ✅ Windows socket API: реализован server_socket() через WSASocket, bind, listen
 - ✅ Windows event loop: реализован через select() (вместо epoll)
 - ✅ Оптимизация кода: -34 строки дублирующегося кода, +12 строк forward declarations
-- ✅ CMakeLists.txt: включены 4 безопасных сетевых модуля, LTO для Unix, ASAN опционально
-- ✅ Windows запуск подтверждён: mtproto-proxy.exe работает (ec8d9cc)
+- ✅ CMakeLists.txt: включены 4 безопасных сетевых модуля, LTO для Unix, ASAN опционально, PGO поддержка
+- ✅ Windows запуск подтверждён: mtproto-proxy.exe работает
+- ✅ Windows IPC улучшен: IPC_ERROR макрос, таймауты, обработка ошибок (63d2a37)
 - ⚠️ Windows: single-worker mode, 6 модулей отключено — работает стабильно
 
 ### Критические компоненты
@@ -527,12 +530,12 @@
 ## 📋 Текущий статус
 
 ### Ветки
-- **dev**: ✅ ec8d9cc — Windows запуск подтверждён, LTO для Unix
-- **main/master**: ✅ ec8d9cc — синхронизирована с dev
-- **origin/dev**: ✅ ec8d9cc — синхронизирована
-- **origin/master**: ✅ ec8d9cc — синхронизирована
-- **Статус**: ✅ Ветки идентичны (ec8d9cc)
-- **Рабочие изменения**: 2 modified (CMakeLists.txt, windows-ipc.c), 9 untracked (секреты, не коммитить)
+- **dev**: ✅ 63d2a37 — CMake LTO/ASAN + Windows IPC улучшения
+- **main/master**: ✅ 63d2a37 — синхронизирована с dev
+- **origin/dev**: ✅ 63d2a37 — синхронизирована
+- **origin/master**: ✅ 63d2a37 — синхронизирована
+- **Статус**: ✅ Ветки идентичны (63d2a37)
+- **Рабочие изменения**: 0 modified, 9 untracked (секреты, не коммитить)
 
 ### Готовые модули к использованию
 | Модуль | Статус | Тесты | Документация |
@@ -1343,6 +1346,8 @@ git checkout master && git merge dev && git push origin master
 ### Последние исправления (коммиты)
 | Коммит | Изменение |
 |--------|-----------|
+| **63d2a37** | feat: CMake LTO для Unix + ASAN опционально + Windows IPC улучшения |
+| **f1d7e0f** | docs: обновлён todo.md — актуальный статус на 25 марта 2026 (Windows запуск, LTO для Unix, ASAN опционально) |
 | **ec8d9cc** | docs: Windows запуск подтверждён ✅ (mtproto-proxy работает) |
 | **b9a0f56** | docs: Windows сборка работает ✅ (тесты 95-100% success) |
 | **8b669a0** | docs: добавлена тестовая документация (testing/README.md) |
@@ -1368,4 +1373,4 @@ git checkout master && git merge dev && git push origin master
 
 ---
 
-*Последнее обновление: 25 марта 2026 г. (коммит ec8d9cc, ветки синхронизированы, Windows запуск подтверждён)*
+*Последнее обновление: 26 марта 2026 г. (коммит 63d2a37, ветки синхронизированы, CMake оптимизации + IPC улучшения)*
