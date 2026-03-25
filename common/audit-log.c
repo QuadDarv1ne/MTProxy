@@ -8,15 +8,47 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+
+// Windows compatibility
+#ifdef _WIN32
+#include <winsock2.h>
+#include <io.h>
+#include <direct.h>
+#include <sys/stat.h>
+#define mkdir _mkdir
+#define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
+#define fstat _fstat
+#define stat _stat
+#else
 #include <unistd.h>
 #include <sys/time.h>
 #include <sys/stat.h>
+#endif
+
 #include <errno.h>
 #include <zlib.h>
 
 /* ============================================================================
  * Вспомогательные функции
  * ============================================================================ */
+
+// Windows compatibility for gettimeofday
+#ifdef _WIN32
+#include <windows.h>
+static int gettimeofday_win(struct timeval *tv, void *tz) {
+    FILETIME ft;
+    ULONGLONG ullTime;
+    GetSystemTimeAsFileTime(&ft);
+    ullTime = ((ULONGLONG)ft.dwHighDateTime << 32) | ft.dwLowDateTime;
+    ullTime -= 116444736000000000ULL; // Convert to Unix epoch
+    if (tv) {
+        tv->tv_sec = (long)(ullTime / 10000000ULL);
+        tv->tv_usec = (long)((ullTime % 10000000ULL) / 10ULL);
+    }
+    return 0;
+}
+#define gettimeofday gettimeofday_win
+#endif
 
 static uint64_t get_timestamp_ms(void) {
     struct timeval tv;
@@ -470,7 +502,11 @@ int audit_logger_start(audit_logger_t *logger) {
     char *last_slash = strrchr(dir, '/');
     if (last_slash) {
         *last_slash = '\0';
+#ifdef _WIN32
+        mkdir(dir);  // Windows mkdir takes only one argument
+#else
         mkdir(dir, 0755);
+#endif
     }
     free(dir);
     
@@ -498,7 +534,7 @@ int audit_logger_start(audit_logger_t *logger) {
     
     // Log system start
     audit_log_event_fmt(logger, AUDIT_EVENT_SYSTEM_START, AUDIT_CATEGORY_SYSTEM,
-                       AUDIT_LEVEL_INFO, "Audit logging system started (version %s)",
+                       AUDIT_LEVEL_ALL, "Audit logging system started (version %s)",
                        AUDIT_LOG_VERSION);
     
     return 0;

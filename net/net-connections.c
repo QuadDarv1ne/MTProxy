@@ -655,10 +655,30 @@ connection_job_t alloc_new_connection (int cfd, conn_target_job_t CTJ, listening
     MODULE_STAT->accept_nonblock_set_failed ++;
     close (cfd);
     return NULL;
-  }  
-  
+  }
+
   flags = 1;
   setsockopt (cfd, IPPROTO_TCP, TCP_NODELAY, &flags, sizeof (flags));
+  
+  // Исправление: устанавливаем timeout для socket операций для предотвращения бесконечного ожидания
+  // Read timeout: 300 секунд (5 минут)
+  struct timeval rcv_timeout;
+  rcv_timeout.tv_sec = 300;
+  rcv_timeout.tv_usec = 0;
+  if (setsockopt (cfd, SOL_SOCKET, SO_RCVTIMEO, &rcv_timeout, sizeof (rcv_timeout)) < 0) {
+    kprintf ("[WARNING] cannot set SO_RCVTIMEO on socket #%d: %m\n", cfd);
+    // Не критично, продолжаем работу
+  }
+  
+  // Write timeout: 300 секунд (5 минут)
+  struct timeval snd_timeout;
+  snd_timeout.tv_sec = 300;
+  snd_timeout.tv_usec = 0;
+  if (setsockopt (cfd, SOL_SOCKET, SO_SNDTIMEO, &snd_timeout, sizeof (snd_timeout)) < 0) {
+    kprintf ("[WARNING] cannot set SO_SNDTIMEO on socket #%d: %m\n", cfd);
+    // Не критично, продолжаем работу
+  }
+  
   if (tcp_maximize_buffers) {
     maximize_sndbuf (cfd, 0);
     maximize_rcvbuf (cfd, 0);
