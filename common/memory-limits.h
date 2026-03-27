@@ -90,11 +90,20 @@ void print_memory_usage(void);
 extern memory_tracker_t g_memory_tracker;
 
 // Макросы для замены стандартных функций выделения
+// Внимание: используется __real_* для избежания рекурсивного вызова
 #ifdef ENABLE_MEMORY_TRACKING
-#define malloc(s)  tracked_malloc(s, &g_memory_tracker)
-#define calloc(n,s) tracked_calloc(n, s, &g_memory_tracker)
-#define realloc(p,s) tracked_realloc(p, s, &g_memory_tracker)
-#define free(p) tracked_free(p, &g_memory_tracker)
+#ifdef __GNUC__
+#define malloc(s)  __real_malloc(s)
+#define calloc(n,s) __real_calloc(n, s)
+#define realloc(p,s) __real_realloc(p, s)
+#define free(p) __real_free(p)
+#else
+// Для не-GCC компиляторов используем обёртки
+void* __wrap_malloc(size_t size);
+void* __wrap_calloc(size_t nmemb, size_t size);
+void* __wrap_realloc(void *ptr, size_t size);
+void __wrap_free(void *ptr);
+#endif
 #endif
 
 #ifdef __cplusplus
