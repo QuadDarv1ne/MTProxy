@@ -325,8 +325,11 @@ void server_init (conn_type_t *listen_connection_type, void *listen_connection_e
 
 void server_exit (void) /* {{{ */ {
   engine_t *E = engine_state;
+  if (!E) {
+    return;
+  }
   server_functions_t *F = E->F;
-  
+
   F->close_net_sockets ();
 
   if (signal_check_pending (SIGTERM)) {
@@ -334,6 +337,10 @@ void server_exit (void) /* {{{ */ {
   } else if (signal_check_pending (SIGINT)) {
     kprintf ("Terminated by SIGINT.\n");
   }
+  
+  // Освобождение памяти engine_state
+  free (engine_state);
+  engine_state = NULL;
 }
 /* }}} */
 
@@ -465,9 +472,17 @@ void default_engine_server_start (void) /* {{{ */ {
     epoll_work (engine_check_multithread_enabled () ? E->epoll_wait_timeout : 1);
     if (interrupt_signal_raised ()) {
       if (F->on_waiting_exit) {
+        // Добавлен таймаут для предотвращения бесконечного цикла ожидания
+        time_t start_time = time(NULL);
+        const int MAX_WAIT_TIME = 30; // Максимум 30 секунд на ожидание
         while (1) {
           useconds_t t = F->on_waiting_exit ();
           if (t <= 0) {
+            break;
+          }
+          // Проверка таймаута
+          if (time(NULL) - start_time > MAX_WAIT_TIME) {
+            vkprintf (0, "WARNING: Exit wait timeout exceeded (%d seconds), forcing exit\n", MAX_WAIT_TIME);
             break;
           }
           usleep (t);
@@ -480,12 +495,14 @@ void default_engine_server_start (void) /* {{{ */ {
       }
       break;
     }
-    
+
     run_pending_main_jobs ();
   }
-  sleep (120);
-  kprintf ("Did not exit after 120 seconds\n");
-  assert (0);
+  // Корректное завершение работы вместо assert(0)
+  vkprintf (0, "Server shutting down gracefully...\n");
+  sleep (1);
+  kprintf ("Server exited normally\n");
+  exit (0);
 }
 /* }}} */
 

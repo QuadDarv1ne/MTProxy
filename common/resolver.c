@@ -133,6 +133,11 @@ static struct host *getHash (struct resolver_conf *R, const char *name, int len,
     h2 = (h2 * 239 + name[i]) % (R->hsize - 1);
   }
   ++h2;
+  
+  // Исправление: защита от бесконечного цикла при переполнении хеш-таблицы
+  int max_attempts = R->hsize + 1;  // Максимум попыток = размер таблицы + 1
+  int attempts = 0;
+  
   while (R->htable[h1]) {
     if (len == R->htable[h1]->len && !memcmp (R->htable[h1]->name, name, len)) {
       return R->htable[h1];
@@ -140,6 +145,22 @@ static struct host *getHash (struct resolver_conf *R, const char *name, int len,
     h1 += h2;
     if (h1 >= R->hsize) {
       h1 -= R->hsize;
+    }
+    
+    // Защита от зацикливания
+    if (++attempts >= max_attempts) {
+      // Таблица полностью заполнена - не можем добавить новый элемент
+      if (!ip) {
+        return 0;
+      }
+      // Выделяем временную структуру, но не добавляем в таблицу
+      struct host *tmp = malloc (len + sizeof (struct host));
+      if (tmp) {
+        tmp->ip = ip;
+        tmp->len = len;
+        memcpy (tmp->name, name, len);
+      }
+      return tmp;
     }
   }
   if (!ip) {

@@ -12,8 +12,40 @@ ifeq ($m, 64)
 ARCH = -m64
 endif
 
-CFLAGS = $(ARCH) -O3 -std=gnu11 -Wall -Wno-array-bounds -mpclmul -march=native -mfpmath=sse -mssse3 -fno-strict-aliasing -fno-strict-overflow -fwrapv -DAES=1 -DCOMMIT=\"${COMMIT}\" -D_GNU_SOURCE=1 -D_FILE_OFFSET_BITS=64
-LDFLAGS = $(ARCH) -ggdb -rdynamic -lm -lrt -lssl -lcrypto -lz -lpthread
+# Оптимизация памяти - уменьшенные лимиты по умолчанию
+MEMORY_LIMIT_FLAGS = -DMAX_CACHE_SIZE_MB=128 -DMAX_POOL_SIZE_MB=64
+
+# Базовые флаги компиляции
+CFLAGS_BASE = $(ARCH) -O3 -std=gnu11 -Wall -Wno-array-bounds -mpclmul -mfpmath=sse -mssse3 -fno-strict-aliasing -fno-strict-overflow -fwrapv -DAES=1 -DCOMMIT=\"${COMMIT}\" -D_GNU_SOURCE=1 -D_FILE_OFFSET_BITS=64
+
+# Флаги для Unix/Linux (с -march=native)
+CFLAGS_UNIX = $(CFLAGS_BASE) -march=native
+
+# Флаги для Windows (без -march=native для совместимости)
+CFLAGS_WIN = $(CFLAGS_BASE) -D_WIN32_WINNT=0x0600
+
+# Определяем платформу
+ifeq ($(OS),Windows_NT)
+    CFLAGS = $(CFLAGS_WIN) $(MEMORY_LIMIT_FLAGS)
+    LDFLAGS = $(ARCH) -ggdb -lm -lssl -lcrypto -lz -lpthread -lws2_32
+    # Отключаем тяжёлые модули для Windows
+    HEAVY_MODULES_EXCLUDED = 1
+else
+    UNAME_S := $(shell uname -s)
+    ifeq ($(UNAME_S),Linux)
+        CFLAGS = $(CFLAGS_UNIX) $(MEMORY_LIMIT_FLAGS)
+        LDFLAGS = $(ARCH) -ggdb -rdynamic -lm -lrt -lssl -lcrypto -lz -lpthread
+    else
+        CFLAGS = $(CFLAGS_UNIX) $(MEMORY_LIMIT_FLAGS)
+        LDFLAGS = $(ARCH) -ggdb -rdynamic -lm -lssl -lcrypto -lz -lpthread
+    endif
+endif
+
+# Флаги оптимизации памяти (можно переопределить: make MEMORY_OPT=1)
+ifdef MEMORY_OPT
+    CFLAGS += -fomit-frame-pointer -ffunction-sections -fdata-sections
+    LDFLAGS += -Wl,--gc-sections
+endif
 
 LIB = ${OBJ}/lib
 CINCLUDE = -iquote common -iquote .
@@ -68,6 +100,7 @@ LIB_OBJS_NORMAL := \
 	${OBJ}/common/cache-manager.o \
 	${OBJ}/common/rate-limiter.o \
 	${OBJ}/common/error-handler.o \
+	${OBJ}/common/memory-limits.o \
 	${OBJ}/common/runtime-tuner.o \
 	${OBJ}/common/structured-logger.o \
 	${OBJ}/common/log-aggregator.o \
@@ -84,10 +117,17 @@ LIB_OBJS_NORMAL := \
 	${OBJ}/system/performance-optimizer.o ${OBJ}/system/optimizer-integration.o ${OBJ}/system/simple-performance-optimizer.o \
 	${OBJ}/system/memory-optimization.o ${OBJ}/system/connection-optimizer.o ${OBJ}/system/advanced-cache.o ${OBJ}/system/memory-manager.o \
 	${OBJ}/security/security-manager.o ${OBJ}/security/ddos-protection.o ${OBJ}/security/cert-pinning.o ${OBJ}/security/security-utils.o \
-	${OBJ}/system/numa-allocator.o ${OBJ}/system/io-uring-interface.o ${OBJ}/system/dpdk-interface.o ${OBJ}/system/advanced-optimizer.o \
 	${OBJ}/ml/anomaly-detector.o ${OBJ}/net/tls-emulator.o ${OBJ}/shadowsocks/shadowsocks-obfuscator.o \
 	${OBJ}/vv/vv-tree.o \
 	${OBJ}/admin/admin-rest-api.o \
+
+# Исключаем тяжёлые модули для Windows (память и совместимость)
+ifdef HEAVY_MODULES_EXCLUDED
+LIB_OBJS_NORMAL := $(filter-out ${OBJ}/system/numa-allocator.o,${LIB_OBJS_NORMAL})
+LIB_OBJS_NORMAL := $(filter-out ${OBJ}/system/io-uring-interface.o,${LIB_OBJS_NORMAL})
+LIB_OBJS_NORMAL := $(filter-out ${OBJ}/system/dpdk-interface.o,${LIB_OBJS_NORMAL})
+LIB_OBJS_NORMAL := $(filter-out ${OBJ}/system/advanced-optimizer.o,${LIB_OBJS_NORMAL})
+endif
 
 LIB_OBJS := ${LIB_OBJS_NORMAL}
 

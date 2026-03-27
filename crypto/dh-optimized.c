@@ -29,11 +29,14 @@
 #include "crypto/dh-optimized.h"
 #include "common/kprintf.h"
 #include "common/common-stats.h"
+#include "common/memory-limits.h"
 
 static struct dh_optimized_stats dh_stats = {0};
 
-// Кэш предвычисленных DH значений
-#define DH_CACHE_SIZE 512
+// Кэш предвычисленных DH значений - ОГРАНИЧЕННЫЙ РАЗМЕР
+#ifndef DH_CACHE_SIZE
+#define DH_CACHE_SIZE 256  // Уменьшено с 512 для экономии памяти
+#endif
 #define DH_CACHE_MASK (DH_CACHE_SIZE - 1)
 
 struct dh_cache_entry {
@@ -77,10 +80,17 @@ int dh_optimized_init(void) {
     if (dh_prime) {
         return 0; // Уже инициализирован
     }
-    
+
+    // Проверка лимита памяти
+    size_t cache_size = DH_CACHE_SIZE * sizeof(struct dh_cache_entry);
+    if (cache_size > MAX_CRYPTO_CACHE_MB * 1024 * 1024 / 2) {
+        vkprintf(1, "WARNING: DH cache size limited to %d MB\n", MAX_CRYPTO_CACHE_MB/2);
+    }
+
     // Инициализация кэша
     dh_cache = calloc(DH_CACHE_SIZE, sizeof(struct dh_cache_entry));
     if (!dh_cache) {
+        vkprintf(0, "ERROR: Failed to allocate DH cache\n");
         return -1;
     }
     

@@ -61,6 +61,27 @@ find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(Threads REQUIRED)
 
+# ============================================
+# Memory Optimization Options
+# ============================================
+option(ENABLE_LOW_MEMORY "Enable low memory mode (reduces RAM usage)" OFF)
+option(EXCLUDE_HEAVY_MODULES "Exclude heavy modules for Windows/low-memory systems" OFF)
+
+# Memory limit definitions
+if(ENABLE_LOW_MEMORY)
+    add_definitions(-DMAX_CACHE_SIZE_MB=64 -DMAX_POOL_SIZE_MB=32)
+    message(STATUS "Low memory mode enabled: reduced cache and pool sizes")
+else()
+    add_definitions(-DMAX_CACHE_SIZE_MB=128 -DMAX_POOL_SIZE_MB=64)
+    message(STATUS "Default memory limits: cache=128MB, pool=64MB")
+endif()
+
+# Auto-enable heavy module exclusion for Windows
+if(WIN32)
+    set(EXCLUDE_HEAVY_MODULES ON CACHE BOOL "Exclude heavy modules" FORCE)
+    message(STATUS "Heavy modules excluded for Windows platform")
+endif()
+
 # HTTP/3 (QUIC) support - optional
 option(ENABLE_HTTP3 "Enable HTTP/3 (QUIC) support with nghttp3/ngtcp2" OFF)
 if(ENABLE_HTTP3)
@@ -346,6 +367,9 @@ set(COMMON_SOURCES
     # Common utilities (refactored)
     common/utils.c
     common/utils.h
+    # Memory limits (OOM protection)
+    common/memory-limits.c
+    common/memory-limits.h
 )
 
 set(JOBS_SOURCES
@@ -649,6 +673,68 @@ set(SYSTEM_SOURCES
     system/optimization/resource-optimization-manager.c
     system/optimization/resource-optimization-manager.h
 )
+
+# Exclude heavy modules for Windows/low-memory systems
+if(EXCLUDE_HEAVY_MODULES)
+    list(REMOVE_ITEM SYSTEM_SOURCES
+        "system/numa-allocator.c"
+        "system/numa-allocator.h"
+        "system/numa-aware-allocator.c"
+        "system/numa-aware-allocator.h"
+        "system/advanced-optimizer.c"
+        "system/advanced-optimizer.h"
+        "system/advanced-predictive-analytics.c"
+        "system/advanced-predictive-analytics.h"
+        "system/ml-performance-predictor.c"
+        "system/ml-performance-predictor.h"
+        "system/proactive-allocator.c"
+        "system/proactive-allocator.h"
+        "system/advanced-memory-management.c"
+        "system/advanced-memory-management.h"
+        "system/memory-pool-optimizer.c"
+        "system/memory-pool-optimizer.h"
+        "system/enhanced-memory-optimizer.c"
+        "system/enhanced-memory-optimizer.h"
+        "system/memory-optimizer.c"
+        "system/memory-optimizer.h"
+        "system/distributed-monitor.c"
+        "system/distributed-monitor.h"
+        "system/auto-scaler.c"
+        "system/auto-scaler.h"
+        "system/failure-predictor.c"
+        "system/failure-predictor.h"
+        "system/intelligent-auto-tuning.c"
+        "system/intelligent-auto-tuning.h"
+        "system/intelligent-optimization-integrator.c"
+        "system/intelligent-optimization-integrator.h"
+        "system/intelligent-workload-distributor.c"
+        "system/intelligent-workload-distributor.h"
+        "system/modular-architecture.c"
+        "system/modular-architecture.h"
+        "system/performance-forecasting-engine.c"
+        "system/performance-forecasting-engine.h"
+        "system/predictive-optimizer.c"
+        "system/predictive-optimizer.h"
+        "system/self-healing.c"
+        "system/self-healing.h"
+    )
+    
+    # Exclude perf_monitor heavy modules
+    list(REMOVE_ITEM PERF_MONITOR_SOURCES
+        "perf_monitor/distributed-tracing.c"
+        "perf_monitor/distributed-tracing.h"
+        "perf_monitor/distributed-tracing-system.c"
+        "perf_monitor/distributed-tracing-system.h"
+        "perf_monitor/enhanced-observability.c"
+        "perf_monitor/enhanced-observability.h"
+        "perf_monitor/enhanced-performance-monitor.c"
+        "perf_monitor/enhanced-performance-monitor.h"
+        "perf_monitor/advanced-metrics.c"
+        "perf_monitor/advanced-metrics.h"
+    )
+    
+    message(STATUS "Heavy system modules excluded for memory optimization")
+endif()
 
 set(ADVANCED_OPTIMIZATION_SOURCES
     system/io-uring-interface.c

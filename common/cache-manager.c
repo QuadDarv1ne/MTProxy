@@ -203,26 +203,39 @@ static void cache_move_to_lru_head(cache_manager_t *cache, cache_entry_t *entry)
 // Инициализация кэша
 cache_manager_t* cache_manager_init(const cache_config_t *config) {
     if (!config) return NULL;
-    
+
+    // Проверка на разумные лимиты памяти (защита от OOM)
+    size_t max_allowed_size_mb = 256; // Максимум 256MB для кэша
+    if (config->max_size_mb > max_allowed_size_mb) {
+        fprintf(stderr, "WARNING: Cache size limited to %zu MB (requested: %zu MB)\n",
+                max_allowed_size_mb, config->max_size_mb);
+    }
+
     cache_manager_t *cache = calloc(1, sizeof(cache_manager_t));
     if (!cache) return NULL;
-    
-    // Копирование конфигурации
+
+    // Копирование конфигурации с ограничением
     memcpy(&cache->config, config, sizeof(cache_config_t));
-    
+    if (cache->config.max_size_mb > max_allowed_size_mb) {
+        cache->config.max_size_mb = max_allowed_size_mb;
+    }
+
     // Инициализация partitioning
-    cache->partition_count = config->enable_partitioning ? 
+    cache->partition_count = config->enable_partitioning ?
                             (config->partition_count > 0 ? config->partition_count : 16) : 1;
     cache->partitions = calloc(cache->partition_count, sizeof(cache_partition_t));
     if (!cache->partitions) {
         free(cache);
         return NULL;
     }
-    
+
     // Инициализация разделов
     size_t buckets_per_partition = config->max_entries / cache->partition_count;
     if (buckets_per_partition < 16) buckets_per_partition = 16;
     
+    // Ограничение на количество бакетов для экономии памяти
+    if (buckets_per_partition > 4096) buckets_per_partition = 4096;
+
     for (int i = 0; i < cache->partition_count; i++) {
         cache->partitions[i].bucket_count = buckets_per_partition;
         cache->partitions[i].buckets = calloc(buckets_per_partition, sizeof(cache_entry_t*));

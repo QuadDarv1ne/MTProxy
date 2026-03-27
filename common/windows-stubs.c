@@ -334,7 +334,11 @@ int epoll_insert(int fd, int flags) {
         init_epoll();
     }
 
-    if (fd < 0) return -1;
+    // Проверка допустимого диапазона fd для предотвращения переполнения FD_SET
+    if (fd < 0 || fd >= FD_SETSIZE) {
+        printf("ERROR: fd=%d exceeds FD_SETSIZE=%d\n", fd, FD_SETSIZE);
+        return -1;
+    }
 
     // Clear fd from all sets first
     FD_CLR(fd, &win_read_fds);
@@ -375,13 +379,20 @@ int epoll_work(int timeout) {
         init_epoll();
     }
 
-    // Check if any file descriptors are registered
+    // Проверка если нет зарегистрированных file descriptors
     if (win_read_fds.fd_count == 0 && win_write_fds.fd_count == 0 && win_except_fds.fd_count == 0) {
-        // No fds to monitor, just sleep
+        // Нет fd для мониторинга, просто спим
         if (timeout > 0) {
             Sleep(timeout < 100 ? timeout : 100);
         }
         return 0;
+    }
+
+    // Ограничение максимального времени ожидания для предотвращения зависания
+    if (timeout < 0) {
+        timeout = 1000;  // Максимум 1 секунда
+    } else if (timeout > 5000) {
+        timeout = 5000;  // Максимум 5 секунд
     }
 
     // Windows select() implementation
@@ -394,7 +405,7 @@ int epoll_work(int timeout) {
     tv.tv_usec = (timeout % 1000) * 1000;
 
     int result = select(0, &read_fds, &write_fds, &except_fds,
-                       timeout >= 0 ? &tv : NULL);
+                       &tv);
 
     if (result == SOCKET_ERROR) {
         printf("select() failed: %d\n", WSAGetLastError());
@@ -519,49 +530,48 @@ int get_my_ipv6(unsigned char ipv6[16]) {
   return 0;
 }
 int epoll_sethandler(int fd, int prio, void *handler, void *data) {
-  if (fd < 0) {
-    return -1;
-  }
-
-  // On Windows, socket handles can be large values, not small integers
-  // So we can't use fd as array index directly. Instead, find a free slot.
-  event_t *ev = NULL;
-
-  // First, check if this fd is already registered
-  for (int i = 0; i < MAX_EVENTS; i++) {
-    if (Events[i].fd == fd) {
-      ev = &Events[i];
-      break;
+    // Проверка допустимого диапазона fd
+    if (fd < 0 || fd >= MAX_EVENTS) {
+        return -1;
     }
-  }
 
-  // If not found, find a free slot
-  if (ev == NULL) {
+    event_t *ev = NULL;
+
+    // First, check if this fd is already registered
     for (int i = 0; i < MAX_EVENTS; i++) {
-      if (Events[i].fd < 0) {
-        ev = &Events[i];
-        break;
-      }
+        if (Events[i].fd == fd) {
+            ev = &Events[i];
+            break;
+        }
     }
-  }
 
-  if (ev == NULL) {
-    // No free slots
-    return -1;
-  }
+    // If not found, find a free slot
+    if (ev == NULL) {
+        for (int i = 0; i < MAX_EVENTS; i++) {
+            if (Events[i].fd < 0) {
+                ev = &Events[i];
+                break;
+            }
+        }
+    }
 
-  // Initialize event if needed
-  if (ev->fd != fd) {
-    memset(ev, 0, sizeof(*ev));
-    ev->fd = fd;
-  }
+    if (ev == NULL) {
+        // No free slots
+        return -1;
+    }
 
-  ev->priority = prio;
-  ev->work = (event_handler_t)handler;
-  ev->data = data;
-  ev->refcnt = 1;
+    // Initialize event if needed
+    if (ev->fd != fd) {
+        memset(ev, 0, sizeof(*ev));
+        ev->fd = fd;
+    }
 
-  return 0;
+    ev->priority = prio;
+    ev->work = (event_handler_t)handler;
+    ev->data = data;
+    ev->refcnt = 1;
+
+    return 0;
 }
 
 // Usage stub - defined in mtproto-proxy.c
