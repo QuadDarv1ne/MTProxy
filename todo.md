@@ -1,10 +1,37 @@
 # MTProxy Project TODO
 
-> **Актуально на:** 27 марта 2026 г. (исправления memory-limits)
-> **Коммит:** b5a7dc5 (HEAD → master) — fix memory-limits
-> **Версия:** v1.0.9-memory-fixes
-> **Статус:** ✅ Memory limits исправлены ✅ Ветки синхронизированы
+> **Актуально на:** 27 марта 2026 г. (исправления безопасности string функций)
+> **Коммит:** 6cf3a18 (HEAD → master) — fix unsafe string functions
+> **Версия:** v1.0.10-safety-string-fixes
+> **Статус:** ✅ Unsafe string функции заменены ✅ Ветки синхронизированы
 > **Ветки:** dev = origin/dev ✅ | master = origin/master ✅ (синхронизированы)
+
+## 🆕 Выполнено (27 марта 2026 — ИСПРАВЛЕНИЯ БЕЗОПАСНОСТИ STRING ФУНКЦИЙ)
+
+### Замена unsafe string функций на безопасные версии
+- [x] **config-profiles.c** — `strcpy` → `utils_strncpy` (2 вызова) ✅
+  - Инициализация `profiles_dir`
+  - Установка значения по умолчанию `"./profiles"`
+  - Добавлен `#include "common/utils.h"`
+- [x] **anomaly-detector.c** — удалена `anomaly_strcpy`, заменено на `utils_strncpy` (4 вызова) ✅
+  - Формирование описания аномалии (4 типа аномалий)
+  - Удалена дублирующая реализация `anomaly_strcpy` (12 строк)
+  - Добавлен `#include "common/utils.h"`
+- [x] **unified-api.c** — удалена `simple_strcpy`, заменено на `utils_strncpy` (18 вызовов) ✅
+  - Сообщения об ошибках API (12 вызовов)
+  - Копирование параметров (6 вызовов)
+  - Удалена дублирующая реализация `simple_strcpy` (10 строк)
+  - Удалена дублирующая реализация `simple_strcmp` (7 строк)
+  - Добавлен `#include "common/utils.h"`
+
+**Итого:** 3 файла изменено, +35 строк, -61 строка (уменьшение на 26 строк)
+
+### Преимущества
+- **Безопасность:** устранены 3 дублирующие реализации strcpy
+- **Консистентность:** единая функция `utils_strncpy` во всём проекте
+- **Качество кода:** уменьшение дублирования, упрощение поддержки
+
+---
 
 ## 🆕 Выполнено (27 марта 2026 — ИСПРАВЛЕНИЯ MEMORY-LIMITS)
 
@@ -551,13 +578,12 @@
 
 ## 🔧 Активные задачи (Следующие действия)
 
-### Немедленно (27 марта 2026 — ИСПРАВЛЕНИЯ MEMORY-LIMITS)
-1. [x] **Memory limits fix**: tracked_free корректное уменьшение usage — ✅ выполнено (b5a7dc5)
-2. [x] **Memory limits fix**: __real_* для GCC (избежание рекурсии) — ✅ выполнено
-3. [x] **Memory limits fix**: безопасные макросы malloc/free — ✅ выполнено
-4. [x] **Синхронизация**: Merge dev в main — ✅ выполнено (b5a7dc5)
-5. [ ] **Сборка**: Проверка компиляции с memory-limits — ⏳ требуется тестирование
-6. [ ] **Тесты**: Проверка memory-limits тестов — ⏳ требуется запуск
+### Немедленно (27 марта 2026 — ИСПРАВЛЕНИЯ БЕЗОПАСНОСТИ)
+1. [x] **String safety fix**: config-profiles.c strcpy → utils_strncpy — ✅ выполнено (6cf3a18)
+2. [x] **String safety fix**: anomaly-detector.c anomaly_strcpy → utils_strncpy — ✅ выполнено
+3. [x] **String safety fix**: unified-api.c simple_strcpy → utils_strncpy — ✅ выполнено
+4. [x] **Синхронизация**: Merge dev в main — ✅ выполнено (6cf3a18)
+5. [ ] **Сборка**: Проверка компиляции — ⏳ требуется тестирование
 
 ### В процессе
 - [x] Интеграция go-pcap2socks модулей — ✅ выполнено (5dedeb9)
@@ -1779,4 +1805,4 @@ git checkout master && git merge dev && git push origin master
 
 ---
 
-*Последнее обновление: 27 марта 2026 г. (коммит b5a7dc5 — HEAD → master, dev = origin/dev, master = origin/master, полностью синхронизированы, memory-limits исправлены, 370 коммитов)*
+*Последнее обновление: 27 марта 2026 г. (коммит 6cf3a18 — HEAD → master, dev = origin/dev, master = origin/master, полностью синхронизированы, unsafe string функции заменены, 371 коммитов)*
