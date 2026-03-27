@@ -1,10 +1,31 @@
 # MTProxy Project TODO
 
-> **Актуально на:** 27 марта 2026 г. (оптимизация памяти и исключение тяжёлых модулей)
-> **Коммит:** 4671bdb (HEAD → master) — merge dev в master
-> **Версия:** v1.0.8-memory-optimization
-> **Статус:** ✅ Оптимизация памяти ✅ Тяжёлые модули исключены ✅ Ветки синхронизированы
+> **Актуально на:** 27 марта 2026 г. (исправления memory-limits)
+> **Коммит:** b5a7dc5 (HEAD → master) — fix memory-limits
+> **Версия:** v1.0.9-memory-fixes
+> **Статус:** ✅ Memory limits исправлены ✅ Ветки синхронизированы
 > **Ветки:** dev = origin/dev ✅ | master = origin/master ✅ (синхронизированы)
+
+## 🆕 Выполнено (27 марта 2026 — ИСПРАВЛЕНИЯ MEMORY-LIMITS)
+
+### Исправления memory-limits модуля
+- [x] **tracked_free** — корректное уменьшение `current_usage` (эвристика среднего размера) ✅
+  - Расчёт среднего размера выделения: `total_allocated / allocation_count`
+  - Уменьшение `current_usage` на средний размер
+  - Увеличение `total_freed` для статистики
+- [x] **tracked_malloc/calloc/realloc/free** — использование `__real_*` для GCC ✅
+  - Избежание рекурсивного вызова при замене malloc/free
+  - Безопасные макросы для ENABLE_MEMORY_TRACKING
+  - Fallback для не-GCC компиляторов
+- [x] **memory-limits.h** — безопасные макросы замены malloc/free ✅
+  - `__real_malloc`, `__real_calloc`, `__real_realloc`, `__real_free` для GCC
+  - `__wrap_*` функции для не-GCC компиляторов
+- [x] **get_process_memory_usage** — добавлен `__attribute__((unused))` ✅
+- [x] **Документация** — улучшена (OOM Protection) ✅
+
+**Итого:** 2 файла изменено, +74 строки, -32 строки
+
+---
 
 ## 🆕 Выполнено (27 марта 2026 — ОПТИМИЗАЦИЯ ПАМЯТИ)
 
@@ -530,19 +551,13 @@
 
 ## 🔧 Активные задачи (Следующие действия)
 
-### Немедленно (27 марта 2026 — ОПТИМИЗАЦИЯ ПАМЯТИ)
-1. [x] **Оптимизация памяти**: CMakeLists.txt + Makefile + memory-limits — ✅ выполнено
-2. [x] **Исключение тяжёлых модулей**: 24 модуля excluded для Windows — ✅ выполнено
-3. [x] **Memory limits**: cache=128MB, pool=64MB, OOM protection — ✅ выполнено
-4. [x] **Windows совместимость**: resolver.c, windows-stubs.c улучшены — ✅ выполнено
-5. [x] **Крипто оптимизация**: aes-optimized.c, dh-optimized.c — ✅ выполнено
-6. [x] **Memory pool оптимизация**: memory-pool.c улучшен — ✅ выполнено
-7. [x] **REST API улучшения**: rest-api.c обработка ошибок — ✅ выполнено
-8. [x] **Тесты**: test_new_modules.c обновлён — ✅ выполнено
-9. [x] **Документация**: todo.md обновлён — ✅ актуальный статус на 27 марта 2026
-10. [x] **Синхронизация**: Merge dev в main — ✅ выполнено (4671bdb)
-11. [ ] **Сборка**: Проверка компиляции с memory-limits — ⏳ требуется тестирование
-12. [ ] **Тесты**: Проверка memory-limits тестов — ⏳ требуется запуск
+### Немедленно (27 марта 2026 — ИСПРАВЛЕНИЯ MEMORY-LIMITS)
+1. [x] **Memory limits fix**: tracked_free корректное уменьшение usage — ✅ выполнено (b5a7dc5)
+2. [x] **Memory limits fix**: __real_* для GCC (избежание рекурсии) — ✅ выполнено
+3. [x] **Memory limits fix**: безопасные макросы malloc/free — ✅ выполнено
+4. [x] **Синхронизация**: Merge dev в main — ✅ выполнено (b5a7dc5)
+5. [ ] **Сборка**: Проверка компиляции с memory-limits — ⏳ требуется тестирование
+6. [ ] **Тесты**: Проверка memory-limits тестов — ⏳ требуется запуск
 
 ### В процессе
 - [x] Интеграция go-pcap2socks модулей — ✅ выполнено (5dedeb9)
@@ -1764,4 +1779,4 @@ git checkout master && git merge dev && git push origin master
 
 ---
 
-*Последнее обновление: 27 марта 2026 г. (коммит 4671bdb — HEAD → master, dev = origin/dev, master = origin/master, полностью синхронизированы, оптимизация памяти выполнена, 17 файлов изменено, 369 коммитов)*
+*Последнее обновление: 27 марта 2026 г. (коммит b5a7dc5 — HEAD → master, dev = origin/dev, master = origin/master, полностью синхронизированы, memory-limits исправлены, 370 коммитов)*
