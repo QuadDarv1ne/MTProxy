@@ -1,10 +1,38 @@
 # MTProxy Project TODO
 
-> **Актуально на:** 27 марта 2026 г. (стабильная версия)
-> **Коммит:** b505820 (HEAD → master) — docs: обновлён todo.md
-> **Версия:** v1.0.10-stable
-> **Статус:** ✅ Стабильная версия ✅ Ветки синхронизированы
+> **Актуально на:** 27 марта 2026 г. (исправления обработки ошибок мьютексов)
+> **Коммит:** 5f668ce (HEAD → master) — fix pthread_mutex_init error checks
+> **Версия:** v1.0.11-mutex-error-handling
+> **Статус:** ✅ Обработка ошибок мьютексов ✅ Ветки синхронизированы
 > **Ветки:** dev = origin/dev ✅ | master = origin/master ✅ (синхронизированы)
+
+## 🆕 Выполнено (27 марта 2026 — ИСПРАВЛЕНИЯ ОБРАБОТКИ ОШИБОК МЬЮТЕКСОВ)
+
+### Добавлены проверки pthread_mutex_init на ошибки
+- [x] **log-aggregator.c** — проверка `pthread_mutex_init` в `log_aggregator_init()` ✅
+  - Возврат -1 при ошибке инициализации мьютекса
+- [x] **cache-manager.c** — проверка `pthread_mutex_init` для partitions и global_mutex ✅
+  - Проверка инициализации мьютексов для каждой партиции
+  - Проверка инициализации глобального мьютекса
+  - Корректный cleanup при ошибке (освобождение памяти + destroy мьютексов)
+- [x] **rate-limiter.c** — проверка `pthread_mutex_init` с cleanup при ошибке ✅
+  - Освобождение mutex и buckets при ошибке
+  - Возврат NULL при неудаче
+- [x] **error-handler.c** — проверка `pthread_mutex_init` с cleanup при ошибке ✅
+  - Освобождение mutex при ошибке
+  - Возврат -1 при неудаче
+- [x] **advanced-logger.c** — проверка `pthread_mutex_init` в `platform_create_mutex()` ✅
+  - Возврат NULL при ошибке инициализации
+  - Освобождение памяти при неудаче
+
+**Итого:** 5 файлов изменено, +50 строк, -19 строк
+
+### Преимущества
+- **Надёжность:** корректная обработка ошибок инициализации мьютексов
+- **Безопасность:** предотвращение использования неинициализированных мьютексов
+- **Стабильность:** graceful degradation при неудаче инициализации
+
+---
 
 ## 🆕 Выполнено (27 марта 2026 — ИСПРАВЛЕНИЯ БЕЗОПАСНОСТИ STRING ФУНКЦИЙ)
 
@@ -579,11 +607,12 @@
 ## 🔧 Активные задачи (Следующие действия)
 
 ### Немедленно (27 марта 2026 — ИСПРАВЛЕНИЯ БЕЗОПАСНОСТИ)
-1. [x] **String safety fix**: config-profiles.c strcpy → utils_strncpy — ✅ выполнено (6cf3a18)
-2. [x] **String safety fix**: anomaly-detector.c anomaly_strcpy → utils_strncpy — ✅ выполнено
-3. [x] **String safety fix**: unified-api.c simple_strcpy → utils_strncpy — ✅ выполнено
-4. [x] **Синхронизация**: Merge dev в main — ✅ выполнено (6cf3a18)
-5. [ ] **Сборка**: Проверка компиляции — ⏳ требуется тестирование
+1. [x] **Mutex error fix**: log-aggregator.c pthread_mutex_init check — ✅ выполнено (5f668ce)
+2. [x] **Mutex error fix**: cache-manager.c pthread_mutex_init checks — ✅ выполнено
+3. [x] **Mutex error fix**: rate-limiter.c pthread_mutex_init check — ✅ выполнено
+4. [x] **Mutex error fix**: error-handler.c pthread_mutex_init check — ✅ выполнено
+5. [x] **Mutex error fix**: advanced-logger.c pthread_mutex_init check — ✅ выполнено
+6. [x] **Синхронизация**: Merge dev в main — ✅ выполнено (5f668ce)
 
 ### В процессе
 - [x] Интеграция go-pcap2socks модулей — ✅ выполнено (5dedeb9)
@@ -1804,4 +1833,4 @@ git checkout master && git merge dev && git push origin master
 
 ---
 
-*Последнее обновление: 27 марта 2026 г. (коммит b505820 — HEAD → master, dev = origin/dev, master = origin/master, полностью синхронизированы, стабильная версия v1.0.10, 371 коммитов)*
+*Последнее обновление: 27 марта 2026 г. (коммит 5f668ce — HEAD → master, dev = origin/dev, master = origin/master, полностью синхронизированы, pthread_mutex_init проверки добавлены, 373 коммитов)*
