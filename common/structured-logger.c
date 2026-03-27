@@ -137,12 +137,18 @@ int structured_logger_init(const char *log_file_path) {
             pthread_mutex_unlock(&logger_mutex);
             return -1;
         }
-        
+
         // Error log file
-        snprintf(global_logger_config.error_log_file_path, 
+        snprintf(global_logger_config.error_log_file_path,
                  sizeof(global_logger_config.error_log_file_path),
                  "%s.error", global_logger_config.log_file_path);
         error_log_file_handle = fopen(global_logger_config.error_log_file_path, "a");
+        if (!error_log_file_handle) {
+            fclose(log_file_handle);
+            log_file_handle = NULL;
+            pthread_mutex_unlock(&logger_mutex);
+            return -1;
+        }
     }
     
     // Запуск async logger thread

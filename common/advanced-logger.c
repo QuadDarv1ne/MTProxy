@@ -170,12 +170,16 @@ int logger_configure(advanced_logger_t *logger, const logger_config_t *config) {
     logger->config = *config;
     
     // Переоткрытие файлов при необходимости
-    if (logger->config.output_type == LOG_OUTPUT_FILE && 
+    if (logger->config.output_type == LOG_OUTPUT_FILE &&
         strlen(logger->config.log_file_path) > 0) {
         if (logger->log_file) {
             fclose(logger->log_file);
         }
         logger->log_file = fopen(logger->config.log_file_path, "a");
+        if (!logger->log_file) {
+            platform_unlock_mutex(logger->mutex);
+            return -1;
+        }
     }
     
     platform_unlock_mutex(logger->mutex);
