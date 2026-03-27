@@ -67,6 +67,9 @@ find_package(Threads REQUIRED)
 option(ENABLE_LOW_MEMORY "Enable low memory mode (reduces RAM usage)" OFF)
 option(EXCLUDE_HEAVY_MODULES "Exclude heavy modules for Windows/low-memory systems" OFF)
 
+# ARM64 оптимизации
+option(ENABLE_ARM64_CRYPTO "Enable ARM64 cryptographic optimizations (NEON instructions)" OFF)
+
 # Memory limit definitions
 if(ENABLE_LOW_MEMORY)
     add_definitions(-DMAX_CACHE_SIZE_MB=64 -DMAX_POOL_SIZE_MB=32)
@@ -80,6 +83,26 @@ endif()
 if(WIN32)
     set(EXCLUDE_HEAVY_MODULES ON CACHE BOOL "Exclude heavy modules" FORCE)
     message(STATUS "Heavy modules excluded for Windows platform")
+endif()
+
+# ARM64 platform detection and optimizations
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64|ARM64)")
+    message(STATUS "Detected ARM64 platform: ${CMAKE_SYSTEM_PROCESSOR}")
+    add_definitions(-D__ARM64__)
+    
+    # Enable ARM64 NEON optimizations if requested
+    if(ENABLE_ARM64_CRYPTO)
+        add_definitions(-D__ARM_NEON__)
+        if(NOT WIN32)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=armv8-a+crypto+neon")
+            message(STATUS "ARM64 NEON crypto optimizations enabled")
+        endif()
+    else()
+        message(STATUS "ARM64 detected, but NEON crypto optimizations disabled (use -DENABLE_ARM64_CRYPTO=ON)")
+    endif()
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm|ARM)")
+    message(STATUS "Detected ARM platform: ${CMAKE_SYSTEM_PROCESSOR}")
+    add_definitions(-D__ARM__)
 endif()
 
 # HTTP/3 (QUIC) support - optional

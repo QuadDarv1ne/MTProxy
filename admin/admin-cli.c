@@ -82,7 +82,17 @@ char** admin_cli_tokenize(const char *command_line, int *argc) {
     char *token = strtok_r(line, " \t\n", &saveptr);
 
     while (token && count < 63) {
-        tokens[count++] = strdup(token);
+        char *token_copy = strdup(token);
+        if (!token_copy) {
+            // Cleanup при ошибке
+            for (int i = 0; i < count; i++) {
+                if (tokens[i]) free(tokens[i]);
+            }
+            free(tokens);
+            free(line);
+            return NULL;
+        }
+        tokens[count++] = token_copy;
         token = strtok_r(NULL, " \t\n", &saveptr);
     }
 

@@ -177,12 +177,14 @@ void http_response_add_cors_headers(http_response_t *response,
 
 static void parse_query_string(const char *query, query_param_t *params, int *count) {
     if (!query || !params || !count) return;
-    
+
     *count = 0;
     char *query_copy = strdup(query);
+    if (!query_copy) return;
+    
     char *saveptr = NULL;
     char *pair = strtok_r(query_copy, "&", &saveptr);
-    
+
     while (pair && *count < REST_API_MAX_QUERY_PARAMS) {
         char *eq = strchr(pair, '=');
         if (eq) {
@@ -193,7 +195,7 @@ static void parse_query_string(const char *query, query_param_t *params, int *co
         }
         pair = strtok_r(NULL, "&", &saveptr);
     }
-    
+
     free(query_copy);
 }
 
