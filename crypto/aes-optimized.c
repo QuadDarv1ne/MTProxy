@@ -29,12 +29,15 @@
 #include "crypto/aes-optimized.h"
 #include "common/kprintf.h"
 #include "common/common-stats.h"
+#include "common/memory-limits.h"
 
 // Глобальная статистика AES
 struct aes_optimized_stats aes_stats = {0};
 
-// Кэш предвычисленных ключей AES
-#define AES_KEY_CACHE_SIZE 1024
+// Кэш предвычисленных ключей AES - ОГРАНИЧЕННЫЙ РАЗМЕР
+#ifndef AES_KEY_CACHE_SIZE
+#define AES_KEY_CACHE_SIZE 256  // Уменьшено с 1024 для экономии памяти
+#endif
 #define AES_KEY_CACHE_MASK (AES_KEY_CACHE_SIZE - 1)
 
 struct aes_key_cache_entry {
@@ -73,13 +76,21 @@ int aes_optimized_init(void) {
     if (aes_key_cache) {
         return 0; // Уже инициализирован
     }
-    
+
+    // Проверка лимита памяти перед выделением
+    size_t cache_size = AES_KEY_CACHE_SIZE * sizeof(struct aes_key_cache_entry);
+    if (cache_size > MAX_CRYPTO_CACHE_MB * 1024 * 1024 / 2) {
+        vkprintf(1, "WARNING: AES cache size limited to %d MB\n", MAX_CRYPTO_CACHE_MB/2);
+    }
+
     aes_key_cache = calloc(AES_KEY_CACHE_SIZE, sizeof(struct aes_key_cache_entry));
     if (!aes_key_cache) {
+        vkprintf(0, "ERROR: Failed to allocate AES key cache\n");
         return -1;
     }
-    
-    vkprintf(1, "AES optimized cache initialized with %d entries\n", AES_KEY_CACHE_SIZE);
+
+    vkprintf(1, "AES optimized cache initialized with %d entries (%zu KB)\n", 
+             AES_KEY_CACHE_SIZE, cache_size / 1024);
     return 0;
 }
 
@@ -125,49 +136,58 @@ static struct aes_key_cache_entry *get_cached_aes_context(const unsigned char *k
     if (!aes_key_cache) {
         return NULL;
     }
-    
+
     unsigned int hash = aes_key_hash(key, iv);
     unsigned int index = hash & AES_KEY_CACHE_MASK;
     struct aes_key_cache_entry *entry = &aes_key_cache[index];
-    
+
     // Проверяем совпадение ключа и IV
-    if (entry->valid && 
-        memcmp(entry->key, key, 32) == 0 && 
+    if (entry->valid &&
+        memcmp(entry->key, key, 32) == 0 &&
         memcmp(entry->iv, iv, 16) == 0) {
         entry->last_used = ++aes_cache_counter;
         aes_stats.key_cache_hits++;
         return entry;
     }
-    
+
     aes_stats.key_cache_misses++;
-    
+
     // Освобождаем старый контекст если есть
     if (entry->valid) {
         if (entry->encrypt_ctx) {
             EVP_CIPHER_CTX_free(entry->encrypt_ctx);
+            entry->encrypt_ctx = NULL;
         }
         if (entry->decrypt_ctx) {
             EVP_CIPHER_CTX_free(entry->decrypt_ctx);
+            entry->decrypt_ctx = NULL;
         }
+        entry->valid = 0;
     }
-    
+
     // Создаем новые контексты
     entry->encrypt_ctx = create_aes_context(key, iv, 1);
     entry->decrypt_ctx = create_aes_context(key, iv, 0);
-    
+
     if (!entry->encrypt_ctx || !entry->decrypt_ctx) {
-        if (entry->encrypt_ctx) EVP_CIPHER_CTX_free(entry->encrypt_ctx);
-        if (entry->decrypt_ctx) EVP_CIPHER_CTX_free(entry->decrypt_ctx);
+        if (entry->encrypt_ctx) {
+            EVP_CIPHER_CTX_free(entry->encrypt_ctx);
+            entry->encrypt_ctx = NULL;
+        }
+        if (entry->decrypt_ctx) {
+            EVP_CIPHER_CTX_free(entry->decrypt_ctx);
+            entry->decrypt_ctx = NULL;
+        }
         entry->valid = 0;
         return NULL;
     }
-    
+
     // Сохраняем ключ и IV
     memcpy(entry->key, key, 32);
     memcpy(entry->iv, iv, 16);
     entry->last_used = ++aes_cache_counter;
     entry->valid = 1;
-    
+
     return entry;
 }
 

@@ -241,22 +241,20 @@ static pthread_mutex_t raw_message_pool_lock = PTHREAD_MUTEX_INITIALIZER;
 // Выделение из пула (быстрее чем malloc)
 static inline struct raw_message *alloc_raw_message_fast (void) {
   struct raw_message *rm = NULL;
-  
-  // Пробуем получить из пула без блокировки (быстрый путь)
+
+  // Исправление race condition: проверка и захват внутри блокировки
+  pthread_mutex_lock(&raw_message_pool_lock);
   if (raw_message_pool_count > 0) {
-    pthread_mutex_lock(&raw_message_pool_lock);
-    if (raw_message_pool_count > 0) {
-      rm = raw_message_pool[--raw_message_pool_count];
-      raw_message_pool[raw_message_pool_count] = NULL;
-    }
-    pthread_mutex_unlock(&raw_message_pool_lock);
+    rm = raw_message_pool[--raw_message_pool_count];
+    raw_message_pool[raw_message_pool_count] = NULL;
   }
-  
+  pthread_mutex_unlock(&raw_message_pool_lock);
+
   // Если пул пуст - выделяем через malloc
   if (!rm) {
     rm = (struct raw_message *) malloc (sizeof (*rm));
   }
-  
+
   return rm;
 }
 
@@ -764,18 +762,22 @@ connection_job_t alloc_new_connection (int cfd, conn_target_job_t CTJ, listening
   c->in_queue = alloc_mp_queue_w ();
   c->out_queue = alloc_mp_queue_w ();
   //c->out_packet_queue = alloc_mp_queue_w ();
-  
+
   // Проверка успешного выделения памяти для очередей
   if (!c->in_queue || !c->out_queue) {
     vkprintf (0, "Failed to allocate queues for connection #%d\n", c->fd);
     if (c->in_queue) {
       free_mp_queue (c->in_queue);
+      c->in_queue = NULL;
     }
     if (c->out_queue) {
       free_mp_queue (c->out_queue);
+      c->out_queue = NULL;
     }
     close (cfd);
-    free (c);
+    // c является частью структуры job, освобождается через job_free
+    // Не вызываем free(c) здесь, чтобы избежать double free
+    job_free (JOB_REF_PASS (C));
     return 0;
   }
 

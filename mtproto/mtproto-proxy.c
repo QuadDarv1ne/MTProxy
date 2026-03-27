@@ -300,7 +300,16 @@ struct ext_connection *get_ext_connection_by_in_conn_id (int in_fd, int in_gen, 
     H->i_prev = cur;
   }
   h = in_conn_id ? lrand48() : in_fd;
+  // Исправление: защита от бесконечного цикла при переполнении таблицы
+  int attempts = 0;
+  const int MAX_ATTEMPTS = 1000; // Максимум попыток найти свободный слот
   while (OutExtConnections[h &= (EXT_CONN_TABLE_SIZE - 1)].ref) {
+    if (++attempts >= MAX_ATTEMPTS) {
+      vkprintf (0, "ERROR: ext_connection table overflow, cannot find free slot after %d attempts\n", MAX_ATTEMPTS);
+      free (cur);
+      ext_connections--;
+      return 0;
+    }
     h = lrand48();
   }
   OutExtConnections[h].ref = cur;
@@ -1201,6 +1210,10 @@ int parse_text_ipv6 (unsigned char ip[16], const char *str) {
     int j = 0, v = 0;
     while ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f')) {
       c |= 0x20;
+      // Защита от integer overflow: проверяем перед умножением
+      if (v > 0xFFFFF) {
+        return -1; // Переполнение при вычислении v
+      }
       v = (v << 4) + (c <= '9' ? c - '0' : c - 'a' + 10);
       if (++j > 4) {
 	return -1; // more than 4 hex digits in component

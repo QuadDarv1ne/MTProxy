@@ -421,7 +421,7 @@ static void *server_thread_func(void *arg) {
                           &client_len);
         
         if (client_fd < 0) continue;
-        
+
         // Check connection limit
         if (server->active_fd_count >= server->config.max_connections) {
             http_response_t response;
@@ -431,7 +431,16 @@ static void *server_thread_func(void *arg) {
             close(client_fd);
             continue;
         }
-        
+
+        // Устанавливаем таймауты для предотвращения зависания
+        struct timeval rcv_timeout, snd_timeout;
+        rcv_timeout.tv_sec = 30;  // 30 секунд на получение
+        rcv_timeout.tv_usec = 0;
+        snd_timeout.tv_sec = 30;  // 30 секунд на отправку
+        snd_timeout.tv_usec = 0;
+        setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&rcv_timeout, sizeof(rcv_timeout));
+        setsockopt(client_fd, SOL_SOCKET, SO_SNDTIMEO, (const char*)&snd_timeout, sizeof(snd_timeout));
+
         // Read request
         bytes_read = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
         if (bytes_read <= 0) {

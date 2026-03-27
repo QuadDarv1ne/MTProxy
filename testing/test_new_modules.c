@@ -299,12 +299,27 @@ void test_error_circuit_breaker() {
    Тесты Config Manager
    ============================================ */
 
+// Cross-platform temp path helper
+static const char* get_temp_path(const char *filename) {
+    static char temp_path[512];
+#ifdef _WIN32
+    const char *temp = getenv("TEMP");
+    if (!temp) temp = getenv("TMP");
+    if (!temp) temp = ".";
+    snprintf(temp_path, sizeof(temp_path), "%s\\%s", temp, filename);
+#else
+    snprintf(temp_path, sizeof(temp_path), "/tmp/%s", filename);
+#endif
+    return temp_path;
+}
+
 void test_config_manager_basic() {
     TEST_START("config_manager_basic");
-    
-    int result = config_manager_init("/tmp/mtproxy_test.conf");
+
+    const char *config_path = get_temp_path("mtproxy_test.conf");
+    int result = config_manager_init(config_path);
     TEST_ASSERT(result == 0, "Config manager initialized");
-    
+
     // Register parameter
     int max_connections = 1000;
     result = config_manager_register_parameter(
@@ -313,48 +328,49 @@ void test_config_manager_basic() {
         1, "1000", "Maximum connections"
     );
     TEST_ASSERT(result == 0, "Parameter registered");
-    
+
     // Get parameter
     int value;
-    result = config_manager_get_parameter("network", "max_connections", 
+    result = config_manager_get_parameter("network", "max_connections",
                                          &value, sizeof(int));
     TEST_ASSERT(result == 0, "Parameter retrieved");
     TEST_ASSERT(value == 1000, "Value matches");
-    
+
     // Set parameter
     int new_value = 2000;
     result = config_manager_set_parameter("network", "max_connections",
                                          &new_value, sizeof(int));
     TEST_ASSERT(result == 0, "Parameter updated");
-    
+
     // Verify update
     result = config_manager_get_parameter("network", "max_connections",
                                          &value, sizeof(int));
     TEST_ASSERT(value == 2000, "Updated value matches");
-    
+
     config_manager_cleanup();
     TEST_END();
 }
 
 void test_config_manager_json() {
     TEST_START("config_manager_json");
-    
-    config_manager_init("/tmp/mtproxy_test.conf");
-    
+
+    const char *json_path = get_temp_path("mtproxy_test.json");
+    config_manager_init(get_temp_path("mtproxy_test.conf"));
+
     // Register and set parameters
     int port = 8080;
     config_manager_register_parameter("server", "port", CONFIG_TYPE_INT,
                                      &port, sizeof(int), 1, "8080", "Server port");
-    
+
     // Export to JSON
-    int result = config_manager_export_to_json("/tmp/mtproxy_test.json", 0);
+    int result = config_manager_export_to_json(json_path, 0);
     TEST_ASSERT(result == 0, "JSON export successful");
-    
+
     // Verify file exists (simple check)
-    FILE *f = fopen("/tmp/mtproxy_test.json", "r");
+    FILE *f = fopen(json_path, "r");
     TEST_ASSERT(f != NULL, "JSON file created");
     if (f) fclose(f);
-    
+
     config_manager_cleanup();
     TEST_END();
 }
