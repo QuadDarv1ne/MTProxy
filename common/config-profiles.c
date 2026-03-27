@@ -4,6 +4,7 @@
  */
 
 #include "config-profiles.h"
+#include "common/utils.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -21,19 +22,19 @@ int config_profiles_init(config_profiles_manager_t *mgr, const char *profiles_di
     if (!mgr) {
         return -1;
     }
-    
+
     memset(mgr, 0, sizeof(config_profiles_manager_t));
-    
+
     if (pthread_mutex_init(&mgr->lock, NULL) != 0) {
         return -1;
     }
-    
+
     if (profiles_dir) {
-        strncpy(mgr->profiles_dir, profiles_dir, sizeof(mgr->profiles_dir) - 1);
+        utils_strncpy(mgr->profiles_dir, profiles_dir, sizeof(mgr->profiles_dir));
     } else {
-        strcpy(mgr->profiles_dir, "./profiles");
+        utils_strncpy(mgr->profiles_dir, "./profiles", sizeof(mgr->profiles_dir));
     }
-    
+
     mgr->profile_count = 0;
     mgr->active_profile = -1;
     mgr->auto_save = 1;

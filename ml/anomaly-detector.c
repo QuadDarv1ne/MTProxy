@@ -4,19 +4,10 @@
  */
 
 #include "anomaly-detector.h"
+#include "common/utils.h"
 
 // Глобальный контекст детектора аномалий
 static anomaly_detector_context_t g_anomaly_ctx = {0};
-
-// Функция для копирования строк
-static void anomaly_strcpy(char *dest, const char *src) {
-    int i = 0;
-    while (src[i] != '\0' && i < 255) {
-        dest[i] = src[i];
-        i++;
-    }
-    dest[i] = '\0';
-}
 
 // Инициализация детектора аномалий
 int anomaly_detector_init(anomaly_detector_context_t *ctx) {
@@ -257,31 +248,31 @@ int anomaly_detector_analyze_traffic(anomaly_detector_context_t *ctx,
             results[anomalies_found].confidence_level = 80 + (traffic_data[i].payload_entropy / 10);
             results[anomalies_found].severity_level = 5;
             results[anomalies_found].detection_time = traffic_data[i].timestamp;
-            
+
             // Формирование описания
             switch (anomaly_type) {
                 case ANOMALY_TYPE_TRAFFIC_SPIKE:
-                    anomaly_strcpy(results[anomalies_found].description, "Обнаружен резкий скачок трафика");
+                    utils_strncpy(results[anomalies_found].description, "Обнаружен резкий скачок трафика", sizeof(results[anomalies_found].description));
                     break;
                 case ANOMALY_TYPE_SIZE_ANOMALY:
-                    anomaly_strcpy(results[anomalies_found].description, "Обнаружен подозрительный размер пакета");
+                    utils_strncpy(results[anomalies_found].description, "Обнаружен подозрительный размер пакета", sizeof(results[anomalies_found].description));
                     break;
                 case ANOMALY_TYPE_PATTERN_CHANGE:
-                    anomaly_strcpy(results[anomalies_found].description, "Обнаружено изменение паттерна трафика");
+                    utils_strncpy(results[anomalies_found].description, "Обнаружено изменение паттерна трафика", sizeof(results[anomalies_found].description));
                     break;
                 default:
-                    anomaly_strcpy(results[anomalies_found].description, "Обнаружена аномалия");
+                    utils_strncpy(results[anomalies_found].description, "Обнаружена аномалия", sizeof(results[anomalies_found].description));
                     break;
             }
-            
+
             results[anomalies_found].recommended_action = 1;  // Рекомендуется действие
             results[anomalies_found].anomalous_data = (traffic_data_t*)&traffic_data[i];
             results[anomalies_found].data_count = 1;
-            
+
             anomalies_found++;
         }
     }
-    
+
     // Обновление статистики
     ctx->stats.total_analyses += data_count;
     ctx->stats.anomalies_detected += anomalies_found;
