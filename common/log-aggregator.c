@@ -160,26 +160,28 @@ int log_aggregator_init(void) {
     if (global_aggregator_ctx.aggregator_initialized) {
         return 0; // Уже инициализирован
     }
-    
-    pthread_mutex_init(&global_aggregator_ctx.aggregator_mutex, NULL);
-    
+
+    if (pthread_mutex_init(&global_aggregator_ctx.aggregator_mutex, NULL) != 0) {
+        return -1;
+    }
+
     // Инициализация структур
     global_aggregator_ctx.pattern_capacity = BUILTIN_PATTERN_COUNT + 20;
-    global_aggregator_ctx.patterns = calloc(global_aggregator_ctx.pattern_capacity, 
+    global_aggregator_ctx.patterns = calloc(global_aggregator_ctx.pattern_capacity,
                                            sizeof(struct log_pattern));
-    
+
     global_aggregator_ctx.rule_capacity = BUILTIN_RULE_COUNT + 10;
-    global_aggregator_ctx.rules = calloc(global_aggregator_ctx.rule_capacity, 
+    global_aggregator_ctx.rules = calloc(global_aggregator_ctx.rule_capacity,
                                         sizeof(struct aggregation_rule));
-    
+
     global_aggregator_ctx.correlation_capacity = 10;
-    global_aggregator_ctx.correlations = calloc(global_aggregator_ctx.correlation_capacity, 
+    global_aggregator_ctx.correlations = calloc(global_aggregator_ctx.correlation_capacity,
                                                sizeof(struct correlation_rule));
-    
+
     global_aggregator_ctx.alert_capacity = 100;
-    global_aggregator_ctx.alerts = calloc(global_aggregator_ctx.alert_capacity, 
+    global_aggregator_ctx.alerts = calloc(global_aggregator_ctx.alert_capacity,
                                          sizeof(struct log_alert));
-    
+
     if (!global_aggregator_ctx.patterns || !global_aggregator_ctx.rules ||
         !global_aggregator_ctx.correlations || !global_aggregator_ctx.alerts) {
         log_aggregator_cleanup();

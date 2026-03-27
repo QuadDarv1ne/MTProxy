@@ -121,7 +121,11 @@ int error_handler_init(error_handler_context_t *ctx, const recovery_config_t *co
 #else
     ctx->mutex = malloc(sizeof(pthread_mutex_t));
     if (ctx->mutex) {
-        pthread_mutex_init((pthread_mutex_t*)ctx->mutex, NULL);
+        if (pthread_mutex_init((pthread_mutex_t*)ctx->mutex, NULL) != 0) {
+            free(ctx->mutex);
+            ctx->mutex = NULL;
+            return -1;
+        }
     } else {
         return -1;
     }

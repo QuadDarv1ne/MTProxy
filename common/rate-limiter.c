@@ -329,7 +329,13 @@ rate_limiter_t* rate_limiter_init(const rate_limit_config_t *config) {
 #else
     limiter->mutex = malloc(sizeof(pthread_mutex_t));
     if (limiter->mutex) {
-        pthread_mutex_init((pthread_mutex_t*)limiter->mutex, NULL);
+        if (pthread_mutex_init((pthread_mutex_t*)limiter->mutex, NULL) != 0) {
+            free(limiter->mutex);
+            limiter->mutex = NULL;
+            free(limiter->buckets);
+            free(limiter);
+            return NULL;
+        }
     } else {
         free(limiter->buckets);
         free(limiter);

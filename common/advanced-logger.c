@@ -45,24 +45,27 @@ static advanced_logger_t *global_logger = NULL;
     static void* platform_create_mutex(void) {
         pthread_mutex_t *mutex = malloc(sizeof(pthread_mutex_t));
         if (mutex) {
-            pthread_mutex_init(mutex, NULL);
+            if (pthread_mutex_init(mutex, NULL) != 0) {
+                free(mutex);
+                return NULL;
+            }
         }
         return mutex;
     }
-    
+
     static void platform_destroy_mutex(void *mutex) {
         if (mutex) {
             pthread_mutex_destroy((pthread_mutex_t*)mutex);
             free(mutex);
         }
     }
-    
+
     static void platform_lock_mutex(void *mutex) {
         if (mutex) {
             pthread_mutex_lock((pthread_mutex_t*)mutex);
         }
     }
-    
+
     static void platform_unlock_mutex(void *mutex) {
         if (mutex) {
             pthread_mutex_unlock((pthread_mutex_t*)mutex);
