@@ -1,9 +1,9 @@
 # MTProxy Project TODO
 
-> **Актуально на:** 27 марта 2026 г. (исправления безопасности string функций)
-> **Коммит:** 6cf3a18 (HEAD → master) — fix unsafe string functions
-> **Версия:** v1.0.10-safety-string-fixes
-> **Статус:** ✅ Unsafe string функции заменены ✅ Ветки синхронизированы
+> **Актуально на:** 27 марта 2026 г. (стабильная версия)
+> **Коммит:** b505820 (HEAD → master) — docs: обновлён todo.md
+> **Версия:** v1.0.10-stable
+> **Статус:** ✅ Стабильная версия ✅ Ветки синхронизированы
 > **Ветки:** dev = origin/dev ✅ | master = origin/master ✅ (синхронизированы)
 
 ## 🆕 Выполнено (27 марта 2026 — ИСПРАВЛЕНИЯ БЕЗОПАСНОСТИ STRING ФУНКЦИЙ)
@@ -607,10 +607,9 @@
 ### Плановые
 - [ ] FreeBSD поддержка — ⏳ Ожидает
 - [ ] ARM64 Linux (Raspberry Pi) — ⏳ Ожидает
-- [ ] HTTP/3 QUIC полная реализация — ⏳ Ожидает
-- [ ] io_uring для Linux — ⏳ Ожидает
+- [ ] HTTP/3 QUIC полная реализация — ⏳ Ожидает (nghttp3/ngtcp2)
+- [ ] io_uring для Linux — ⏳ Ожидает (Linux 5.1+)
 - [ ] jemalloc/tcmalloc интеграция — ⏳ Ожидает
-- [ ] Синхронизация dev → main — ⏳ После финального тестирования
 
 ---
 
@@ -1805,4 +1804,4 @@ git checkout master && git merge dev && git push origin master
 
 ---
 
-*Последнее обновление: 27 марта 2026 г. (коммит 6cf3a18 — HEAD → master, dev = origin/dev, master = origin/master, полностью синхронизированы, unsafe string функции заменены, 371 коммитов)*
+*Последнее обновление: 27 марта 2026 г. (коммит b505820 — HEAD → master, dev = origin/dev, master = origin/master, полностью синхронизированы, стабильная версия v1.0.10, 371 коммитов)*
