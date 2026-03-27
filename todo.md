@@ -1,10 +1,31 @@
 # MTProxy Project TODO
 
-> **Актуально на:** 27 марта 2026 г. (исправления обработки ошибок мьютексов)
-> **Коммит:** 5f668ce (HEAD → master) — fix pthread_mutex_init error checks
-> **Версия:** v1.0.11-mutex-error-handling
-> **Статус:** ✅ Обработка ошибок мьютексов ✅ Ветки синхронизированы
+> **Актуально на:** 27 марта 2026 г. (исправления обработки ошибок fopen)
+> **Коммит:** 1e7c458 (HEAD → master) — fix fopen error checks
+> **Версия:** v1.0.12-fopen-error-handling
+> **Статус:** ✅ Обработка ошибок fopen ✅ Ветки синхронизированы
 > **Ветки:** dev = origin/dev ✅ | master = origin/master ✅ (синхронизированы)
+
+## 🆕 Выполнено (27 марта 2026 — ИСПРАВЛЕНИЯ ОБРАБОТКИ ОШИБОК FOPEN)
+
+### Добавлены проверки fopen на ошибки
+- [x] **advanced-logger.c** — проверка `fopen` в `logger_configure()` ✅
+  - Проверка открытия файла при переоткрытии
+  - Возврат -1 при ошибке
+  - Корректный cleanup
+- [x] **structured-logger.c** — проверка `fopen` для `error_log_file_handle` ✅
+  - Проверка открытия error log файла
+  - Закрытие основного log файла при ошибке
+  - Возврат -1 при неудаче
+
+**Итого:** 2 файла изменено, +13 строк, -3 строки
+
+### Преимущества
+- **Надёжность:** корректная обработка ошибок открытия файлов
+- **Безопасность:** предотвращение использования NULL FILE* указателей
+- **Стабильность:** graceful degradation при неудаче открытия файла
+
+---
 
 ## 🆕 Выполнено (27 марта 2026 — ИСПРАВЛЕНИЯ ОБРАБОТКИ ОШИБОК МЬЮТЕКСОВ)
 
@@ -607,12 +628,9 @@
 ## 🔧 Активные задачи (Следующие действия)
 
 ### Немедленно (27 марта 2026 — ИСПРАВЛЕНИЯ БЕЗОПАСНОСТИ)
-1. [x] **Mutex error fix**: log-aggregator.c pthread_mutex_init check — ✅ выполнено (5f668ce)
-2. [x] **Mutex error fix**: cache-manager.c pthread_mutex_init checks — ✅ выполнено
-3. [x] **Mutex error fix**: rate-limiter.c pthread_mutex_init check — ✅ выполнено
-4. [x] **Mutex error fix**: error-handler.c pthread_mutex_init check — ✅ выполнено
-5. [x] **Mutex error fix**: advanced-logger.c pthread_mutex_init check — ✅ выполнено
-6. [x] **Синхронизация**: Merge dev в main — ✅ выполнено (5f668ce)
+1. [x] **Fopen error fix**: advanced-logger.c fopen check — ✅ выполнено (1e7c458)
+2. [x] **Fopen error fix**: structured-logger.c error_log_file_handle check — ✅ выполнено
+3. [x] **Синхронизация**: Merge dev в main — ✅ выполнено (1e7c458)
 
 ### В процессе
 - [x] Интеграция go-pcap2socks модулей — ✅ выполнено (5dedeb9)
@@ -1833,4 +1851,4 @@ git checkout master && git merge dev && git push origin master
 
 ---
 
-*Последнее обновление: 27 марта 2026 г. (коммит 5f668ce — HEAD → master, dev = origin/dev, master = origin/master, полностью синхронизированы, pthread_mutex_init проверки добавлены, 373 коммитов)*
+*Последнее обновление: 27 марта 2026 г. (коммит 1e7c458 — HEAD → master, dev = origin/dev, master = origin/master, полностью синхронизированы, fopen проверки добавлены, 375 коммитов)*
