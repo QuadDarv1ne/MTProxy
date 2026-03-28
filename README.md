@@ -25,6 +25,14 @@
 - ✅ **Проверки malloc**: добавлены проверки выделения памяти в критических функциях
 - ✅ **Документация**: IMPROVEMENTS_PLAN.md, CHANGELOG.md обновлены
 
+### ♻️ Программа устранения дублирования (Март 2026)
+
+#### Выполнено (8 исправлений)
+- ✅ **Удалено дублирования time функций**: `get_current_time_ms()` → `utils_time_ms()` (3 файла: crypto-optimizer, crypto-performance-optimizer, enhanced-crypto-optimizer)
+- ✅ **Удалено дублирования hash функций**: `simple_hash`/`cache_hash_key`/`rate_limit_hash` → `utils_hash_djb2()` (3 файла: advanced-load-balancer, cache-manager, rate-limiter)
+- ✅ **Добавлены utility функции**: `utils_int_to_string()`/`utils_float_to_string()` (utils.c/h)
+- ✅ **Удалено строк**: 128+ строк дублирующегося кода
+
 ### 🆕 Новые возможности (Март 2026)
 
 #### Управление конфигурацией
