@@ -646,8 +646,9 @@
 - [x] Deployment Guide — ✅ создан (DEPLOYMENT.md)
 - [x] Docker документация — ✅ готова
 - [x] Testing документация — ✅ testing/README.md
-- [ ] Troubleshooting Guide — ⏳ ожидается
-- [ ] Performance Tuning Guide — ⏳ ожидается
+- [x] Troubleshooting Guide — ✅ создан (docs/TROUBLESHOOTING.md)
+- [x] Performance Tuning Guide — ✅ создан (docs/PERFORMANCE_TUNING.md)
+- [x] Debugging Guide — ✅ создан (docs/DEBUGGING.md)
 
 ---
 
