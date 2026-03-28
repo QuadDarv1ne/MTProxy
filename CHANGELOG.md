@@ -9,6 +9,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added (Март 2026)
 
+#### Инфраструктура
+- **Ninja Build System**: установлен Ninja v1.13.2 в папку `deps/`
+  - Автоматическая загрузка в `deps/ninja-win.zip`
+  - Версия: 1.13.2 (ноябрь 2025)
+  - Использование: `cmake -G Ninja -DCMAKE_MAKE_PROGRAM=deps/ninja.exe`
+
+#### Многопоточный режим
+- **Авто-детект CPU ядер**: автоматическое определение количества workers
+  - Windows: `GetSystemInfo()->dwNumberOfProcessors`
+  - Unix/Linux: `sysconf(_SC_NPROCESSORS_ONLN)`
+  - workers по умолчанию = CPU cores (минимум 2, максимум MAX_WORKERS)
+  - Не требуется указывать `-M` вручную
+
+- **Многопоточность по умолчанию**: `ENGINE_ENABLE_MULTITHREAD` включен в `ENGINE_DEFAULT_ENABLED_MODULES`
+  - Обратная совместимость через `--single-thread`
+  - Производительность: автоматическое использование всех CPU ядер
+
+### Changed (Март 2026)
+
+#### Исправления тестов
+- **test_utils.c**: исправления тестов utils
+  - `utils_strcat_basic`: ожидаемая длина 12 → 13
+  - `utils_memmove_overlap`: ожидаемая строка 'HeHello World!' → 'HeHelloWorld!'
+  - Все 22 теста utils теперь проходят успешно
+
+### Added (Март 2026)
+
 #### Новые модули
 - **config-manager**: Расширенная система управления конфигурацией
   - Callback'и для изменений конфигурации
