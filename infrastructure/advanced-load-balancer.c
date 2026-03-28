@@ -4,21 +4,10 @@
  */
 
 #include "advanced-load-balancer.h"
+#include "common/utils.h"
 
 // Global load balancer instance
 static advanced_load_balancer_t *g_load_balancer = NULL;
-
-// Simple hash function for IP-based distribution
-static unsigned int simple_hash(const char* str) {
-    unsigned int hash = 5381;
-    int c;
-    
-    while ((c = *str++)) {
-        hash = ((hash << 5) + hash) + c; // hash * 33 + c
-    }
-    
-    return hash;
-}
 
 // Initialize advanced load balancer
 advanced_load_balancer_t* advanced_load_balancer_init(const lb_config_t *config) {
@@ -247,8 +236,8 @@ static int advanced_load_balancer_ip_hash(advanced_load_balancer_t *lb, const ch
     if (!client_ip) {
         return advanced_load_balancer_round_robin(lb);
     }
-    
-    unsigned int hash = simple_hash(client_ip);
+
+    unsigned int hash = utils_hash_djb2(client_ip, strlen(client_ip));
     int index = hash % lb->server_count;
     
     // Find healthy server starting from hash index
