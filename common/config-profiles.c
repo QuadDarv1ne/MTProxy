@@ -11,6 +11,7 @@
 #include <time.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <unistd.h>
 
 /* Внутренние функции */
 static int find_profile(config_profiles_manager_t *mgr, const char *name);
@@ -30,9 +31,9 @@ int config_profiles_init(config_profiles_manager_t *mgr, const char *profiles_di
     }
 
     if (profiles_dir) {
-        utils_strncpy(mgr->profiles_dir, profiles_dir, sizeof(mgr->profiles_dir));
+        utils_strncpy(mgr->profiles_dir, profiles_dir, strlen(profiles_dir), sizeof(mgr->profiles_dir));
     } else {
-        utils_strncpy(mgr->profiles_dir, "./profiles", sizeof(mgr->profiles_dir));
+        utils_strncpy(mgr->profiles_dir, "./profiles", 10, sizeof(mgr->profiles_dir));
     }
 
     mgr->profile_count = 0;

@@ -686,6 +686,10 @@ static int f_parse_option_engine (int val) {
         epoll_sleep_ns = 10000;
       }
       break;
+    case 259:
+      // --single-thread: отключаем многопоточность
+      engine_disable_multithread ();
+      break;
     case 301:
       engine_set_required_tcp_cpu_threads (atoi (optarg));
       break;
@@ -714,7 +718,8 @@ static void parse_option_engine_builtin (const char *name, int arg, int *var, in
 void engine_add_engine_parse_options (void) {
   parse_option_engine_builtin ("cpu-threads", required_argument, 0, 227, LONGOPT_JOBS_SET, "Number of CPU threads (1-64, default 8)");
   parse_option_engine_builtin ("io-threads", required_argument, 0, 228, LONGOPT_JOBS_SET,  "Number of I/O threads (1-64, default 16)");
-  parse_option_engine_builtin ("multithread", optional_argument, 0, 258, LONGOPT_JOBS_SET, "run in multithread mode");
+  parse_option_engine_builtin ("multithread", optional_argument, 0, 258, LONGOPT_JOBS_SET, "run in multithread mode (enabled by default)");
+  parse_option_engine_builtin ("single-thread", no_argument, 0, 259, LONGOPT_JOBS_SET, "disable multithread mode (run in single-thread mode)");
   parse_option_engine_builtin ("tcp-cpu-threads", required_argument, 0, 301, LONGOPT_JOBS_SET, "number of tcp-cpu threads");
   parse_option_engine_builtin ("tcp-iothreads", required_argument, 0, 302, LONGOPT_JOBS_SET, "number of tcp-io threads");
 }

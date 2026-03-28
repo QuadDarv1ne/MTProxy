@@ -4,6 +4,9 @@ objs/
 dep/
 build-windows-x64/
 
+# Dependencies (downloaded tools)
+deps/
+
 # Build logs
 build.log
 

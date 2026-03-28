@@ -252,16 +252,16 @@ int anomaly_detector_analyze_traffic(anomaly_detector_context_t *ctx,
             // Формирование описания
             switch (anomaly_type) {
                 case ANOMALY_TYPE_TRAFFIC_SPIKE:
-                    utils_strncpy(results[anomalies_found].description, "Обнаружен резкий скачок трафика", sizeof(results[anomalies_found].description));
+                    utils_strncpy(results[anomalies_found].description, "Обнаружен резкий скачок трафика", 31, sizeof(results[anomalies_found].description));
                     break;
                 case ANOMALY_TYPE_SIZE_ANOMALY:
-                    utils_strncpy(results[anomalies_found].description, "Обнаружен подозрительный размер пакета", sizeof(results[anomalies_found].description));
+                    utils_strncpy(results[anomalies_found].description, "Обнаружен подозрительный размер пакета", 37, sizeof(results[anomalies_found].description));
                     break;
                 case ANOMALY_TYPE_PATTERN_CHANGE:
-                    utils_strncpy(results[anomalies_found].description, "Обнаружено изменение паттерна трафика", sizeof(results[anomalies_found].description));
+                    utils_strncpy(results[anomalies_found].description, "Обнаружено изменение паттерна трафика", 38, sizeof(results[anomalies_found].description));
                     break;
                 default:
-                    utils_strncpy(results[anomalies_found].description, "Обнаружена аномалия", sizeof(results[anomalies_found].description));
+                    utils_strncpy(results[anomalies_found].description, "Обнаружена аномалия", 19, sizeof(results[anomalies_found].description));
                     break;
             }
 

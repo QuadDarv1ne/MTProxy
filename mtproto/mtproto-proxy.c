@@ -46,6 +46,7 @@
 #include <sys/wait.h>
 #include <sys/mman.h>
 #include <netdb.h>
+#include <sys/param.h>  // Для sysconf
 #endif
 
 #include <ctype.h>
@@ -2373,6 +2374,31 @@ void mtfront_pre_init (void) {
     vlog_field_str("status", "success")
   };
   vlog_with_fields(LOG_LEVEL_INFO, "config", "Configuration loaded successfully", fields, 2);
+
+  // Установка количества workers по умолчанию = количеству CPU ядер
+  // Если workers не задан через -M, используем авто-детект
+  if (workers == 0) {
+#ifdef _WIN32
+    // Windows: определяем количество процессоров
+    SYSTEM_INFO sysInfo;
+    GetSystemInfo(&sysInfo);
+    workers = sysInfo.dwNumberOfProcessors;
+#else
+    // Unix/Linux: используем sysconf
+    workers = sysconf(_SC_NPROCESSORS_ONLN);
+    if (workers <= 0) {
+      workers = 1;
+    }
+#endif
+    // Ограничиваем максимальным значением
+    if (workers > MAX_WORKERS) {
+      workers = MAX_WORKERS;
+    }
+    // Используем минимум 2 workers для многопоточности
+    if (workers < 2) {
+      workers = 2;
+    }
+  }
 
   if (domain_count) {
     tcp_rpc_init_proxy_domains();

@@ -98,7 +98,7 @@ void* tracked_malloc(size_t size, memory_tracker_t *tracker) {
         return NULL;
     }
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(_WIN32)
     void *ptr = __real_malloc(size);
 #else
     void *ptr = malloc(size);
@@ -125,7 +125,7 @@ void* tracked_calloc(size_t nmemb, size_t size, memory_tracker_t *tracker) {
         return NULL;
     }
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(_WIN32)
     void *ptr = __real_calloc(nmemb, size);
 #else
     void *ptr = calloc(nmemb, size);
@@ -156,7 +156,7 @@ void* tracked_realloc(void *ptr, size_t size, memory_tracker_t *tracker) {
         return NULL;
     }
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(_WIN32)
     void *new_ptr = __real_realloc(ptr, size);
 #else
     void *new_ptr = realloc(ptr, size);
@@ -190,8 +190,8 @@ void tracked_free(void *ptr, memory_tracker_t *tracker) {
     
     tracker->free_count++;
     tracker->total_freed += avg_alloc_size;
-    
-#ifdef __GNUC__
+
+#if defined(__GNUC__) && !defined(_WIN32)
     __real_free(ptr);
 #else
     free(ptr);

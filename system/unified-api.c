@@ -5,6 +5,7 @@
 
 #include "unified-api.h"
 #include "common/utils.h"
+#include <string.h>
 
 // Глобальные переменные для унифицированного API
 static modular_architecture_context_t g_modular_arch;
@@ -50,7 +51,7 @@ api_status_t unified_api_call(api_operation_type_t operation,
         if (result) {
             result->status = API_STATUS_ERROR;
             result->error_code = 1;
-            utils_strncpy(result->error_message, "API not initialized", sizeof(result->error_message));
+            utils_strncpy(result->error_message, "API not initialized", 19, sizeof(result->error_message));
         }
         return API_STATUS_ERROR;
     }
@@ -77,11 +78,11 @@ api_status_t unified_api_call(api_operation_type_t operation,
                     result->status = API_STATUS_SUCCESS;
                 } else {
                     result->status = API_STATUS_ERROR;
-                    utils_strncpy(result->error_message, "Failed to load module", sizeof(result->error_message));
+                    utils_strncpy(result->error_message, "Failed to load module", 21, sizeof(result->error_message));
                 }
             } else {
                 result->status = API_STATUS_INVALID_PARAMS;
-                utils_strncpy(result->error_message, "Invalid parameters for load module", sizeof(result->error_message));
+                utils_strncpy(result->error_message, "Invalid parameters for load module", 34, sizeof(result->error_message));
             }
             break;
 
@@ -97,11 +98,11 @@ api_status_t unified_api_call(api_operation_type_t operation,
                     result->result_size = output_size;
                 } else {
                     result->status = API_STATUS_ERROR;
-                    utils_strncpy(result->error_message, "Failed to execute plugin", sizeof(result->error_message));
+                    utils_strncpy(result->error_message, "Failed to execute plugin", 24, sizeof(result->error_message));
                 }
             } else {
                 result->status = API_STATUS_INVALID_PARAMS;
-                utils_strncpy(result->error_message, "Invalid parameters for execute plugin", sizeof(result->error_message));
+                utils_strncpy(result->error_message, "Invalid parameters for execute plugin", 38, sizeof(result->error_message));
             }
             break;
 
@@ -111,7 +112,7 @@ api_status_t unified_api_call(api_operation_type_t operation,
                 result->status = API_STATUS_SUCCESS;
             } else {
                 result->status = API_STATUS_INVALID_PARAMS;
-                utils_strncpy(result->error_message, "Invalid parameters for configure component", sizeof(result->error_message));
+                utils_strncpy(result->error_message, "Invalid parameters for configure component", 42, sizeof(result->error_message));
             }
             break;
 
@@ -121,7 +122,7 @@ api_status_t unified_api_call(api_operation_type_t operation,
                 result->status = API_STATUS_SUCCESS;
             } else {
                 result->status = API_STATUS_INVALID_PARAMS;
-                utils_strncpy(result->error_message, "Invalid parameters for get stats", sizeof(result->error_message));
+                utils_strncpy(result->error_message, "Invalid parameters for get stats", 32, sizeof(result->error_message));
             }
             break;
 
@@ -137,30 +138,30 @@ api_status_t unified_api_call(api_operation_type_t operation,
                     result->status = API_STATUS_SUCCESS;
                 } else {
                     result->status = API_STATUS_ERROR;
-                    utils_strncpy(result->error_message, "Failed to unload module", sizeof(result->error_message));
+                    utils_strncpy(result->error_message, "Failed to unload module", 23, sizeof(result->error_message));
                 }
             } else {
                 result->status = API_STATUS_INVALID_PARAMS;
-                utils_strncpy(result->error_message, "Invalid parameters for unload module", sizeof(result->error_message));
+                utils_strncpy(result->error_message, "Invalid parameters for unload module", 38, sizeof(result->error_message));
             }
             break;
 
         case API_OP_RELOAD_COMPONENT:
             // В реальной реализации: перезагрузка компонента
             result->status = API_STATUS_NOT_IMPLEMENTED;
-            utils_strncpy(result->error_message, "Reload component not implemented", sizeof(result->error_message));
+            utils_strncpy(result->error_message, "Reload component not implemented", 32, sizeof(result->error_message));
             break;
 
         case API_OP_REGISTER_CALLBACK:
         case API_OP_UNREGISTER_CALLBACK:
             // В реальной реализации: регистрация/отмена регистрации callback'ов
             result->status = API_STATUS_NOT_IMPLEMENTED;
-            utils_strncpy(result->error_message, "Callback registration not implemented", sizeof(result->error_message));
+            utils_strncpy(result->error_message, "Callback registration not implemented", 37, sizeof(result->error_message));
             break;
 
         default:
             result->status = API_STATUS_ERROR;
-            utils_strncpy(result->error_message, "Unknown operation", sizeof(result->error_message));
+            utils_strncpy(result->error_message, "Unknown operation", 17, sizeof(result->error_message));
             break;
     }
 
@@ -179,7 +180,7 @@ api_status_t unified_load_module(const char *module_path,
     api_params_t params;
     api_result_t result;
 
-    utils_strncpy(params.load_module.module_path, module_path ? module_path : "", sizeof(params.load_module.module_path));
+    utils_strncpy(params.load_module.module_path, module_path ? module_path : "", strlen(module_path ? module_path : ""), sizeof(params.load_module.module_path));
     params.load_module.module_type = type;
     params.load_module.init_params = init_params;
 
@@ -194,7 +195,7 @@ api_status_t unified_unload_module(const char *module_name) {
     api_params_t params;
     api_result_t result;
 
-    utils_strncpy(params.component_name, module_name ? module_name : "", sizeof(params.component_name));
+    utils_strncpy(params.component_name, module_name ? module_name : "", strlen(module_name ? module_name : ""), sizeof(params.component_name));
 
     return unified_api_call(API_OP_UNLOAD_MODULE, &params, &result);
 }
@@ -210,7 +211,7 @@ api_status_t unified_execute_plugin(const char *plugin_name,
     api_params_t params;
     api_result_t result;
 
-    utils_strncpy(params.execute_plugin.plugin_name, plugin_name ? plugin_name : "", sizeof(params.execute_plugin.plugin_name));
+    utils_strncpy(params.execute_plugin.plugin_name, plugin_name ? plugin_name : "", strlen(plugin_name ? plugin_name : ""), sizeof(params.execute_plugin.plugin_name));
     params.execute_plugin.input_data = input;
     params.execute_plugin.output_data = output;
     params.execute_plugin.timeout_ms = 5000; // 5 секунд по умолчанию
@@ -235,8 +236,8 @@ api_status_t unified_configure_component(const char *component_name,
     api_params_t params;
     api_result_t result;
 
-    utils_strncpy(params.configure.component_name, component_name ? component_name : "", sizeof(params.configure.component_name));
-    utils_strncpy(params.configure.property_name, property ? property : "", sizeof(params.configure.property_name));
+    utils_strncpy(params.configure.component_name, component_name ? component_name : "", strlen(component_name ? component_name : ""), sizeof(params.configure.component_name));
+    utils_strncpy(params.configure.property_name, property ? property : "", strlen(property ? property : ""), sizeof(params.configure.property_name));
     params.configure.property_value = value;
     params.configure.value_size = value_size;
 
@@ -253,7 +254,7 @@ api_status_t unified_get_component_stats(const char *component_name,
     api_params_t params;
     api_result_t result;
 
-    utils_strncpy(params.get_stats.component_name, component_name ? component_name : "", sizeof(params.get_stats.component_name));
+    utils_strncpy(params.get_stats.component_name, component_name ? component_name : "", strlen(component_name ? component_name : ""), sizeof(params.get_stats.component_name));
     params.get_stats.stat_type = 0; // По умолчанию статистика модуля
 
     // В реальной реализации: получить статистику и скопировать в буфер

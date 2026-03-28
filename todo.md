@@ -1,10 +1,36 @@
 # MTProxy Project TODO
 
-> **Актуально на:** 27 марта 2026 г. (безопасность памяти + ARM64 поддержка)
-> **Коммит:** 093341d (HEAD → master) — fix memory safety + ARM64
-> **Версия:** v1.0.13-memory-safety-arm64
-> **Статус:** ✅ Безопасность памяти ✅ ARM64 поддержка ✅ Ветки синхронизированы
+> **Актуально на:** 28 марта 2026 г. (обязательный многопоточный режим)
+> **Коммит:** pending (dev) — mandatory multithread mode
+> **Версия:** v1.0.14-multithread-mandatory
+> **Статус:** ✅ Многопоточный режим по умолчанию ✅ Auto-detect CPU cores ✅
 > **Ветки:** dev = origin/dev ✅ | master = origin/master ✅ (синхронизированы)
+
+## 🆕 Выполнено (28 марта 2026 — ОБЯЗАТЕЛЬНЫЙ МНОГОПОТОЧНЫЙ РЕЖИМ)
+
+### Многопоточный режим по умолчанию
+- [x] **engine.h** — ENGINE_ENABLE_MULTITHREAD включен в ENGINE_DEFAULT_ENABLED_MODULES ✅
+  - Многопоточность теперь включена по умолчанию для производительности
+  - Обратная совместимость через --single-thread
+- [x] **engine.c** — добавлена опция --single-thread для отключения ✅
+  - Опция 259: engine_disable_multithread()
+  - Обновлена справка для --multithread (enabled by default)
+- [x] **mtproto-proxy.c** — auto-detect количества CPU ядер ✅
+  - Windows: GetSystemInfo(&sysInfo)->dwNumberOfProcessors
+  - Unix/Linux: sysconf(_SC_NPROCESSORS_ONLN)
+  - workers по умолчанию = CPU cores (минимум 2, максимум MAX_WORKERS)
+  - Windows: fallback на single-worker mode при отсутствии fork()
+
+**Итого:** 3 файла изменено, +42 строки, -3 строки
+
+### Преимущества
+- **Производительность:** автоматическое использование всех CPU ядер
+- **Масштабируемость:** оптимальное количество workers без ручной настройки
+- **Удобство:** не требуется указывать -M вручную
+- **Гибкость:** возможность отключения через --single-thread
+- **Кроссплатформенность:** авто-детект на Windows и Unix/Linux
+
+---
 
 ## 🆕 Выполнено (27 марта 2026 — БЕЗОПАСНОСТЬ ПАМЯТИ И ARM64 ПОДДЕРЖКА)
 

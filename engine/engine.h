@@ -64,7 +64,8 @@ struct rpc_custom_op {
 #define ENGINE_ENABLE_MULTITHREAD 0x1000000ull
 #define ENGINE_ENABLE_SLAVE_MODE 0x2000000ull
 
-#define ENGINE_DEFAULT_ENABLED_MODULES (ENGINE_ENABLE_TCP)
+// Многопоточный режим включен по умолчанию для производительности
+#define ENGINE_DEFAULT_ENABLED_MODULES (ENGINE_ENABLE_TCP | ENGINE_ENABLE_MULTITHREAD)
 
 typedef struct {
   void (*cron) (void);
