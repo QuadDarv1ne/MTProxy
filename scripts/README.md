@@ -1,307 +1,212 @@
-# MTProxy Scripts
+# Scripts Directory
 
-## 📚 Обзор
+Скрипты для автоматизации работы с MTProxy.
 
-Эта директория содержит утилиты и скрипты для администрирования и мониторинга MTProxy.
+## Доступные скрипты
 
-## 🔧 Скрипты
+### Тестирование
 
-### 1. monitor.sh - Скрипт мониторинга
-
-Bash-скрипт для мониторинга состояния MTProxy сервера.
-
-**Использование:**
-
+#### run_all_tests.bat (Windows)
 ```bash
-# Показать статус
-./monitor.sh status
-
-# Выполнить проверку
-./monitor.sh check
-
-# Непрерывный мониторинг
-./monitor.sh monitor
-
-# Показать соединения
-./monitor.sh connections
-
-# Помощь
-./monitor.sh help
+scripts\run_all_tests.bat [build_dir]
 ```
 
-**Переменные окружения:**
+**Пример:**
+```bash
+scripts\run_all_tests.bat build
+```
+
+#### run_all_tests.sh (Linux/macOS)
+```bash
+chmod +x scripts/run_all_tests.sh
+./scripts/run_all_tests.sh [build_dir]
+```
+
+**Пример:**
+```bash
+./scripts/run_all_tests.sh build
+```
+
+### Сборка
+
+#### build.bat (Windows)
+```bash
+scripts\build.bat [Release^|Debug]
+```
+
+#### build.sh (Linux/macOS)
+```bash
+chmod +x scripts/build.sh
+./scripts/build.sh [Release^|Debug]
+```
+
+---
+
+## Переменные окружения
 
 | Переменная | Описание | По умолчанию |
 |------------|----------|--------------|
-| `MTProxy_HOST` | Хост сервера | 127.0.0.1 |
-| `MTProxy_PORT` | Порт статистики | 8888 |
-| `CHECK_INTERVAL` | Интервал проверки (сек) | 60 |
-| `ALERT_EMAIL` | Email для алертов | - |
-| `LOG_FILE` | Путь к лог-файлу | /var/log/mtproxy-monitor.log |
+| `MTProxy_BUILD_DIR` | Директория сборки | `build` |
+| `MTProxy_BIN_DIR` | Директория бинарников | `build/bin` |
+| `MTProxy_TESTS` | Запуск тестов | `1` |
 
-**Пример с переменными:**
+---
 
+## Примеры использования
+
+### Быстрая сборка и тестирование
+
+**Windows:**
 ```bash
-MTProxy_HOST=192.168.1.100 \
-MTProxy_PORT=9999 \
-CHECK_INTERVAL=30 \
-./monitor.sh monitor
+# Сборка
+scripts\build.bat Release
+
+# Тесты
+scripts\run_all_tests.bat
 ```
 
-**Оповещения:**
-
-Скрипт поддерживает отправку алертов через:
-- Email (требуется `mail` команда)
-- Telegram (требуется доработка)
-- Slack (требуется доработка)
-
----
-
-### 2. metrics_collector.py - Сборщик метрик
-
-Python-скрипт для сбора и экспорта метрик MTProxy.
-
-**Требования:**
-- Python 3.6+
-- Стандартная библиотека (нет внешних зависимостей)
-
-**Использование:**
-
+**Linux/macOS:**
 ```bash
-# Показать статус
-python3 metrics_collector.py status
+# Сборка
+./scripts/build.sh Release
 
-# Показать метрики (текст)
-python3 metrics_collector.py metrics
-
-# Показать метрики (JSON)
-python3 metrics_collector.py metrics --format json
-
-# Показать метрики (Prometheus)
-python3 metrics_collector.py metrics --format prometheus
-
-# Проверка здоровья
-python3 metrics_collector.py health
-
-# Непрерывное наблюдение
-python3 metrics_collector.py watch --interval 5
-
-# Экспорт метрик
-python3 metrics_collector.py export --format json --output metrics.json
+# Тесты
+./scripts/run_all_tests.sh
 ```
 
-**Параметры:**
+### Debug сборка с ASan
 
-| Параметр | Описание | По умолчанию |
-|----------|----------|--------------|
-| `--host` | Хост сервера | 127.0.0.1 |
-| `--port` | Порт статистики | 8888 |
-| `--timeout` | Таймаут запроса (сек) | 5 |
-
-**Примеры:**
-
+**Windows:**
 ```bash
-# Подключение к удаленному серверу
-python3 metrics_collector.py --host 192.168.1.100 --port 9999 status
-
-# Экспорт в Prometheus формат для Grafana
-python3 metrics_collector.py export --format prometheus > /var/lib/prometheus/mtproxy.metrics
-
-# Мониторинг с интервалом 10 секунд
-python3 metrics_collector.py watch --interval 10 --format json
+cmake -G Ninja -DCMAKE_MAKE_PROGRAM=deps\ninja.exe -DCMAKE_BUILD_TYPE=Debug -DENABLE_ASAN=ON -B build
+cmake --build build
 ```
 
----
-
-### 3. update-secrets.sh - Обновление секретов
-
-Скрипт для обновления конфигурации и секретов от Telegram.
-
-**Использование:**
-
+**Linux:**
 ```bash
-# Обновить секреты
-./update-secrets.sh
-
-# Обновить только конфигурацию
-./update-secrets.sh --config-only
-
-# Обновить только секреты
-./update-secrets.sh --secrets-only
-```
-
-**Автоматизация (cron):**
-
-```bash
-# Обновлять каждый день в 3:00
-0 3 * * * /path/to/MTProxy/scripts/update-secrets.sh
+cmake -DCMAKE_BUILD_TYPE=Debug -DENABLE_ASAN=ON -B build
+cmake --build build
 ```
 
 ---
 
-### 4. update-secrets.bat - Обновление секретов (Windows)
+## Выходные данные тестов
 
-Аналог update-secrets.sh для Windows.
+После запуска тестов вы увидите:
 
-**Использование:**
+```
+========================================
+  MTProxy - Запуск всех тестов
+========================================
 
-```batch
-update-secrets.bat
+----------------------------------------
+Запуск: New Modules Tests
+----------------------------------------
+===========================================
+  MTProxy New Modules Test Suite
+===========================================
+...
+===========================================
+  Test Summary
+===========================================
+  Total:  45
+  Passed: 45
+  Failed: 0
+===========================================
+✅ New Modules Tests: PASSED
+
+...
+
+========================================
+  Статистика тестирования
+========================================
+Всего тестов: 6
+Пройдено: 6
+Не пройдено: 0
+========================================
+✅ Все тесты пройдены!
 ```
 
 ---
 
-### 5. build_windows.bat - Сборка на Windows
+## Интеграция с CI/CD
 
-Скрипт для сборки MTProxy на Windows.
-
-**Требования:**
-- MinGW или Visual Studio
-- OpenSSL для Windows
-- zlib для Windows
-
-**Использование:**
-
-```batch
-build_windows.bat
-```
-
----
-
-## 🔗 Интеграция
-
-### Systemd сервис для мониторинга
-
-Создайте файл `/etc/systemd/system/mtproxy-monitor.service`:
-
-```ini
-[Unit]
-Description=MTProxy Monitor
-After=network.target mtproxy.service
-
-[Service]
-Type=simple
-ExecStart=/path/to/MTProxy/scripts/monitor.sh monitor
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Активация:
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable mtproxy-monitor
-sudo systemctl start mtproxy-monitor
-```
-
----
-
-### Grafana Dashboard
-
-Импортируйте дашборд из `scripts/grafana-dashboard.json` (если доступен).
-
-**Настройка:**
-
-1. Добавьте Prometheus data source
-2. Импортируйте дашборд
-3. Настройте алерты
-
----
-
-### Prometheus Configuration
-
-Добавьте в `prometheus.yml`:
+### GitHub Actions
 
 ```yaml
-scrape_configs:
-  - job_name: 'mtproxy'
-    static_configs:
-      - targets: ['localhost:8888']
-    metrics_path: '/metrics'
-    scrape_interval: 15s
+name: Tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get install -y libssl-dev zlib1g-dev  # Ubuntu
+          brew install openssl zlib                      # macOS
+      
+      - name: Build
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build -j$(nproc)
+      
+      - name: Test
+        run: |
+          ./scripts/run_all_tests.sh build
 ```
 
 ---
 
-## 📊 Метрики
+## Поддерживаемые тесты
 
-Скрипт `metrics_collector.py` собирает следующие метрики:
-
-### Общие метрики
-- `mtproxy_up` - Статус сервера (1=OK, 0=DOWN)
-- `mtproxy_uptime_seconds` - Время работы сервера
-- `mtproxy_connections_active` - Активные соединения
-- `mtproxy_connections_total` - Всего соединений
-
-### Метрики производительности
-- `mtproxy_cpu_usage_percent` - Использование CPU
-- `mtproxy_memory_usage_bytes` - Использование памяти
-- `mtproxy_requests_per_second` - Запросов в секунду
-
-### Метрики кэша
-- `mtproxy_cache_entries` - Количество записей в кэше
-- `mtproxy_cache_hits_total` - Всего попаданий в кэш
-- `mtproxy_cache_misses_total` - Всего промахов кэша
-- `mtproxy_cache_hit_rate` - Процент попаданий
-
-### Метрики rate limiting
-- `mtproxy_ratelimit_requests_total` - Всего запросов
-- `mtproxy_ratelimit_rejections_total` - Отклонено по лимиту
-- `mtproxy_ratelimit_active_limits` - Активные лимиты
+| Тест | Файл | Описание |
+|------|------|----------|
+| **New Modules** | test-new-modules.exe | Тесты новых модулей (cache, rate-limiter, error-handler) |
+| **Utils** | test-utils.exe | Тесты утилит (строки, память, хэши) |
+| **Traffic Stats** | test-traffic-stats.exe | Тесты статистики трафика |
+| **Integration** | integration-tests-simple.exe | Интеграционные тесты |
+| **Cache Performance** | cache-performance-test-simple.exe | Тесты производительности кэша |
+| **Rate Limiter** | rate-limiter-highload-test-simple.exe | Тесты нагрузки rate-limiter |
 
 ---
 
-## 🛠️ Troubleshooting
+## Покрытие кода
 
-### monitor.sh не работает
+Для измерения покрытия кода используйте gcov/lcov:
 
-1. Проверьте права на выполнение:
-   ```bash
-   chmod +x monitor.sh
-   ```
+**Linux:**
+```bash
+# Сборка с покрытием
+cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="--coverage" -DCMAKE_EXE_LINKER_FLAGS="--coverage" -B build
+cmake --build build
 
-2. Проверьте доступность команд:
-   ```bash
-   which nc ss curl
-   ```
+# Запуск тестов
+./scripts/run_all_tests.sh build
 
-3. Проверьте логи:
-   ```bash
-   tail -f /var/log/mtproxy-monitor.log
-   ```
+# Генерация отчёта
+lcov --capture --directory build --output-file coverage.info
+genhtml coverage.info --output-directory coverage_report
+```
 
-### metrics_collector.py выдает ошибку
-
-1. Проверьте версию Python:
-   ```bash
-   python3 --version
-   ```
-
-2. Проверьте доступность порта:
-   ```bash
-   curl http://127.0.0.1:8888/stats
-   ```
-
-3. Запустите с отладкой:
-   ```bash
-   python3 -v metrics_collector.py status
-   ```
+**Просмотр отчёта:**
+```bash
+xdg-open coverage_report/index.html  # Linux
+open coverage_report/index.html      # macOS
+start coverage_report\index.html     # Windows
+```
 
 ---
 
-## 📝 Лицензия
+## Дополнительные ресурсы
 
-Скрипты распространяются под той же лицензией, что и MTProxy.
-
----
-
-## 🤝 Contributing
-
-Вносите изменения через pull requests в ветку `dev`.
-
----
-
-*Последнее обновление: Март 2026*
+- [DEBUGGING.md](../docs/DEBUGGING.md) — Руководство по отладке
+- [TROUBLESHOOTING.md](../docs/TROUBLESHOOTING.md) — Диагностика проблем
+- [PERFORMANCE_TUNING.md](../docs/PERFORMANCE_TUNING.md) — Оптимизация производительности
