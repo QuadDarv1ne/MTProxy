@@ -9,7 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed (Март 2026)
 
-#### Безопасность работы со строками
+#### Безопасность работы со строками (часть 3)
+- **common/audit-log.c**: замена `strncpy` на `utils_strcpy` (8 мест)
+  - get_hostname: buffer для hostname
+  - audit_logger_init: current_path
+  - audit_log_event: message
+  - audit_log_security: ip_address, user_id
+  - audit_log_config_change: user_id
+  - audit_log_client_connect: ip_address
+  - audit_log_client_disconnect: ip_address
+  - Добавлен `#include "common/utils.h"`
+
+- **common/windows-ipc.c**: замена `strncpy` на `utils_strcpy` (2 места)
+  - ipc_parent_init: pipe_name
+  - ipc_worker_connect: pipe_name
+  - Добавлен `#include "common/utils.h"`
+
+#### Безопасность работы со строками (часть 2)
+- **common/config-manager.c**: замена `strncpy` на `utils_strcpy` (7 мест)
+  - config_manager_init: builtin секции и config_file_path
+  - config_manager_create_section: имя секции
+  - config_manager_register_parameter: name, description, default_value
+  - config_manager_add_history_entry: section, parameter, old_value, new_value, changed_by
+  - Добавлен `#include "common/utils.h"`
+
+- **common/config-profiles.c**: замена `strncpy` на `utils_strncpy` (2 места)
+  - config_profiles_create: name и description профиля
+  - Добавлен `#include "common/utils.h"`
+
+#### Безопасность работы со строками (часть 1)
 - **admin/admin-cli.c**: замена `strcpy` на `utils_strcpy` в `admin_cli_format_json()`
   - Добавлена проверка `malloc` на NULL
   - Безопасное копирование с проверкой границ
