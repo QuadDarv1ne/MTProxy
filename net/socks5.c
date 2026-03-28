@@ -4,6 +4,7 @@
  */
 
 #include "socks5.h"
+#include "common/utils.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -33,7 +34,7 @@ int socks5_server_init(socks5_server_t *server, socks5_config_t *config) {
     } else {
         /* Конфигурация по умолчанию */
         server->config.port = SOCKS5_PORT;
-        strcpy(server->config.bind_address, "0.0.0.0");
+        utils_strcpy(server->config.bind_address, "0.0.0.0", sizeof(server->config.bind_address));
         server->config.auth_enabled = 0;
         server->config.allow_udp = 1;
     }

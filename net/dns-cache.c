@@ -4,6 +4,7 @@
  */
 
 #include "dns-cache.h"
+#include "common/utils.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -40,8 +41,8 @@ int dns_cache_init(dns_cache_ctx_t *ctx, dns_config_t *config) {
         memcpy(&ctx->config, config, sizeof(dns_config_t));
     } else {
         /* Конфигурация по умолчанию */
-        strcpy(ctx->config.upstream_dns[0], "8.8.8.8");
-        strcpy(ctx->config.upstream_dns[1], "8.8.4.4");
+        utils_strcpy(ctx->config.upstream_dns[0], "8.8.8.8", sizeof(ctx->config.upstream_dns[0]));
+        utils_strcpy(ctx->config.upstream_dns[1], "8.8.4.4", sizeof(ctx->config.upstream_dns[1]));
         ctx->config.upstream_count = 2;
         ctx->config.cache_enabled = 1;
         ctx->config.cache_ttl = DNS_CACHE_DEFAULT_TTL;

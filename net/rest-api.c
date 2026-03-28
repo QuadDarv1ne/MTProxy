@@ -4,6 +4,7 @@
  */
 
 #include "rest-api.h"
+#include "common/utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -116,7 +117,7 @@ void http_response_init(http_response_t *response,
     if (body) {
         size_t len = strlen(body);
         if (len < sizeof(response->body)) {
-            strcpy(response->body, body);
+            utils_strcpy(response->body, body, sizeof(response->body));
             response->body_length = len;
         }
     }
