@@ -19,12 +19,7 @@
 #include "common/rate-limiter.h"
 #include "common/kprintf.h"
 #include "common/crc32.h"
-
-// Хэш-функция для ключа
-static uint64_t rate_limit_hash(const char *key) {
-    if (!key) return 0;
-    return crc32_partial(key, strlen(key), -1) ^ -1;
-}
+#include "common/utils.h"
 
 // Создание новой записи
 static rate_limit_entry_t* rate_limit_create_entry(const char *key) {
@@ -62,8 +57,8 @@ static void rate_limit_free_entry(rate_limit_entry_t *entry) {
 // Поиск записи
 static rate_limit_entry_t* rate_limit_find_entry(rate_limiter_t *limiter, const char *key) {
     if (!limiter || !key || !limiter->buckets) return NULL;
-    
-    uint64_t hash = rate_limit_hash(key);
+
+    uint64_t hash = utils_hash_djb2(key, strlen(key));
     size_t bucket_idx = hash % limiter->bucket_count;
     
     rate_limit_entry_t *entry = limiter->buckets[bucket_idx];
@@ -80,8 +75,8 @@ static rate_limit_entry_t* rate_limit_find_entry(rate_limiter_t *limiter, const 
 // Добавление записи в хэш-таблицу
 static int rate_limit_add_entry(rate_limiter_t *limiter, rate_limit_entry_t *entry) {
     if (!limiter || !entry || !limiter->buckets) return -1;
-    
-    uint64_t hash = rate_limit_hash(entry->key);
+
+    uint64_t hash = utils_hash_djb2(entry->key, strlen(entry->key));
     size_t bucket_idx = hash % limiter->bucket_count;
     
     entry->next = limiter->buckets[bucket_idx];
@@ -98,8 +93,8 @@ static int rate_limit_add_entry(rate_limiter_t *limiter, rate_limit_entry_t *ent
 // Удаление записи из хэш-таблицы
 static int rate_limit_remove_entry(rate_limiter_t *limiter, rate_limit_entry_t *entry) {
     if (!limiter || !entry || !limiter->buckets) return -1;
-    
-    uint64_t hash = rate_limit_hash(entry->key);
+
+    uint64_t hash = utils_hash_djb2(entry->key, strlen(entry->key));
     size_t bucket_idx = hash % limiter->bucket_count;
     
     if (entry->prev) {

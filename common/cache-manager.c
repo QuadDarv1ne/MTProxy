@@ -20,18 +20,7 @@
 #include "common/cache-manager.h"
 #include "common/kprintf.h"
 #include "common/crc32.h"
-
-// Простая реализация хэш-функции Jenkins
-uint64_t cache_hash_key(const char *key) {
-    if (!key) return 0;
-    
-    uint64_t hash = 0;
-    while (*key) {
-        hash = hash * 31 + (unsigned char)(*key);
-        key++;
-    }
-    return hash;
-}
+#include "common/utils.h"
 
 // Создание новой записи кэша
 static cache_entry_t* cache_create_entry(const char *key, const void *data, 
@@ -59,8 +48,8 @@ static cache_entry_t* cache_create_entry(const char *key, const void *data,
     entry->expiry_time = (ttl > 0) ? entry->creation_time + ttl : 0;
     entry->access_count = 0;
     entry->frequency = 0;
-    entry->hash = cache_hash_key(key);
-    
+    entry->hash = utils_hash_djb2(key, strlen(key));
+
     return entry;
 }
 
@@ -83,9 +72,9 @@ static int cache_is_expired(cache_entry_t *entry) {
 // Поиск записи в хэш-таблице
 static cache_entry_t* cache_find_entry(cache_manager_t *cache, const char *key) {
     if (!cache || !key || !cache->partitions) return NULL;
-    
+
     // Выбор раздела по хэшу
-    uint64_t hash = cache_hash_key(key);
+    uint64_t hash = utils_hash_djb2(key, strlen(key));
     int partition_idx = hash % cache->partition_count;
     cache_partition_t *partition = &cache->partitions[partition_idx];
     
