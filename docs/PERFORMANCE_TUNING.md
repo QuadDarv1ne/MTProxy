@@ -1,555 +1,538 @@
-# MTProxy Performance Tuning Guide
+# Performance Tuning Guide
 
-Руководство по настройке и оптимизации производительности MTProxy
+Руководство по оптимизации производительности MTProxy.
 
----
+## Содержание
 
-## 📋 Содержание
-
-1. [Архитектура производительности](#архитектура-производительности)
+1. [Быстрая настройка](#быстрая-настройка)
 2. [Оптимизация сборки](#оптимизация-сборки)
 3. [Настройка runtime](#настройка-runtime)
 4. [Оптимизация памяти](#оптимизация-памяти)
 5. [Сетевая оптимизация](#сетевая-оптимизация)
-6. [Криптографические оптимизации](#криптографические-оптимизации)
+6. [Многопоточность](#многопоточность)
 7. [Мониторинг и профилирование](#мониторинг-и-профилирование)
-8. [Best Practices](#best-practices)
+8. [Бенчмарки](#бенчмарки)
 
 ---
 
-## 🏗️ Архитектура производительности
+## Быстрая настройка
 
-### Компоненты системы
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    MTProxy Server                       │
-├─────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐    │
-│  │   Worker 1  │  │   Worker 2  │  │   Worker N  │    │
-│  │  (Thread)   │  │  (Thread)   │  │  (Thread)   │    │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘    │
-│         │                │                │            │
-│  ┌──────┴────────────────┴────────────────┴──────┐    │
-│  │          Connection Pool Manager              │    │
-│  └─────────────────────┬─────────────────────────┘    │
-│                        │                               │
-│  ┌─────────────────────┴─────────────────────────┐    │
-│  │           Event Loop (epoll/IOCP)             │    │
-│  └─────────────────────┬─────────────────────────┘    │
-│                        │                               │
-│  ┌─────────────────────┴─────────────────────────┐    │
-│  │        Crypto Engine (AES-NI/ARM NEON)        │    │
-│  └───────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────┘
-```
-
-### Ключевые метрики
-
-| Метрика | Описание | Цель |
-|---------|----------|------|
-| **Connections/sec** | Новые подключения в секунду | 10K+ |
-| **Throughput** | Пропускная способность | 1 Gbps+ |
-| **Latency (p50)** | Средняя задержка | < 5ms |
-| **Latency (p99)** | 99-й перцентиль задержки | < 20ms |
-| **Memory/conn** | Память на подключение | < 50KB |
-| **CPU usage** | Использование CPU (idle) | < 2% |
-
----
-
-## 🔨 Оптимизация сборки
-
-### Компилятор и флаги
-
-#### Linux/macOS
+### Оптимальная конфигурация для production
 
 ```bash
-# Базовая оптимизированная сборка
-mkdir build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release \
-      -DBUILD_OPTIMIZATION_LEVEL=O3 \
-      -DENABLE_LTO=ON \
-      ..
-cmake --build . --parallel $(nproc)
+# Запуск с оптимизированными параметрами
+./mtproto-proxy.exe \
+  -p 8888 \
+  -M 4 \
+  --tcp-buffer-size 262144 \
+  --max-connections 65535 \
+  --cache-size 256 \
+  --optimize-for-throughput \
+  --tcp-nodelay \
+  --tcp-keepalive
+```
+
+**Параметры:**
+- `-M 4` — 4 worker потока (адаптируйте под CPU)
+- `--tcp-buffer-size 262144` — 256KB буфер
+- `--max-connections 65535` — максимум подключений
+- `--cache-size 256` — 256MB кэш
+- `--optimize-for-throughput` — оптимизация пропускной способности
+- `--tcp-nodelay` — отключение Nagle algorithm
+- `--tcp-keepalive` — keepalive соединения
+
+---
+
+## Оптимизация сборки
+
+### Compiler optimizations
+
+**Release сборка с максимальными оптимизациями:**
+
+```bash
+cd build
+rm -rf *
+cmake -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_C_FLAGS="-O3 -march=native -flto -ffunction-sections -fdata-sections" \
+  -DCMAKE_EXE_LINKER_FLAGS="-flto -Wl,--gc-sections" \
+  -DCMAKE_MAKE_PROGRAM=../deps/ninja.exe \
+  ..
+cmake --build . -j$(nproc)
 ```
 
 **Флаги оптимизации:**
-
-| Флаг | Описание | Эффект |
-|------|----------|--------|
-| `-O3` | Максимальная оптимизация | +20-30% скорости |
-| `-march=native` | Оптимизация под текущий CPU | +10-15% |
-| `-flto=auto` | Link-Time Optimization | +5-10% |
-| `-funroll-loops` | Развёртка циклов | +5% |
-| `-ftree-vectorize` | Векторизация | +10-20% |
-
-#### Windows (MSYS2/UCRT64)
-
-```bash
-mkdir build && cd build
-cmake -G "MinGW Makefiles" \
-      -DCMAKE_BUILD_TYPE=Release \
-      -DBUILD_OPTIMIZATION_LEVEL=O3 \
-      ..
-cmake --build . --parallel
-```
-
-**Заметка:** LTO отключён на Windows для кроссплатформенной совместимости.
+- `-O3` — максимальная оптимизация
+- `-march=native` — оптимизация под текущий CPU
+- `-flto` — Link-Time Optimization
+- `-ffunction-sections` — размещение функций в отдельных секциях
+- `-fdata-sections` — размещение данных в отдельных секциях
+- `-Wl,--gc-sections` — удаление неиспользуемых секций
 
 ### Profile-Guided Optimization (PGO)
 
-PGO позволяет компилятору оптимизировать код на основе реального профиля использования.
+**Этап 1: Сборка с инструментацией**
 
 ```bash
-# Шаг 1: Сборка с инструментацией
-cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_PGO=ON ..
-cmake --build . --parallel
-
-# Шаг 2: Запуск с типичной нагрузкой
-./mtproto-proxy -p 8888 ...
-# Прогоните типичный трафик в течение 5-10 минут
-
-# Шаг 3: Пересборка с использованием профиля
-cmake -DCMAKE_BUILD_TYPE=Release -DUSE_PGO_PROFILE=ON ..
-cmake --build . --parallel
+cd build
+rm -rf *
+cmake -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DENABLE_PGO=ON \
+  -DCMAKE_MAKE_PROGRAM=../deps/ninja.exe \
+  ..
+cmake --build .
 ```
 
-**Эффект от PGO:** +10-20% производительности
-
-### AddressSanitizer для отладки
+**Этап 2: Сбор профилировочных данных**
 
 ```bash
-# Debug сборка с санитайзерами
-cmake -DCMAKE_BUILD_TYPE=Debug -DENABLE_ASAN=ON ..
-cmake --build . --parallel
+# Запуск с типичной нагрузкой (30-60 минут)
+./bin/mtproto-proxy.exe -p 8888 -M 4
+
+# Или через нагрузочное тестирование
+ab -n 1000000 -c 100 http://localhost:8888/stats
 ```
 
-**Использование:** Обнаружение утечек памяти, buffer overflow, use-after-free
+**Этап 3: Пересборка с использованием профиля**
+
+```bash
+cd build
+cmake -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DUSE_PGO_PROFILE=ON \
+  -DCMAKE_MAKE_PROGRAM=../deps/ninja.exe \
+  ..
+cmake --build .
+```
+
+**Ожидаемый прирост:** +10-20% производительности
+
+### Cross-Platform оптимизации
+
+**Linux (с io_uring):**
+
+```bash
+cmake -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DENABLE_IO_URING=ON \
+  -DCMAKE_C_FLAGS="-O3 -march=native" \
+  ..
+```
+
+**Windows:**
+
+```bash
+cmake -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_C_FLAGS="-O3 -march=x86-64-v3" \
+  -DCMAKE_MAKE_PROGRAM=../deps/ninja.exe \
+  ..
+```
+
+**ARM64 (Raspberry Pi 4+):**
+
+```bash
+cmake -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DENABLE_ARM64_CRYPTO=ON \
+  -DCMAKE_C_FLAGS="-O3 -march=armv8-a+crypto+neon" \
+  ..
+```
 
 ---
 
-## ⚙️ Настройка runtime
+## Настройка runtime
 
-### Количество workers
+### Выбор количества workers
 
-Оптимальное количество workers зависит от количества CPU ядер:
-
+**Авто-детект (по умолчанию):**
 ```bash
-# Авто-детект количества ядер
-NPROC=$(nproc)  # Linux
-# NPROC=$(sysctl -n hw.ncpu)  # macOS
+./mtproto-proxy.exe -p 8888
+# workers = CPU cores (минимум 2, максимум MAX_WORKERS)
+```
 
-# Запуск с оптимальным количеством workers
-./mtproto-proxy -M $NPROC ...
+**Ручная настройка:**
+```bash
+# Формула: workers = CPU_cores * 2
+./mtproto-proxy.exe -M 8 -p 8888  # для 4-ядерного CPU
 ```
 
 **Рекомендации:**
+- 2 ядра: `-M 2-4`
+- 4 ядра: `-M 4-8`
+- 8 ядер: `-M 8-16`
+- 16+ ядер: `-M 16-32`
 
-| Сценарий | Workers | Обоснование |
-|----------|---------|-------------|
-| Low-load (< 1K conn) | 1-2 | Минимальное использование памяти |
-| Medium-load (1K-10K conn) | 4-8 | Баланс между производительностью и памятью |
-| High-load (> 10K conn) | N ядер | Максимальная производительность |
-
-### Параметры командной строки
+### Оптимизация TCP параметров
 
 ```bash
-./mtproto-proxy \
-  -u nobody \              # Пользователь (безопасность)
-  -p 8888 \                # Порт статистики
-  -H 443 \                 # Порт для клиентов
-  -S <secret> \            # Secret ключ
-  -M 4 \                   # Количество workers
-  --max-connections 10000 \ # Лимит подключений
-  --buffer-size 8192 \     # Размер буфера
-  --rate-limit 100 \       # Rate limiting
-  --aes-pwd proxy-secret \ # AES password
-  proxy-multi.conf
+./mtproto-proxy.exe \
+  -p 8888 \
+  --tcp-buffer-size 262144 \
+  --tcp-nodelay \
+  --tcp-keepalive \
+  --tcp-keepidle 60 \
+  --tcp-keepintvl 10 \
+  --tcp-keepcnt 6
 ```
 
-**Критичные параметры:**
+**Параметры:**
+- `--tcp-buffer-size` — размер буфера (128KB-512KB)
+- `--tcp-nodelay` — отключение алгоритма Нейгла
+- `--tcp-keepalive` — включение keepalive
+- `--tcp-keepidle` — время до первого keepalive (сек)
+- `--tcp-keepintvl` — интервал между keepalive (сек)
+- `--tcp-keepcnt` — количество keepalive попыток
 
-| Параметр | Рекомендация | Влияние |
-|----------|--------------|---------|
-| `-M` (workers) | = количеству ядер | Производительность |
-| `--max-connections` | 10000-100000 | Использование памяти |
-| `--buffer-size` | 4096-16384 | Память vs производительность |
-| `--rate-limit` | 50-200 запросов/сек | Защита от DDoS |
-
----
-
-## 💾 Оптимизация памяти
-
-### Кэширование
-
-MTProxy поддерживает 5 алгоритмов кэширования:
-
-```c
-// Конфигурация кэша
-cache_config_t config = {
-    .type = CACHE_TYPE_MEMORY,
-    .policy = CACHE_LRU,        // LRU, LFU, FIFO, TTL, ARC
-    .max_entries = 10000,
-    .max_size_mb = 256,
-    .default_ttl_sec = 300,
-    .enable_partitioning = 1,   // Multi-threading
-    .num_partitions = 8         // Количество разделов
-};
-```
-
-**Выбор алгоритма:**
-
-| Алгоритм | Сценарий | Hit Rate |
-|----------|----------|----------|
-| **LRU** | Универсальный | 80-90% |
-| **LFU** | Частые запросы к одним данным | 85-95% |
-| **FIFO** | Простые сценарии | 70-80% |
-| **TTL** | Временные данные | 75-85% |
-| **ARC** | Адаптивный | 90-95% |
-
-**Рекомендации:**
-
-1. **Включите partitioning для многопоточности:**
-   ```bash
-   cache.enable_partitioning = true
-   cache.num_partitions = 8  # По количеству CPU ядер
-   ```
-
-2. **Настройте TTL для сессионных данных:**
-   ```bash
-   cache.default_ttl = 300  # 5 минут
-   ```
-
-3. **Мониторьте hit rate:**
-   ```bash
-   admin-cli cache-stats
-   # Цель: hit rate > 80%
-   ```
-
-### Управление памятью
-
-####jemalloc/tcmalloc
-
-Для high-load сценариев используйте альтернативные аллокаторы:
+### Оптимизация таймаутов
 
 ```bash
-# Сборка с jemalloc
-cmake -DSTATIC_LINKING=ON ..
-LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so ./mtproto-proxy ...
-
-# или tcmalloc
-LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libtcmalloc.so ./mtproto-proxy ...
-```
-
-**Эффект:**
-- Уменьшение фрагментации памяти
-- Улучшение производительности на 10-20%
-- Лучшая масштабируемость на многопоточных системах
-
-#### Настройка аллокатора
-
-```bash
-# jemalloc настройки
-export MALLOC_CONF=background_thread:true,metadata_thp:auto,dirty_decay_ms:30000,muzzy_decay_ms:30000
-
-# tcmalloc настройки
-export TCMALLOC_RELEASE_RATE=1.0
-export TCMALLOC_MAX_TOTAL_THREAD_CACHE_BYTES=268435456
+./mtproto-proxy.exe \
+  -p 8888 \
+  --read-timeout 300 \
+  --write-timeout 300 \
+  --connect-timeout 30 \
+  --accept-timeout 1000
 ```
 
 ---
 
-## 🌐 Сетевая оптимизация
+## Оптимизация памяти
 
-### TCP настройки
+### Low-memory режим
 
-#### Linux
-
-```bash
-# Увеличение буферов TCP
-sysctl -w net.core.rmem_max=16777216
-sysctl -w net.core.wmem_max=16777216
-sysctl -w net.ipv4.tcp_rmem="4096 87380 16777216"
-sysctl -w net.ipv4.tcp_wmem="4096 65536 16777216"
-
-# Включение TCP Fast Open
-sysctl -w net.ipv4.tcp_fastopen=3
-
-# Оптимизация TIME_WAIT
-sysctl -w net.ipv4.tcp_tw_reuse=1
-sysctl -w net.ipv4.tcp_fin_timeout=30
-
-# Увеличение очереди входящих соединений
-sysctl -w net.core.somaxconn=65535
-sysctl -w net.ipv4.tcp_max_syn_backlog=65535
-```
-
-#### Windows
-
-```powershell
-# Увеличение TCP буферов
-netsh int tcp set global autotuninglevel=normal
-netsh int tcp set global chimney=enabled
-netsh int tcp set global dca=enabled
-netsh int tcp set global netdma=enabled
-netsh int tcp set global ecncapability=enabled
-```
-
-### Socket опции
-
-```c
-// В конфигурации MTProxy
-socket.reuseaddr = true
-socket.nodelay = true      # Отключение Nagle's algorithm
-socket.keepalive = true
-socket.keepalive_time = 60 # seconds
-socket.keepalive_interval = 10
-socket.keepalive_probes = 3
-```
-
-### Zero-Copy IO (Linux 5.1+)
+Для систем с ограниченной памятью (< 512MB):
 
 ```bash
-# Включение io_uring для асинхронного IO
-cmake -DENABLE_IO_URING=ON ..
+# Сборка в low-memory режиме
+cmake -DENABLE_LOW_MEMORY=ON ..
+cmake --build .
+
+# Запуск с ограничением памяти
+./mtproto-proxy.exe \
+  -p 8888 \
+  --cache-size 64 \
+  --pool-size 32 \
+  --max-connections 10000
 ```
 
-**Требования:**
-- Linux kernel 5.1+
-- Файловая система с поддержкой io_uring (ext4, xfs)
+### Настройка кэша
 
-**Эффект:** +20-30% производительности для high-load
+```bash
+./mtproto-proxy.exe \
+  -p 8888 \
+  --cache-size 256 \
+  --cache-algorithm lru \
+  --cache-partitions 16
+```
+
+**Алгоритмы кэширования:**
+- `lru` — Least Recently Used (по умолчанию)
+- `lfu` — Least Frequently Used
+- `fifo` — First In First Out
+- `arc` — Adaptive Replacement Cache
+
+**Размер кэша:**
+- 64MB — low-memory системы
+- 128MB — стандартная конфигурация
+- 256MB — high-performance
+- 512MB+ — enterprise
+
+### Настройка memory pool
+
+```bash
+./mtproto-proxy.exe \
+  -p 8888 \
+  --use-memory-pool \
+  --pool-size 128 \
+  --pool-block-size 4096
+```
 
 ---
 
-## 🔐 Криптографические оптимизации
+## Сетевая оптимизация
 
-### AES-NI (x86_64)
-
-Проверка поддержки:
+### Оптимизация для высокой пропускной способности
 
 ```bash
-grep -o aes /proc/cpuinfo
+./mtproto-proxy.exe \
+  -p 8888 \
+  --optimize-for-throughput \
+  --tcp-buffer-size 524288 \
+  --max-packet-size 262144 \
+  --send-buffer-size 524288 \
+  --recv-buffer-size 524288
 ```
 
-**Эффект:** 10-20x ускорение AES шифрования
-
-### ARM NEON (ARM64)
-
-Для Raspberry Pi и ARM серверов:
+### Оптимизация для низкой задержки
 
 ```bash
-# Проверка поддержки NEON
-grep -o neon /proc/cpuinfo
+./mtproto-proxy.exe \
+  -p 8888 \
+  --optimize-for-latency \
+  --tcp-nodelay \
+  --tcp-buffer-size 65536 \
+  --max-packet-size 16384 \
+  --flush-interval 1
 ```
 
-**Планируется:** Реализация ARM NEON оптимизаций для AES
+### Настройка сокетов
 
-### Crypto Pool
-
-Кэширование криптографических контекстов:
-
-```c
-// Предвычисление ключей для часто используемых сессий
-crypto_opt_precompute_keys(crypto_opt, keys, num_keys, key_size);
+```bash
+./mtproto-proxy.exe \
+  -p 8888 \
+  --socket-backlog 4096 \
+  --reuse-port \
+  --reuse-addr \
+  --no-delay
 ```
-
-**Эффект:** Уменьшение задержки на 30-50% для повторных подключений
 
 ---
 
-## 📊 Мониторинг и профилирование
+## Многопоточность
 
-### Встроенная статистика
+### Конфигурация потоков
 
 ```bash
-# Получение статистики
-wget localhost:8888/stats
-
-# REST API (если интегрирован)
-curl localhost:8888/api/v1/stats
-curl localhost:8888/api/v1/metrics  # Prometheus format
+./mtproto-proxy.exe \
+  -p 8888 \
+  -M 8 \
+  --io-threads 16 \
+  --cpu-threads 8 \
+  --tcp-cpu-threads 4 \
+  --tcp-io-threads 8
 ```
 
-### Admin CLI
+**Параметры:**
+- `-M` — количество workers
+- `--io-threads` — потоки ввода-вывода
+- `--cpu-threads` — CPU потоки
+- `--tcp-cpu-threads` — TCP CPU потоки
+- `--tcp-io-threads` — TCP IO потоки
+
+### Балансировка нагрузки
+
+Для многопоточного режима:
 
 ```bash
-# Статус сервера
-admin-cli status
+./mtproto-proxy.exe \
+  -p 8888 \
+  -M 4 \
+  --accept-round-robin \
+  --connection-balance
+```
 
-# Статистика
-admin-cli stats
+---
 
-# Кэш статистика
-admin-cli cache-stats
+## Мониторинг и профилирование
 
-# Активные подключения
-admin-cli connections
+### Встроенный мониторинг
+
+```bash
+# Статистика в реальном времени
+watch -n 1 'curl -s http://localhost:8888/stats | jq'
+
+# Метрики Prometheus
+curl http://localhost:8888/metrics
 
 # Health check
-admin-cli health
+curl http://localhost:8888/health
 ```
 
-### Профилирование
-
-#### perf (Linux)
+### Профилирование с perf (Linux)
 
 ```bash
-# CPU профилирование
-perf record -g -p $(pgrep mtproto) sleep 30
-perf report
+# Запись профиля
+perf record -g -p $(pgrep mtproto-proxy) sleep 30
 
-# Анализ cache misses
-perf stat -e cache-references,cache-misses -p $(pgrep mtproto)
+# Анализ
+perf report --stdio
+
+# Или через flamegraph
+perf script | stackcollapse-perf.pl | flamegraph.pl > flame.svg
 ```
 
-#### eBPF/bpftrace (Linux 4.x+)
+### Профилирование с VTune (Windows)
 
 ```bash
-# Трассировка системных вызовов
-bpftrace -e 'tracepoint:syscalls:sys_enter_read { @reads = count(); }'
+# Запуск с профилированием
+vtune -collect hotspots -result-dir vtune_result \
+  mtproto-proxy.exe -p 8888
 
-# Анализ задержек
-bpftrace -e 'kprobe:tcp_recvmsg { @start = nsecs; } kretprobe:tcp_recvmsg { @latency = hist(nsecs - @start); }'
+# Анализ
+vtune -report summary -result-dir vtune_result
 ```
 
-#### Valgrind (отладка)
+### Профилирование памяти
 
 ```bash
-# Проверка утечек памяти
-valgrind --leak-check=full --show-leak-kinds=all ./mtproto-proxy ...
+# Massif (Valgrind)
+valgrind --tool=massif ./mtproto-proxy.exe -p 8888
 
-# Профилирование производительности
-valgrind --tool=callgrind ./mtproto-proxy ...
-callgrind_annotate callgrind.out.*
+# Анализ
+ms_print massif.out.PID
+
+# Или с ASan
+export ASAN_OPTIONS=detect_leaks=1:verbosity=1
+./mtproto-proxy.exe -p 8888
 ```
-
-### Grafana Dashboard
-
-**Планируется:** Интеграция с Prometheus + Grafana для визуализации метрик
 
 ---
 
-## 🎯 Best Practices
+## Бенчмарки
 
-### Production чеклист
-
-#### Перед запуском
-
-- [ ] Сборка в Release режиме с LTO
-- [ ] Оптимизация под архитектуру CPU (`-march=native`)
-- [ ] Настройка sysctl параметров (Linux)
-- [ ] Настройка firewall правил
-- [ ] Тестирование конфигурации на staging
-
-#### Конфигурация
+### Тестирование пропускной способности
 
 ```bash
-# Оптимальные параметры для production
-./mtproto-proxy \
-  -u mtproxy \                    # Отдельный пользователь
-  -p 8888 \                       # Порт статистики (localhost only)
-  -H 443 \                        # Порт для клиентов
-  -S <secret> \                   # Secret ключ
-  -M $(nproc) \                   # Workers = CPU ядра
-  --max-connections 50000 \       # Лимит подключений
-  --buffer-size 8192 \            # Баланс память/производительность
-  --rate-limit 100 \              # Защита от DDoS
-  --cache-policy ARC \            # Лучший hit rate
-  --cache-partitions $(nproc) \   # Partitioned кэш
-  --aes-pwd proxy-secret \
-  proxy-multi.conf
+# Apache Bench
+ab -n 1000000 -c 100 http://localhost:8888/stats
+
+# wrk (HTTP benchmark)
+wrk -t4 -c100 -d60s http://localhost:8888/stats
+
+# Собственный тест
+./bin/rate-limiter-highload-test-simple.exe
 ```
 
-#### Мониторинг
-
-- [ ] Настроить алерты по CPU (> 80%)
-- [ ] Настроить алерты по памяти (> 90%)
-- [ ] Настроить алерты по количеству подключений
-- [ ] Включить логирование ошибок
-- [ ] Настроить ротацию логов
-
-#### Безопасность
-
-- [ ] Запуск от непривилегированного пользователя
-- [ ] Ограничение доступа к порту статистики
-- [ ] Включение rate limiting
-- [ ] Регулярное обновление secret ключей
-- [ ] Аудит логов безопасности
-
-### Tuning для различных сценариев
-
-#### Low-load (< 1K подключений)
+### Тестирование задержки
 
 ```bash
-./mtproto-proxy -M 2 --max-connections 5000 --buffer-size 4096 ...
+# ping
+ping -c 100 localhost
+
+# curl timing
+curl -w "@curl-format.txt" -o /dev/null -s http://localhost:8888/stats
+
+# curl-format.txt:
+# time_namelookup:  %{time_namelookup}\n
+# time_connect:     %{time_connect}\n
+# time_starttransfer: %{time_starttransfer}\n
+# time_total:       %{time_total}\n
 ```
 
-**Фокус:** Минимальное использование памяти
-
-#### Medium-load (1K-10K подключений)
+### Тестирование памяти
 
 ```bash
-./mtproto-proxy -M 4 --max-connections 20000 --buffer-size 8192 \
-  --cache-policy LRU --cache-partitions 4 ...
+# Мониторинг памяти
+watch -n 1 'ps -o pid,rss,vsz,comm -p $(pgrep mtproto-proxy)'
+
+# Или через /proc (Linux)
+cat /proc/$(pgrep mtproto-proxy)/status | grep -E "VmRSS|VmSize"
 ```
 
-**Фокус:** Баланс производительности и памяти
-
-#### High-load (> 10K подключений)
+### Benchmark скрипт
 
 ```bash
-./mtproto-proxy -M $(nproc) --max-connections 100000 --buffer-size 16384 \
-  --cache-policy ARC --cache-partitions $(nproc) \
-  --rate-limit 200 --jemalloc ...
-```
+#!/bin/bash
+# benchmark.sh
 
-**Фокус:** Максимальная производительность
+echo "=== MTProxy Benchmark ==="
+
+# Параметры
+HOST=${1:-localhost}
+PORT=${2:-8888}
+DURATION=${3:-60}
+
+echo "Target: $HOST:$PORT"
+echo "Duration: ${DURATION}s"
+
+# Тест 1: Пропускная способность
+echo -e "\n=== Throughput Test ==="
+ab -n 100000 -c 100 http://$HOST:$PORT/stats
+
+# Тест 2: Задержка
+echo -e "\n=== Latency Test ==="
+for i in {1..100}; do
+  curl -s -o /dev/null -w "%{time_total}\n" http://$HOST:$PORT/stats
+done | awk '{sum+=$1} END {print "Average: " sum/NR "s"}'
+
+# Тест 3: Память
+echo -e "\n=== Memory Usage ==="
+ps -o pid,rss,vsz,comm -p $(pgrep mtproto-proxy)
+
+echo -e "\n=== Benchmark Complete ==="
+```
 
 ---
 
-## 📈 Benchmark результаты
+## Рекомендуемые конфигурации
 
-### Тестовая среда
+### Home Server (2 ядра, 1GB RAM)
 
-- **CPU:** Intel Core i7-10700K (8 ядер, 16 потоков)
-- **RAM:** 32GB DDR4-3200
-- **OS:** Ubuntu 22.04 LTS
-- **Сеть:** 1 Gbps
+```bash
+./mtproto-proxy.exe \
+  -p 8888 \
+  -M 2 \
+  --cache-size 64 \
+  --pool-size 32 \
+  --max-connections 1000 \
+  --tcp-buffer-size 65536
+```
 
-### Результаты
+### VPS (4 ядра, 4GB RAM)
 
-| Метрика | Значение |
-|---------|----------|
-| **Макс. подключений** | 100K+ |
-| **Пропускная способность** | 850 Mbps |
-| **Задержка (p50)** | 2.3ms |
-| **Задержка (p99)** | 8.7ms |
-| **Память на подключение** | 42KB |
-| **CPU usage (idle)** | 1.2% |
-| **Cache hit rate (ARC)** | 93.5% |
+```bash
+./mtproto-proxy.exe \
+  -p 8888 \
+  -M 4 \
+  --cache-size 128 \
+  --pool-size 64 \
+  --max-connections 10000 \
+  --tcp-buffer-size 131072 \
+  --tcp-nodelay
+```
 
-### Сравнение оптимизаций
+### Dedicated Server (8+ ядер, 16GB+ RAM)
 
-| Оптимизация | Прирост производительности |
-|-------------|---------------------------|
-| **-O3** | +25% |
-| **LTO** | +8% |
-| **PGO** | +15% |
-| **jemalloc** | +12% |
-| **AES-NI** | +18x (crypto) |
-| **Partitioned cache** | +30% (multi-thread) |
+```bash
+./mtproto-proxy.exe \
+  -p 8888 \
+  -M 8 \
+  --cache-size 512 \
+  --pool-size 256 \
+  --max-connections 65535 \
+  --tcp-buffer-size 262144 \
+  --tcp-nodelay \
+  --tcp-keepalive \
+  --optimize-for-throughput
+```
+
+### High-Performance Cluster (16+ ядер, 32GB+ RAM)
+
+```bash
+./mtproto-proxy.exe \
+  -p 8888 \
+  -M 16 \
+  --cache-size 1024 \
+  --pool-size 512 \
+  --max-connections 100000 \
+  --tcp-buffer-size 524288 \
+  --tcp-nodelay \
+  --tcp-keepalive \
+  --optimize-for-throughput \
+  --reuse-port
+```
 
 ---
 
-## 🔗 Дополнительные ресурсы
+## Чеклист оптимизации
 
-- [BUILD_CMAKE.md](BUILD_CMAKE.md) — Детали сборки
-- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) — Решение проблем
-- [API_REFERENCE.md](API_REFERENCE.md) — API документация
-- [DEPLOYMENT.md](DEPLOYMENT.md) — Развёртывание
+- [ ] Сборка в Release режиме с `-O3 -flto`
+- [ ] PGO профилирование выполнено
+- [ ] Количество workers настроено под CPU
+- [ ] TCP буферы оптимизированы
+- [ ] Кэш настроен под доступную память
+- [ ] TCP_NODELAY включен
+- [ ] Keepalive включен
+- [ ] Таймауты настроены
+- [ ] Мониторинг настроен
+- [ ] Бенчмарки пройдены
 
 ---
 
-*Последнее обновление: 25 марта 2026 г.*
-*Версия документа: 1.0*
+## Дополнительные ресурсы
+
+- [Linux Performance Tuning](https://www.brendangregg.com/linuxperf.html)
+- [FreeBSD Performance Tuning](https://docs.freebsd.org/en/books/handbook/performance/)
+- [TCP/IP Performance Tuning](https://access.redhat.com/sites/default/files/attachments/20150129_network_performance_tuning.pdf)

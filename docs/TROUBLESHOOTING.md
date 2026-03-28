@@ -1,549 +1,552 @@
-# MTProxy Troubleshooting Guide
+# Troubleshooting Guide
 
-Руководство по диагностике и решению проблем MTProxy
+Руководство по диагностике и решению проблем MTProxy.
 
----
-
-## 📋 Содержание
+## Содержание
 
 1. [Проблемы сборки](#проблемы-сборки)
 2. [Проблемы запуска](#проблемы-запуска)
-3. [Проблемы с сетью](#проблемы-с-сетью)
-4. [Проблемы производительности](#проблемы-производительности)
-5. [Проблемы безопасности](#проблемы-безопасности)
-6. [Частые ошибки](#частые-ошибки)
-7. [Диагностические команды](#диагностические-команды)
+3. [Проблемы производительности](#проблемы-производительности)
+4. [Сетевые проблемы](#сетевые-проблемы)
+5. [Проблемы с памятью](#проблемы-с-памятью)
+6. [Логирование и диагностика](#логирование-и-диагностика)
 
 ---
 
-## 🔧 Проблемы сборки
+## Проблемы сборки
 
-### Ошибка: `multiple definition of 'usage'`
+### Ошибка: CMake не находит компилятор
 
 **Симптомы:**
 ```
-ld.exe: libkdb_common.a(windows-stubs.c.obj):windows-stubs.c:(.text$usage+0x0): 
-multiple definition of `usage'; CMakeFiles\mtproto-proxy.dir/objects.a(mtproto-proxy.c.obj):mtproto-proxy.c:(.text$usage+0x0): first defined here
+CMake Error: CMAKE_C_COMPILER not set
 ```
-
-**Причина:** Конфликт имён функций между `windows-stubs.c` и `mtproto-proxy.c`
 
 **Решение:**
-1. Убедитесь, что `BUILD_SHARED_LIB=OFF` для основной сборки:
-   ```bash
-   cmake -DBUILD_SHARED_LIB=OFF ..
-   ```
 
-2. Или очистите сборку и пересоберите:
-   ```bash
-   rm -rf build/
-   mkdir build && cd build
-   cmake -DBUILD_SHARED_LIB=OFF -DCMAKE_BUILD_TYPE=Release ..
-   cmake --build . --parallel
-   ```
-
----
-
-### Ошибка: `undefined reference to 'usage'`
-
-**Симптомы:**
-```
-undefined reference to `usage'
-collect2.exe: error: ld returned 1 exit status
-```
-
-**Причина:** Функция `usage()` требуется для shared library, но отсутствует
-
-**Решение:**
-1. Для сборки shared library включите `BUILD_SHARED_LIB=ON`:
-   ```bash
-   cmake -DBUILD_SHARED_LIB=ON ..
-   ```
-
-2. Убедитесь, что `windows-stubs.c` содержит stub-функцию:
-   ```c
-   #ifdef BUILD_SHARED_LIB
-   void usage(void) { /* stub for shared library */ }
-   #endif
-   ```
-
----
-
-### Ошибка: `implicit declaration of function 'Sleep'`
-
-**Симптомы:**
-```
-error: implicit declaration of function 'Sleep'; did you mean '_sleep'?
-```
-
-**Причина:** Отсутствие заголовочных файлов Windows в тестовых файлах
-
-**Решение:**
-Добавьте в начало тестового файла:
-```c
-#ifdef _WIN32
-    #include <windows.h>
-    #define sleep(x) Sleep((x) * 1000)
-#else
-    #include <unistd.h>
-#endif
-```
-
----
-
-### Ошибка: `cache_config_t has no member named 'num_partitions'`
-
-**Симптомы:**
-```
-error: 'cache_config_t' has no member named 'num_partitions'
-```
-
-**Причина:** API кэша изменился, но тесты не обновлены
-
-**Решение:**
-1. Обновите тесты для использования нового API:
-   - Замените `num_partitions` на `enable_partitioning`
-   - Используйте `cache_get_stats(cache, &stats)` вместо `cache_get_stats(cache)`
-
-2. Или временно отключите проблемные тесты:
-   ```bash
-   cmake -DBUILD_TESTS=OFF ..
-   ```
-
----
-
-## 🚀 Проблемы запуска
-
-### Сервер не запускается
-
-**Симптомы:**
-- Процесс завершается сразу после запуска
-- Нет сообщений в логе
-
-**Диагностика:**
+**Windows (MSYS2):**
 ```bash
-# Проверка логов
-./mtproto-proxy --help
+# Проверка наличия компилятора
+where gcc g++
 
-# Проверка файлов конфигурации
-cat proxy-secret
-cat proxy-multi.conf
-
-# Запуск с verbose логом
-./mtproto-proxy -v -p 8888 --aes-pwd proxy-secret proxy-multi.conf -M 1
+# Если не найден — установка MSYS2
+# Скачать с https://www.msys2.org/
+# Установить пакеты:
+pacman -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-ninja
 ```
 
-**Возможные причины:**
-
-1. **Неверный путь к файлам конфигурации**
-   ```bash
-   # Используйте абсолютные пути
-   ./mtproto-proxy --aes-pwd /full/path/to/proxy-secret /full/path/to/proxy-multi.conf
-   ```
-
-2. **Неверный формат secret файла**
-   ```bash
-   # Secret файл должен содержать 16 байт в hex формате
-   cat proxy-secret | xxd -r -p > proxy-secret.bin
-   ```
-
-3. **Порт уже занят**
-   ```bash
-   # Linux
-   netstat -tlnp | grep 8888
-   
-   # Windows
-   netstat -ano | findstr :8888
-   ```
-
----
-
-### Ошибка: "cannot open server socket"
-
-**Симптомы:**
-```
-cannot open server socket at port 443: Permission denied
-```
-
-**Причины:**
-
-1. **Порт требует root прав** (порты < 1024 на Linux)
-   
-   **Решение:**
-   ```bash
-   # Используйте порт > 1024
-   ./mtproto-proxy -p 8443 ...
-   
-   # Или запустите от root (не рекомендуется)
-   sudo ./mtproto-proxy -p 443 ...
-   ```
-
-2. **Брандмауэр блокирует порт**
-   
-   **Решение:**
-   ```bash
-   # Linux (iptables)
-   iptables -A INPUT -p tcp --dport 8888 -j ACCEPT
-   
-   # Windows (PowerShell)
-   New-NetFirewallRule -DisplayName "MTProxy" -Direction Inbound -LocalPort 8888 -Protocol TCP -Action Allow
-   ```
-
----
-
-### Ошибка: "Multi-worker mode not supported on Windows"
-
-**Симптомы:**
-```
-WARN: Multi-worker mode not supported on Windows - using single worker mode
-```
-
-**Причина:** Windows не поддерживает `fork()`, необходимый для multi-worker режима
-
-**Решение:**
-1. Используйте `-M 1` (single worker mode):
-   ```bash
-   ./mtproto-proxy.exe -M 1 ...
-   ```
-
-2. Для multi-worker mode используйте WSL2 или Docker
-
----
-
-## 🌐 Проблемы с сетью
-
-### Клиенты не могут подключиться
-
-**Диагностика:**
-
-1. **Проверка доступности порта:**
-   ```bash
-   # Linux
-   telnet your.server.com 443
-   
-   # Windows
-   Test-NetConnection your.server.com -Port 443
-   ```
-
-2. **Проверка firewall:**
-   ```bash
-   # Linux
-   iptables -L -n | grep 443
-   
-   # Windows
-   Get-NetFirewallRule | Where-Object Enabled -Eq True
-   ```
-
-3. **Проверка NAT/маршрутизации:**
-   ```bash
-   traceroute your.server.com
-   ```
-
-**Решение:**
-
-1. Откройте порт в firewall
-2. Настройте проброс портов на роутере (NAT)
-3. Проверьте, что сервер слушает правильный интерфейс:
-   ```bash
-   netstat -tlnp | grep mtproto
-   ```
-
----
-
-### Соединения сбрасываются
-
-**Симптомы:**
-- Клиенты подключаются, но сразу отключаются
-- В логах: "connection reset by peer"
-
-**Возможные причины:**
-
-1. **Неверный secret ключ**
-   ```bash
-   # Проверьте формат ключа (32 hex символа)
-   echo "your_secret" | wc -c
-   
-   # Пересоздайте ключ
-   head -c 16 /dev/urandom | xxd -ps
-   ```
-
-2. **Проблемы с TLS обфускацией**
-   ```bash
-   # Отключите TLS обфускацию для теста
-   ./mtproto-proxy --no-tls ...
-   ```
-
-3. **MTU проблемы**
-   ```bash
-   # Уменьшите MTU
-   ifconfig eth0 mtu 1400
-   ```
-
----
-
-## ⚡ Проблемы производительности
-
-### Высокое использование CPU
-
-**Диагностика:**
+**Linux:**
 ```bash
-# Linux
-top -p $(pgrep mtproto)
-htop
+# Установка компилятора
+sudo apt-get install build-essential cmake ninja-build  # Debian/Ubuntu
+sudo dnf install gcc gcc-c++ cmake ninja-build         # Fedora/RHEL
+```
 
+### Ошибка: CMake не находит OpenSSL
+
+**Симптомы:**
+```
+CMake Error at CMakeLists.txt:XX (find_package):
+  Could not find a package configuration file provided by "OpenSSL"
+```
+
+**Решение:**
+
+**Windows (MSYS2):**
+```bash
+pacman -S mingw-w64-ucrt-x86_64-openssl
+```
+
+**Linux:**
+```bash
+sudo apt-get install libssl-dev              # Debian/Ubuntu
+sudo dnf install openssl-devel               # Fedora/RHEL
+sudo pacman -S openssl                       # Arch Linux
+```
+
+**macOS:**
+```bash
+brew install openssl
+```
+
+### Ошибка: нехватка памяти при сборке
+
+**Симптомы:**
+```
+v8::base::FatalOOM
+Out of memory
+```
+
+**Решение:**
+
+1. **Уменьшить параллелизм:**
+```bash
+cd build
+cmake -DCMAKE_BUILD_PARALLEL_LEVEL=2 ..
+cmake --build . -j2
+```
+
+2. **Использовать Ninja с ограничением:**
+```bash
+cmake -G Ninja -DCMAKE_MAKE_PROGRAM=../deps/ninja.exe -DCMAKE_BUILD_PARALLEL_LEVEL=2 ..
+```
+
+3. **Включить low-memory режим:**
+```bash
+cmake -DENABLE_LOW_MEMORY=ON ..
+```
+
+### Ошибка: undefined reference
+
+**Симптомы:**
+```
+undefined reference to `pthread_create'
+undefined reference to `WSAStartup'
+```
+
+**Решение:**
+
+Проверить наличие библиотек в CMakeLists.txt:
+```bash
+# Для pthread (Linux)
+sudo apt-get install libpthread-stubs0-dev
+
+# Для Windows socket API
+# Убедиться, что в CMakeLists.txt есть ws2_32
+```
+
+---
+
+## Проблемы запуска
+
+### Ошибка: cannot open secret file
+
+**Симптомы:**
+```
+cannot open password file proxy-secret: No such file or directory
+```
+
+**Решение:**
+
+1. **Создать файл секрета:**
+```bash
+# Генерация случайного секрета
+openssl rand -hex 16 > proxy-secret
+
+# Или использовать утилиту:
+./mtproto-proxy.exe --generate-secret
+```
+
+2. **Проверить права доступа:**
+```bash
+chmod 600 proxy-secret
+```
+
+3. **Указать полный путь:**
+```bash
+./mtproto-proxy.exe -p 8888 -S /full/path/to/proxy-secret
+```
+
+### Ошибка: cannot bind to port
+
+**Симптомы:**
+```
+cannot bind to port 8888: Address already in use
+```
+
+**Решение:**
+
+1. **Проверить занятость порта:**
+```bash
 # Windows
-tasklist /v | findstr mtproto
-Process Explorer
+netstat -ano | findstr :8888
+
+# Linux/macOS
+lsof -i :8888
+ss -tlnp | grep 8888
 ```
 
-**Решение:**
-
-1. **Оптимизируйте количество workers:**
-   ```bash
-   # Количество workers = количество CPU ядер
-   ./mtproto-proxy -M $(nproc) ...
-   ```
-
-2. **Включите кэширование:**
-   ```c
-   // В конфигурации
-   cache.enabled = true
-   cache.policy = LRU
-   cache.max_entries = 10000
-   ```
-
-3. **Используйте оптимизированную сборку:**
-   ```bash
-   cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_OPTIMIZATION_LEVEL=O3 ..
-   ```
-
----
-
-### Высокое использование памяти
-
-**Диагностика:**
+2. **Освободить порт:**
 ```bash
-# Linux
-cat /proc/$(pgrep mtproto)/status | grep Vm
-
 # Windows
-Get-Process mtproto-proxy | Select-Object WorkingSet,VirtualMemorySize
+taskkill /PID <PID> /F
+
+# Linux/macOS
+kill -9 <PID>
+```
+
+3. **Использовать другой порт:**
+```bash
+./mtproto-proxy.exe -p 8889
+```
+
+### Ошибка: fork failed (Windows)
+
+**Симптомы:**
+```
+fork: Function not implemented
 ```
 
 **Решение:**
 
-1. **Ограничьте количество соединений:**
-   ```bash
-   ./mtproto-proxy --max-connections 10000 ...
-   ```
+Windows не поддерживает fork(). Используйте single-worker режим:
 
-2. **Уменьшите размер буферов:**
-   ```bash
-   ./mtproto-proxy --buffer-size 4096 ...
-   ```
+```bash
+# Запуск с одним worker'ом
+./mtproto-proxy.exe -M 1 -p 8888
 
-3. **Включите jemalloc/tcmalloc:**
-   ```bash
-   cmake -DSTATIC_LINKING=ON ..
-   LD_PRELOAD=/usr/lib/libjemalloc.so ./mtproto-proxy ...
-   ```
+# Или с опцией single-thread
+./mtproto-proxy.exe --single-thread
+```
+
+### Ошибка: too many open files
+
+**Симптомы:**
+```
+socket: Too many open files
+```
+
+**Решение:**
+
+**Linux/macOS:**
+```bash
+# Проверить текущий лимит
+ulimit -n
+
+# Увеличить лимит
+ulimit -n 65536
+
+# Постоянное изменение (/etc/security/limits.conf)
+echo "* soft nofile 65536" | sudo tee -a /etc/security/limits.conf
+echo "* hard nofile 65536" | sudo tee -a /etc/security/limits.conf
+```
+
+**Windows:**
+```bash
+# Увеличить лимит через реестр
+# HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters
+# Создать DWORD: MaxUserPort = 65534
+```
 
 ---
+
+## Проблемы производительности
 
 ### Низкая пропускная способность
 
-**Диагностика:**
-```bash
-# Проверка статистики
-wget localhost:8888/stats
-
-# Мониторинг трафика
-iftop -P -p 8888
-```
+**Симптомы:**
+- Скорость < 100 Мбит/с
+- Высокая задержка
 
 **Решение:**
 
-1. **Увеличьте количество workers:**
-   ```bash
-   ./mtproto-proxy -M 4 ...
-   ```
+1. **Включить многопоточность:**
+```bash
+# Авто-детект CPU ядер (по умолчанию)
+./mtproto-proxy.exe -p 8888
 
-2. **Включите LTO оптимизацию:**
-   ```bash
-   cmake -DCMAKE_BUILD_TYPE=Release ..
-   # LTO автоматически включается для Unix
-   ```
+# Или явно указать количество workers
+./mtproto-proxy.exe -M 4 -p 8888
+```
 
-3. **Используйте AES-NI:**
-   ```bash
-   # Проверьте поддержку CPU
-   grep -o aes /proc/cpuinfo
-   ```
+2. **Проверить использование CPU:**
+```bash
+# Windows
+tasklist | findstr mtproto-proxy
 
----
+# Linux
+top -p $(pgrep mtproto-proxy)
+```
 
-## 🔒 Проблемы безопасности
+3. **Оптимизировать параметры:**
+```bash
+# Увеличить размер буфера
+./mtproto-proxy.exe --tcp-buffer-size 262144 -p 8888
 
-### Ошибка: "invalid secret key"
+# Включить оптимизации
+./mtproto-proxy.exe --optimize-for-throughput -p 8888
+```
+
+### Высокое использование памяти
 
 **Симптомы:**
-- Клиенты не могут аутентифицироваться
-- В логах: "authentication failed"
+- Потребление > 512 MB
+- OOM killer убивает процесс
 
 **Решение:**
 
-1. **Проверьте формат ключа:**
-   ```bash
-   # Должен быть 32 hex символа
-   echo -n "your_secret" | wc -c
-   ```
+1. **Включить low-memory режим:**
+```bash
+cmake -DENABLE_LOW_MEMORY=ON ..
+cmake --build .
+```
 
-2. **Пересоздайте ключ:**
-   ```bash
-   head -c 16 /dev/urandom | xxd -ps
-   ```
+2. **Ограничить размер кэша:**
+```bash
+./mtproto-proxy.exe --cache-size 64 -p 8888
+```
 
-3. **Обновите конфигурацию клиента:**
-   ```
-   tg://proxy?server=example.com&port=443&secret=новый_ключ
-   ```
+3. **Уменьшить количество connections:**
+```bash
+./mtproto-proxy.exe --max-connections 10000 -p 8888
+```
 
----
-
-### DDoS атака
+### Высокая задержка (latency)
 
 **Симптомы:**
-- Резкий рост количества подключений
-- Высокое использование CPU/памяти
-- Легитимные клиенты не могут подключиться
+- Ping > 100ms
+- Задержки при передаче данных
 
 **Решение:**
 
-1. **Включите rate limiting:**
-   ```bash
-   ./mtproto-proxy --rate-limit 100 --rate-window 60 ...
-   ```
+1. **Проверить сетевую задержку:**
+```bash
+ping -c 10 <server-ip>
+```
 
-2. **Используйте whitelist:**
-   ```bash
-   admin-cli whitelist add trusted_ip
-   ```
+2. **Включить TCP_NODELAY:**
+```bash
+./mtproto-proxy.exe --tcp-nodelay -p 8888
+```
 
-3. **Включите circuit breaker:**
-   ```c
-   // В конфигурации
-   error_handler.circuit_breaker = true
-   error_handler.threshold = 100
-   ```
+3. **Оптимизировать размер пакетов:**
+```bash
+./mtproto-proxy.exe --max-packet-size 131072 -p 8888
+```
 
 ---
 
-## ❌ Частые ошибки
+## Сетевые проблемы
 
-### Ошибка: "address already in use"
+### Клиенты не могут подключиться
+
+**Симптомы:**
+- Connection refused
+- Timeout при подключении
 
 **Решение:**
+
+1. **Проверить брандмауэр:**
 ```bash
-# Найдите процесс, занимающий порт
-lsof -i :8888
-netstat -tlnp | grep 8888
+# Windows
+netsh advfirewall firewall add rule name="MTProxy" dir=in action=allow protocol=TCP localport=8888
 
-# Завершите процесс
-kill -9 <PID>
+# Linux (iptables)
+sudo iptables -A INPUT -p tcp --dport 8888 -j ACCEPT
 
-# Или используйте SO_REUSEADDR (уже включено)
+# Linux (firewalld)
+sudo firewall-cmd --add-port=8888/tcp --permanent
+sudo firewall-cmd --reload
 ```
 
----
+2. **Проверить прослушивание:**
+```bash
+# Windows
+netstat -ano | findstr :8888
 
-### Ошибка: "permission denied"
+# Linux
+ss -tlnp | grep 8888
+```
+
+3. **Проверить конфигурацию:**
+```bash
+# Убедиться, что сервер слушает 0.0.0.0
+./mtproto-proxy.exe --bind 0.0.0.0 -p 8888
+```
+
+### Обрыв соединения
+
+**Симптомы:**
+- Connection reset by peer
+- Unexpected EOF
 
 **Решение:**
+
+1. **Увеличить timeout:**
 ```bash
-# Проверьте права на файлы
-ls -la proxy-secret proxy-multi.conf
+./mtproto-proxy.exe --read-timeout 600 --write-timeout 600 -p 8888
+```
 
-# Исправьте права
-chmod 600 proxy-secret
-chmod 644 proxy-multi.conf
+2. **Включить keepalive:**
+```bash
+./mtproto-proxy.exe --tcp-keepalive -p 8888
+```
 
-# Запустите от правильного пользователя
-./mtproto-proxy -u nobody ...
+3. **Проверить логи:**
+```bash
+./mtproto-proxy.exe --log-level 2 --log-file proxy.log -p 8888
 ```
 
 ---
 
-### Ошибка: "configuration file not found"
+## Проблемы с памятью
+
+### Утечки памяти
+
+**Симптомы:**
+- Постепенный рост потребления памяти
+- OOM через несколько часов работы
 
 **Решение:**
-```bash
-# Используйте абсолютные пути
-./mtproto-proxy --aes-pwd /opt/mtproxy/proxy-secret /opt/mtproxy/proxy-multi.conf
 
-# Или скопируйте файлы в рабочую директорию
-cp proxy-secret proxy-multi.conf ./
+1. **Сборка с ASan для диагностики:**
+```bash
+cd build
+cmake -DENABLE_ASAN=ON -DCMAKE_BUILD_TYPE=Debug ..
+cmake --build .
+
+# Запуск с детекцией утечек
+export ASAN_OPTIONS=detect_leaks=1
+./bin/mtproto-proxy.exe -p 8888
+```
+
+2. **Использовать Valgrind:**
+```bash
+valgrind --leak-check=full --show-leak-kinds=all \
+  ./bin/mtproto-proxy.exe -p 8888
+```
+
+3. **Включить периодический GC:**
+```bash
+./mtproto-proxy.exe --gc-interval 3600 -p 8888
+```
+
+### Фрагментация памяти
+
+**Симптомы:**
+- Высокое потребление памяти при низкой нагрузке
+- Частые аллокации
+
+**Решение:**
+
+1. **Включить memory pool:**
+```bash
+./mtproto-proxy.exe --use-memory-pool -p 8888
+```
+
+2. **Оптимизировать размер пула:**
+```bash
+./mtproto-proxy.exe --pool-size 64 -p 8888
 ```
 
 ---
 
-## 🛠️ Диагностические команды
+## Логирование и диагностика
 
-### Проверка состояния сервера
+### Включение подробного логирования
 
 ```bash
-# Статус процесса
-ps aux | grep mtproto
-
-# Статистика
-curl localhost:8888/stats
-
-# Активные подключения
-netstat -an | grep :443 | wc -l
-
-# Использование памяти
-cat /proc/$(pgrep mtproto)/status | grep VmRSS
+# Уровень логирования: 0=quiet, 1=error, 2=warning, 3=info, 4=debug
+./mtproto-proxy.exe --log-level 3 --log-file proxy.log -p 8888
 ```
 
-### Логирование
+### Просмотр статистики
 
 ```bash
-# Запуск с debug логом
-./mtproto-proxy -v ...
+# Статистика через REST API
+curl http://localhost:8888/stats
 
-# Просмотр логов в реальном времени
-tail -f /var/log/mtproxy.log
+# Расширенная статистика
+curl http://localhost:8888/metrics
 
-# Фильтрация по уровню
-grep "ERROR" /var/log/mtproxy.log
+# Статус сервера
+curl http://localhost:8888/status
 ```
 
-### Тестирование
+### Проверка здоровья
 
 ```bash
-# Модульные тесты
-make test
+# Health check
+curl http://localhost:8888/health
 
-# Интеграционные тесты
-./build/bin/test-new-modules.exe
+# Проверка конфигурации
+curl http://localhost:8888/config
+```
 
-# Performance тесты
-./build/bin/cache-performance-test-simple.exe
+### Динамическая перезагрузка
+
+```bash
+# Перезагрузка конфигурации
+curl -X POST http://localhost:8888/reload
+
+# Обновление секретов
+curl -X POST http://localhost:8888/secrets/reload
 ```
 
 ---
 
-## 📞 Поддержка
+## Диагностика через admin-cli
+
+```bash
+# Запуск admin-cli
+./mtproxy-admin.exe
+
+# Команды диагностики
+> status          # Статус сервера
+> stats           # Расширенная статистика
+> connections     # Список подключений
+> config          # Текущая конфигурация
+> cache stats     # Статистика кэша
+> ratelimit status # Статус rate limiter'ов
+> health          # Проверка здоровья
+```
+
+---
+
+## Часто задаваемые вопросы
+
+### Q: Как узнать версию MTProxy?
+
+```bash
+./mtproto-proxy.exe --version
+# или
+curl http://localhost:8888/status | jq .version
+```
+
+### Q: Как сбросить статистику?
+
+```bash
+curl -X POST http://localhost:8888/stats/reset
+```
+
+### Q: Как экспортировать конфигурацию?
+
+```bash
+curl http://localhost:8888/config > config-backup.json
+```
+
+### Q: Как импортировать конфигурацию?
+
+```bash
+curl -X POST -H "Content-Type: application/json" \
+  -d @config-backup.json \
+  http://localhost:8888/config/reload
+```
+
+### Q: Где найти логи?
+
+```bash
+# По умолчанию
+./proxy.log
+
+# Или через опцию
+./mtproto-proxy.exe --log-file /var/log/mtproxy/proxy.log -p 8888
+```
+
+---
+
+## Обратная связь
 
 Если проблема не решена:
 
 1. **Соберите информацию:**
-   - Версия MTProxy: `./mtproto-proxy --version`
-   - ОС и версия: `uname -a` или `systeminfo`
-   - Логи ошибки
-   - Конфигурация запуска
+   - Версия MTProxy
+   - Версия ОС
+   - Логи (с уровнем 3+)
+   - Вывод `--version` и `--help`
 
 2. **Проверьте известные проблемы:**
-   - [GitHub Issues](https://github.com/QuadDarv1ne/MTProxy/issues)
+   - [GitHub Issues](https://github.com/mtproxy/MTProxy/issues)
    - [CHANGELOG.md](CHANGELOG.md)
 
 3. **Создайте issue:**
@@ -552,8 +555,3 @@ make test
    - Ожидаемое поведение
    - Фактическое поведение
    - Логи и скриншоты
-
----
-
-*Последнее обновление: 25 марта 2026 г.*
-*Версия документа: 1.0*
