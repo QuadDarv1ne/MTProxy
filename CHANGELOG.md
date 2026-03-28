@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Summary (Март 2026 — Программа улучшений безопасности)
+
+#### Итоги программы улучшений (24 исправления)
+- **Безопасность строк**: 23 замены unsafe функций на `utils_strcpy`/`utils_strncpy`
+- **Файлов исправлено**: 9 (admin-cli, admin-rest-api, rest-api, dns-cache, socks5, config-manager, config-profiles, audit-log, windows-ipc)
+- **Документация**: IMPROVEMENTS_PLAN.md, CHANGELOG.md, todo.md обновлены
+- **Ветки синхронизированы**: dev = master = origin/dev = origin/master ✅
+
 ### Fixed (Март 2026)
 
 #### Безопасность работы со строками (часть 3)
