@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed (Март 2026)
+
+#### Безопасность работы со строками
+- **admin/admin-cli.c**: замена `strcpy` на `utils_strcpy` в `admin_cli_format_json()`
+  - Добавлена проверка `malloc` на NULL
+  - Безопасное копирование с проверкой границ
+  - Добавлен `#include "common/utils.h"`
+
+- **admin/admin-rest-api.c**: добавлен `#include "common/utils.h"` для консистентности
+
+- **net/rest-api.c**: замена `strcpy` на `utils_strcpy` в `http_response_init()`
+  - Безопасное копирование body в response
+  - Добавлен `#include "common/utils.h"`
+
+- **net/dns-cache.c**: замена `strcpy` на `utils_strcpy` при инициализации
+  - Безопасная инициализация upstream_dns[0] и upstream_dns[1]
+  - Добавлен `#include "common/utils.h"`
+
+- **net/socks5.c**: замена `strcpy` на `utils_strcpy` при инициализации
+  - Безопасная инициализация bind_address
+  - Добавлен `#include "common/utils.h"`
+
 ### Added (Март 2026)
 
 #### Инфраструктура
