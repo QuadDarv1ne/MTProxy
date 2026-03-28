@@ -84,6 +84,74 @@ size_t utils_strcat(char *dest, const char *src, size_t dest_size) {
     return dest_len + copy_len;
 }
 
+// Integer to string conversion
+int utils_int_to_string(int value, char *str, size_t max_len) {
+    if (max_len <= 0) return 0;
+
+    int temp = value;
+    int digits = 0;
+
+    if (temp == 0) {
+        if (max_len < 2) return 0;
+        str[0] = '0';
+        str[1] = '\0';
+        return 1;
+    }
+
+    if (temp < 0) {
+        if (max_len < 2) return 0;
+        str[0] = '-';
+        str++;
+        max_len--;
+        temp = -temp;
+    }
+
+    int temp_val = temp;
+    while (temp_val > 0) {
+        temp_val /= 10;
+        digits++;
+    }
+
+    if (digits >= max_len) return 0;
+
+    str[digits] = '\0';
+    int pos = digits - 1;
+    while (temp > 0 && pos >= 0) {
+        str[pos--] = '0' + (temp % 10);
+        temp /= 10;
+    }
+
+    return digits;
+}
+
+// Float to string conversion (limited precision)
+int utils_float_to_string(float value, char *str, size_t max_len) {
+    if (max_len <= 0) return 0;
+
+    int int_part = (int)value;
+    float frac_part = value - int_part;
+
+    if (frac_part < 0) frac_part = -frac_part;
+
+    int len = utils_int_to_string(int_part, str, max_len);
+    if (len <= 0) return 0;
+
+    if (max_len - len < 3) return len;
+
+    str[len++] = '.';
+    int frac = (int)(frac_part * 100);
+    if (frac < 10) {
+        str[len++] = '0';
+        str[len++] = '0' + frac;
+    } else {
+        str[len++] = '0' + (frac / 10);
+        str[len++] = '0' + (frac % 10);
+    }
+    str[len] = '\0';
+
+    return len;
+}
+
 // Case-insensitive string comparison
 int utils_strcasecmp(const char *s1, const char *s2) {
     if (!s1 || !s2) {

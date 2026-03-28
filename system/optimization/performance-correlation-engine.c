@@ -4,6 +4,7 @@
  */
 
 #include "performance-correlation-engine.h"
+#include "common/utils.h"
 
 // Helper function to compare strings (since we can't use standard library)
 static int string_compare(const char* str1, const char* str2) {
@@ -31,78 +32,6 @@ static int string_length(const char* str) {
     return len;
 }
 
-// Helper function for simple integer to string conversion
-static int int_to_string(int value, char* str, int max_len) {
-    if (max_len <= 0) return 0;
-    
-    int temp = value;
-    int digits = 0;
-    
-    if (temp == 0) {
-        if (max_len < 2) return 0;
-        str[0] = '0';
-        str[1] = '\0';
-        return 1;
-    }
-    
-    if (temp < 0) {
-        if (max_len < 2) return 0;
-        str[0] = '-';
-        str++;
-        max_len--;
-        temp = -temp;
-    }
-    
-    int temp_val = temp;
-    while (temp_val > 0) {
-        temp_val /= 10;
-        digits++;
-    }
-    
-    if (digits >= max_len) return 0;
-    
-    str[digits] = '\0';
-    int pos = digits - 1;
-    while (temp > 0 && pos >= 0) {
-        str[pos--] = '0' + (temp % 10);
-        temp /= 10;
-    }
-    
-    return digits;
-}
-
-// Helper function for simple float to string conversion (limited precision)
-static int float_to_string(float value, char* str, int max_len) {
-    if (max_len <= 0) return 0;
-    
-    int int_part = (int)value;
-    float frac_part = value - int_part;
-    
-    if (frac_part < 0) frac_part = -frac_part;
-    
-    int int_len = int_to_string(int_part, str, max_len);
-    if (int_len <= 0) return 0;
-    
-    if (int_len >= max_len - 1) return int_len;
-    
-    str[int_len] = '.';
-    int pos = int_len + 1;
-    
-    // Add 2 decimal places
-    frac_part *= 100;
-    int frac_int = (int)frac_part;
-    
-    if (frac_int > 99) frac_int = 99;
-    
-    if (pos >= max_len - 2) return int_len;
-    
-    str[pos] = '0' + (frac_int / 10);
-    str[pos + 1] = '0' + (frac_int % 10);
-    str[pos + 2] = '\0';
-    
-    return pos + 2;
-}
-
 // Helper function for simple string formatting (simplified snprintf)
 static int simple_sprintf(char* str, int size, const char* format, int val1, int val2, float val3) {
     int pos = 0;
@@ -114,7 +43,7 @@ static int simple_sprintf(char* str, int size, const char* format, int val1, int
             
             if (format[fmt_pos] == 'd') {
                 char temp_str[16];
-                int len = int_to_string(val1, temp_str, 16);
+                int len = utils_int_to_string(val1, temp_str, 16);
                 if (len > 0 && pos + len < size) {
                     int i;
                     for (i = 0; i < len; i++) {
@@ -123,7 +52,7 @@ static int simple_sprintf(char* str, int size, const char* format, int val1, int
                 }
             } else if (format[fmt_pos] == 'f') {
                 char temp_str[16];
-                int len = float_to_string(val3, temp_str, 16);
+                int len = utils_float_to_string(val3, temp_str, 16);
                 if (len > 0 && pos + len < size) {
                     int i;
                     for (i = 0; i < len; i++) {
@@ -138,7 +67,7 @@ static int simple_sprintf(char* str, int size, const char* format, int val1, int
             fmt_pos++; // Skip '{'
             if (format[fmt_pos] == '1' && format[fmt_pos + 1] == '}') {
                 char temp_str[16];
-                int len = int_to_string(val1, temp_str, 16);
+                int len = utils_int_to_string(val1, temp_str, 16);
                 if (len > 0 && pos + len < size) {
                     int i;
                     for (i = 0; i < len; i++) {
@@ -148,7 +77,7 @@ static int simple_sprintf(char* str, int size, const char* format, int val1, int
                 }
             } else if (format[fmt_pos] == '2' && format[fmt_pos + 1] == '}') {
                 char temp_str[16];
-                int len = int_to_string(val2, temp_str, 16);
+                int len = utils_int_to_string(val2, temp_str, 16);
                 if (len > 0 && pos + len < size) {
                     int i;
                     for (i = 0; i < len; i++) {
@@ -158,7 +87,7 @@ static int simple_sprintf(char* str, int size, const char* format, int val1, int
                 }
             } else if (format[fmt_pos] == '3' && format[fmt_pos + 1] == '}') {
                 char temp_str[16];
-                int len = float_to_string(val3, temp_str, 16);
+                int len = utils_float_to_string(val3, temp_str, 16);
                 if (len > 0 && pos + len < size) {
                     int i;
                     for (i = 0; i < len; i++) {
@@ -463,8 +392,8 @@ int generate_correlation_report(correlation_engine_context_t* ctx, char* report_
                     metric1_name[m1_len] = '\0';
                     for (i = 0; i < m2_len; i++) metric2_name[i] = group->metrics[m2].metric_name[i];
                     metric2_name[m2_len] = '\0';
-                    
-                    int corr_len = float_to_string(corr, corr_str, 10);
+
+                    int corr_len = utils_float_to_string(corr, corr_str, 10);
                     
                     char corr_line[256];
                     int line_len = 0;

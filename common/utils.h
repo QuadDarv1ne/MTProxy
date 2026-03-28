@@ -87,6 +87,12 @@ int utils_clamp_int(int value, int min, int max);
 // Clamp long to range
 long utils_clamp_long(long value, long min, long max);
 
+// Integer to string conversion
+int utils_int_to_string(int value, char *str, size_t max_len);
+
+// Float to string conversion (limited precision)
+int utils_float_to_string(float value, char *str, size_t max_len);
+
 /* ============================================================================
  * Hash Utilities
  * ============================================================================ */
