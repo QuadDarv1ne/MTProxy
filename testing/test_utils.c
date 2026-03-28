@@ -75,10 +75,10 @@ TEST(utils_strcat_basic) {
     char dest[32] = "Hello";
     const char *src = ", World!";
     size_t total = utils_strcat(dest, src, sizeof(dest));
-    
-    ASSERT_EQ(total, 12);
+
+    ASSERT_EQ(total, 13);  // "Hello" (5) + ", World!" (8) = 13
     ASSERT_EQ(strcmp(dest, "Hello, World!"), 0);
-    
+
     return TEST_PASS;
 }
 
@@ -125,11 +125,13 @@ TEST(utils_memcpy_basic) {
 
 TEST(utils_memmove_overlap) {
     char str[] = "Hello, World!";
-    
+
     // Overlapping copy (move forward)
+    // Copy "Hello" (5 bytes) from position 0 to position 2
+    // Result: "He" + "Hello" + "World!" = "HeHelloWorld!"
     utils_memmove(str + 2, str, 5);
-    ASSERT_EQ(strcmp(str, "HeHello, World!"), 0);
-    
+    ASSERT_EQ(strcmp(str, "HeHelloWorld!"), 0);
+
     return TEST_PASS;
 }
 
