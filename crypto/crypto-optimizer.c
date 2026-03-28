@@ -1,5 +1,6 @@
 #include "crypto-optimizer.h"
 #include "common/kprintf.h"
+#include "common/utils.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -9,20 +10,6 @@
 #else
     #include <sys/time.h>
 #endif
-
-// Вспомогательные функции для измерения времени
-static double get_current_time_ms(void) {
-#ifdef _WIN32
-    LARGE_INTEGER frequency, counter;
-    QueryPerformanceFrequency(&frequency);
-    QueryPerformanceCounter(&counter);
-    return (double)counter.QuadPart * 1000.0 / frequency.QuadPart;
-#else
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return tv.tv_sec * 1000.0 + tv.tv_usec / 1000.0;
-#endif
-}
 
 // Обнаружение поддерживаемых оптимизаций
 int crypto_optimizer_detect_capabilities(void) {
@@ -235,8 +222,8 @@ int crypto_optimized_encrypt(crypto_optimizer_t *optimizer,
     if (!optimizer || !optimizer->is_initialized) {
         return -1;
     }
-    
-    double start_time = get_current_time_ms();
+
+    uint64_t start_time = utils_time_ms();
     optimizer->stats.total_operations++;
     
     // Попытка использовать кэш
@@ -275,9 +262,9 @@ int crypto_optimized_encrypt(crypto_optimizer_t *optimizer,
         // Добавить в кэш для будущих операций
         add_key_to_cache(optimizer, key, iv);
     }
-    
-    double end_time = get_current_time_ms();
-    double operation_time = end_time - start_time;
+
+    uint64_t end_time = utils_time_ms();
+    double operation_time = (double)(end_time - start_time);
     optimizer->stats.total_processing_time_ms += operation_time;
     
     if (cache_index >= 0) {

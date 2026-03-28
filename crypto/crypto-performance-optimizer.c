@@ -3,6 +3,8 @@
  * Implements optimized cryptographic operations with caching and batching
  */
 
+#include "common/utils.h"
+
 #ifndef NULL
 #define NULL ((void*)0)
 #endif
@@ -71,13 +73,6 @@ typedef struct {
 
 // Global crypto optimizer instance
 static crypto_optimizer_t *g_crypto_optimizer = NULL;
-
-// Simple time simulation
-static double get_current_time_ms(void) {
-    static double base_time = 1000.0;
-    base_time += 0.1;
-    return base_time;
-}
 
 // Simple memory allocation
 static void* simple_malloc(size_t size) {
@@ -172,7 +167,7 @@ static int add_key_to_cache(const unsigned char *key, const unsigned char *iv) {
     
     // Initialize other fields
     entry->crypto_context = simple_malloc(1024); // Simulated context
-    entry->last_used = (unsigned long long)get_current_time_ms();
+    entry->last_used = utils_time_ms();
     entry->use_count = 1;
     entry->valid = 1;
     
@@ -246,7 +241,7 @@ int crypto_optimized_encrypt(const unsigned char *key,
         return -1;
     }
     
-    double start_time = get_current_time_ms();
+    double start_time = (double)utils_time_ms();
     g_crypto_optimizer->stats.total_encryptions++;
     g_crypto_optimizer->operation_count++;
     
@@ -256,7 +251,7 @@ int crypto_optimized_encrypt(const unsigned char *key,
         cache_index = find_key_in_cache(key, iv);
         if (cache_index != -1) {
             g_crypto_optimizer->stats.key_cache_hits++;
-            g_crypto_optimizer->key_cache[cache_index].last_used = (unsigned long long)get_current_time_ms();
+            g_crypto_optimizer->key_cache[cache_index].last_used = utils_time_ms();
             g_crypto_optimizer->key_cache[cache_index].use_count++;
         } else {
             g_crypto_optimizer->stats.key_cache_misses++;
@@ -272,7 +267,7 @@ int crypto_optimized_encrypt(const unsigned char *key,
     *ciphertext_len = plaintext_len;
     
     // Update statistics
-    double end_time = get_current_time_ms();
+    double end_time = (double)utils_time_ms();
     double operation_time = end_time - start_time;
     
     // Update average encryption time
@@ -294,7 +289,7 @@ int crypto_optimized_decrypt(const unsigned char *key,
         return -1;
     }
     
-    double start_time = get_current_time_ms();
+    double start_time = (double)utils_time_ms();
     g_crypto_optimizer->stats.total_decryptions++;
     g_crypto_optimizer->operation_count++;
     
@@ -304,7 +299,7 @@ int crypto_optimized_decrypt(const unsigned char *key,
         cache_index = find_key_in_cache(key, iv);
         if (cache_index != -1) {
             g_crypto_optimizer->stats.key_cache_hits++;
-            g_crypto_optimizer->key_cache[cache_index].last_used = (unsigned long long)get_current_time_ms();
+            g_crypto_optimizer->key_cache[cache_index].last_used = utils_time_ms();
             g_crypto_optimizer->key_cache[cache_index].use_count++;
         } else {
             g_crypto_optimizer->stats.key_cache_misses++;
@@ -320,7 +315,7 @@ int crypto_optimized_decrypt(const unsigned char *key,
     *plaintext_len = ciphertext_len;
     
     // Update statistics
-    double end_time = get_current_time_ms();
+    double end_time = (double)utils_time_ms();
     double operation_time = end_time - start_time;
     
     // Update average decryption time

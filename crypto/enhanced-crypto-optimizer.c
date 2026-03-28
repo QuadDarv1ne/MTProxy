@@ -6,15 +6,9 @@
 #include "crypto-optimizer.h"
 #include "enhanced-crypto-optimizer.h"
 #include "common/kprintf.h"
+#include "common/utils.h"
 #include <string.h>
 #include <stdio.h>
-
-// Simple time function for simulation
-static double get_current_time_ms(void) {
-    static double time_base = 1000000.0;
-    time_base += 10.0; // Increment by 10ms each call
-    return time_base;
-}
 
 // Enhanced cryptographic performance measurement
 int crypto_optimizer_measure_performance(crypto_optimizer_t *optimizer,
@@ -26,7 +20,7 @@ int crypto_optimizer_measure_performance(crypto_optimizer_t *optimizer,
         return -1;
     }
 
-    double start_time = get_current_time_ms();
+    double start_time = (double)utils_time_ms();
 
     // Simulate encryption operation
     unsigned char ciphertext[4096];
@@ -37,7 +31,7 @@ int crypto_optimizer_measure_performance(crypto_optimizer_t *optimizer,
         ciphertext[i] = data[i] ^ key[i % 32]; // Simple XOR encryption
     }
 
-    end_time = get_current_time_ms();
+    end_time = (double)utils_time_ms();
     optimizer->stats.total_operations++;
     optimizer->stats.total_processing_time_ms += (end_time - start_time);
 
@@ -134,7 +128,7 @@ void crypto_optimizer_run_benchmark(crypto_optimizer_t *optimizer,
         int operation_count = 5;
 
         for (int i = 0; i < operation_count; i++) {
-            double start_time = get_current_time_ms();
+            double start_time = (double)utils_time_ms();
 
             // Simulate different performance based on method
             double simulated_time = 1.0; // Base time
