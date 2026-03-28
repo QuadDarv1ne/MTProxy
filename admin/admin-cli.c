@@ -24,6 +24,7 @@
 
 #include "admin/admin-cli.h"
 #include "common/kprintf.h"
+#include "common/utils.h"
 
 // Таблица команд
 static const struct {
@@ -742,13 +743,14 @@ int admin_cli_load_history(admin_cli_context_t *ctx, const char *filename) {
 // Форматирование JSON (заглушка)
 char* admin_cli_format_json(const char *data) {
     if (!data) return NULL;
-    
+
     // Простое копирование для теста
     size_t len = strlen(data);
     char *result = malloc(len + 1);
-    if (result) {
-        strcpy(result, data);
-    }
+    if (!result) return NULL;
+    
+    // Безопасное копирование с проверкой границ
+    utils_strcpy(result, data, len + 1);
     return result;
 }
 

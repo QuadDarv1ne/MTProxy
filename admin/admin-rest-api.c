@@ -20,6 +20,7 @@
 #include "admin/admin-rest-api.h"
 #include "common/rate-limiter.h"
 #include "common/common-stats.h"
+#include "common/utils.h"
 
 #include <stdio.h>
 #include <stdlib.h>
