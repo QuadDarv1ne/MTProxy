@@ -720,10 +720,10 @@ int admin_cli_save_history(admin_cli_context_t *ctx, const char *filename) {
 // Загрузка истории
 int admin_cli_load_history(admin_cli_context_t *ctx, const char *filename) {
     if (!ctx || !filename) return -1;
-    
+
     FILE *file = fopen(filename, "r");
     if (!file) return -1;
-    
+
     char line[512];
     while (fgets(line, sizeof(line), file) && ctx->history_count < ctx->history_max) {
         // Удаление newline
@@ -731,10 +731,54 @@ int admin_cli_load_history(admin_cli_context_t *ctx, const char *filename) {
         if (len > 0 && line[len-1] == '\n') {
             line[len-1] = '\0';
         }
-        
+
         admin_cli_add_history(ctx, line);
     }
-    
+
     fclose(file);
     return 0;
+}
+
+// Форматирование JSON (заглушка)
+char* admin_cli_format_json(const char *data) {
+    if (!data) return NULL;
+    
+    // Простое копирование для теста
+    size_t len = strlen(data);
+    char *result = malloc(len + 1);
+    if (result) {
+        strcpy(result, data);
+    }
+    return result;
+}
+
+// Форматирование таблицы (заглушка)
+char* admin_cli_format_table(const char **headers, int num_columns, 
+                             const char **rows, int num_rows) {
+    if (!headers || !rows || num_columns <= 0 || num_rows <= 0) return NULL;
+    
+    // Простая реализация для теста
+    size_t estimated_size = 4096;
+    char *result = malloc(estimated_size);
+    if (!result) return NULL;
+    
+    char *ptr = result;
+    char *end = result + estimated_size;
+    
+    // Заголовки
+    for (int i = 0; i < num_columns; i++) {
+        ptr += snprintf(ptr, end - ptr, "%-15s", headers[i]);
+    }
+    ptr += snprintf(ptr, end - ptr, "\n");
+    
+    // Данные
+    for (int row = 0; row < num_rows; row++) {
+        for (int col = 0; col < num_columns; col++) {
+            int idx = row * num_columns + col;
+            ptr += snprintf(ptr, end - ptr, "%-15s", rows[idx]);
+        }
+        ptr += snprintf(ptr, end - ptr, "\n");
+    }
+    
+    return result;
 }

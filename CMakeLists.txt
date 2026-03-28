@@ -944,6 +944,21 @@ set_target_properties(test-utils PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# Admin CLI test executable
+add_executable(test-admin-cli
+    testing/test_admin_cli.c
+    admin/admin-cli.c
+)
+
+target_link_libraries(test-admin-cli
+    kdb_common
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-admin-cli PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # WS Tunnel test executable - ОТКЛЮЧЕН (tg-ws-proxy integration)
 # add_executable(test-ws-tunnel
 #     testing/test_ws_tunnel.c
@@ -1095,7 +1110,7 @@ set_target_properties(integration-tests-simple PROPERTIES
 
 # Installation rules - Windows excludes some targets
 if(WIN32)
-    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils cache-performance-test-simple rate-limiter-highload-test-simple integration-tests-simple
+    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils test-admin-cli cache-performance-test-simple rate-limiter-highload-test-simple integration-tests-simple
         RUNTIME DESTINATION bin
     )
 else()
