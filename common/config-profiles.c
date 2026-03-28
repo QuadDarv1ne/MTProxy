@@ -95,9 +95,9 @@ int config_profiles_create(config_profiles_manager_t *mgr,
     /* Создаём профиль */
     config_profile_t *profile = &mgr->profiles[mgr->profile_count];
     memset(profile, 0, sizeof(config_profile_t));
-    
-    strncpy(profile->name, name, PROFILE_NAME_LEN - 1);
-    strncpy(profile->description, description ? description : "", PROFILE_DESC_LEN - 1);
+
+    utils_strncpy(profile->name, name, strlen(name), sizeof(profile->name));
+    utils_strncpy(profile->description, description ? description : "", description ? strlen(description) : 0, sizeof(profile->description));
     profile->type = type;
     profile->created = time(NULL);
     profile->modified = profile->created;

@@ -32,6 +32,7 @@
 #include "common/config-manager.h"
 #include "common/kprintf.h"
 #include "common/common-stats.h"
+#include "common/utils.h"
 
 /* Configuration statistics - defined in header */
 static struct config_manager_stats config_stats = {0};
@@ -124,22 +125,21 @@ int config_manager_init(const char *config_file_path) {
 
     // Создание builtin секций
     for (int i = 0; i < BUILTIN_SECTION_COUNT; i++) {
-        strncpy(global_config_ctx.sections[i].name,
-                builtin_sections[i].name,
-                sizeof(global_config_ctx.sections[i].name) - 1);
+        utils_strcpy(global_config_ctx.sections[i].name,
+                     builtin_sections[i].name,
+                     sizeof(global_config_ctx.sections[i].name));
         global_config_ctx.section_count++;
     }
 
     // Установка пути к конфигу
     if (config_file_path) {
-        strncpy(global_config_ctx.config_file_path,
-                config_file_path,
-                sizeof(global_config_ctx.config_file_path) - 1);
+        utils_strcpy(global_config_ctx.config_file_path,
+                     config_file_path,
+                     sizeof(global_config_ctx.config_file_path));
     } else {
-        strncpy(global_config_ctx.config_file_path, "/etc/mtproxy.conf",
-                sizeof(global_config_ctx.config_file_path) - 1);
+        utils_strcpy(global_config_ctx.config_file_path, "/etc/mtproxy.conf",
+                     sizeof(global_config_ctx.config_file_path));
     }
-    global_config_ctx.config_file_path[sizeof(global_config_ctx.config_file_path) - 1] = '\0';
 
     global_config_ctx.auto_reload_enabled = 1;
     global_config_ctx.validation_enabled = 1;
@@ -207,7 +207,7 @@ int config_manager_create_section(const char *section_name, const char *descript
     
     // Создание новой секции
     struct config_section *new_section = &global_config_ctx.sections[global_config_ctx.section_count];
-    strncpy(new_section->name, section_name, sizeof(new_section->name) - 1);
+    utils_strcpy(new_section->name, section_name, sizeof(new_section->name));
     new_section->parameters = NULL;
     new_section->param_count = 0;
     new_section->param_capacity = 0;
@@ -270,22 +270,22 @@ int config_manager_register_parameter(
     
     // Создание нового параметра
     struct config_parameter *new_param = &section->parameters[section->param_count];
-    strncpy(new_param->name, param_name, sizeof(new_param->name) - 1);
+    utils_strcpy(new_param->name, param_name, sizeof(new_param->name));
     if (description) {
-        strncpy(new_param->description, description, sizeof(new_param->description) - 1);
+        utils_strcpy(new_param->description, description, sizeof(new_param->description));
     }
     new_param->type = type;
     new_param->value_ptr = value_ptr;
     new_param->value_size = value_size;
     new_param->is_runtime_modifiable = is_runtime_modifiable;
-    new_param->is_sensitive = (strstr(param_name, "password") != NULL || 
+    new_param->is_sensitive = (strstr(param_name, "password") != NULL ||
                               strstr(param_name, "secret") != NULL ||
                               strstr(param_name, "key") != NULL);
     new_param->last_modified = time(NULL);
     new_param->version = 1;
-    
+
     if (default_value) {
-        strncpy(new_param->default_value, default_value, sizeof(new_param->default_value) - 1);
+        utils_strcpy(new_param->default_value, default_value, sizeof(new_param->default_value));
     }
     
     section->param_count++;
@@ -715,13 +715,13 @@ static void config_manager_add_history_entry(const char *section,
     
     struct config_change_history *history = global_config_ctx.change_history;
     struct config_change_entry *entry = &history->entries[history->current_index];
-    
+
     entry->timestamp = time(NULL);
-    strncpy(entry->section, section, sizeof(entry->section) - 1);
-    strncpy(entry->parameter, param, sizeof(entry->parameter) - 1);
-    strncpy(entry->old_value, old_val, sizeof(entry->old_value) - 1);
-    strncpy(entry->new_value, new_val, sizeof(entry->new_value) - 1);
-    strncpy(entry->changed_by, changed_by ? changed_by : "system", sizeof(entry->changed_by) - 1);
+    utils_strcpy(entry->section, section, sizeof(entry->section));
+    utils_strcpy(entry->parameter, param, sizeof(entry->parameter));
+    utils_strcpy(entry->old_value, old_val, sizeof(entry->old_value));
+    utils_strcpy(entry->new_value, new_val, sizeof(entry->new_value));
+    utils_strcpy(entry->changed_by, changed_by ? changed_by : "system", sizeof(entry->changed_by));
     entry->event_type = event;
     
     history->current_index = (history->current_index + 1) % history->max_entries;
