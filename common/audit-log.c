@@ -4,6 +4,7 @@
  */
 
 #include "audit-log.h"
+#include "common/utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -67,9 +68,8 @@ static void format_timestamp_iso(uint64_t timestamp_ms, char *buffer, size_t siz
 
 static void get_hostname(char *buffer, size_t size) {
     if (gethostname(buffer, size) != 0) {
-        strncpy(buffer, "unknown", size - 1);
+        utils_strcpy(buffer, "unknown", size);
     }
-    buffer[size - 1] = '\0';
 }
 
 static pthread_t get_current_thread_id(void) {
@@ -521,8 +521,8 @@ int audit_logger_start(audit_logger_t *logger) {
     if (fstat(fileno(logger->current_log), &st) == 0) {
         logger->current_size = st.st_size;
     }
-    
-    strncpy(logger->current_path, logger->config.log_path, sizeof(logger->current_path) - 1);
+
+    utils_strcpy(logger->current_path, logger->config.log_path, sizeof(logger->current_path));
     
     // Start writer thread
     logger->running = true;
@@ -609,8 +609,8 @@ int audit_log_event(audit_logger_t *logger,
     event.process_id = getpid();
     get_thread_name(event.thread_name, sizeof(event.thread_name));
     event.thread_id = get_current_thread_id();
-    strncpy(event.message, message, sizeof(event.message) - 1);
-    
+    utils_strcpy(event.message, message, sizeof(event.message));
+
     // Context
     if (context) {
         event.context = *context;
@@ -671,10 +671,10 @@ int audit_log_security(audit_logger_t *logger,
                       const char *message) {
     audit_context_t context = {0};
     if (ip_address) {
-        strncpy(context.ip_address, ip_address, sizeof(context.ip_address) - 1);
+        utils_strcpy(context.ip_address, ip_address, sizeof(context.ip_address));
     }
     if (user_id) {
-        strncpy(context.user_id, user_id, sizeof(context.user_id) - 1);
+        utils_strcpy(context.user_id, user_id, sizeof(context.user_id));
     }
     
     return audit_log_event(logger, event_type, AUDIT_CATEGORY_SECURITY_VIOLATION,
@@ -711,9 +711,9 @@ int audit_log_config_change(audit_logger_t *logger,
             old_value ? old_value : "none",
             new_value ? new_value : "none",
             admin_id ? admin_id : "unknown");
-    
+
     if (admin_id) {
-        strncpy(context.user_id, admin_id, sizeof(context.user_id) - 1);
+        utils_strcpy(context.user_id, admin_id, sizeof(context.user_id));
     }
     
     return audit_log_event(logger, AUDIT_EVENT_CONFIG_MODIFIED, 
@@ -727,7 +727,7 @@ int audit_log_client_connect(audit_logger_t *logger,
                             uint16_t port,
                             const char *secret_id) {
     audit_context_t context = {0};
-    strncpy(context.ip_address, ip_address, sizeof(context.ip_address) - 1);
+    utils_strcpy(context.ip_address, ip_address, sizeof(context.ip_address));
     context.port = port;
     snprintf(context.custom_data, sizeof(context.custom_data),
             "fd=%d,secret=%s", client_fd, secret_id ? secret_id : "unknown");
@@ -745,7 +745,7 @@ int audit_log_client_disconnect(audit_logger_t *logger,
                                uint64_t bytes_sent,
                                uint64_t bytes_received) {
     audit_context_t context = {0};
-    strncpy(context.ip_address, ip_address, sizeof(context.ip_address) - 1);
+    utils_strcpy(context.ip_address, ip_address, sizeof(context.ip_address));
     context.duration_ms = duration_ms;
     context.bytes_sent = bytes_sent;
     context.bytes_received = bytes_received;

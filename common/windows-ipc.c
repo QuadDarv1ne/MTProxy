@@ -23,6 +23,7 @@
 #include <errno.h>
 
 #include "posix-compat-windows.h"
+#include "common/utils.h"
 
 // Debug flag for IPC tracing
 #ifndef IPC_DEBUG
@@ -123,8 +124,7 @@ int ipc_parent_init(const char *worker_id) {
     }
 
     g_ipc_parent.pipe_handle = pipe;
-    strncpy(g_ipc_parent.pipe_name, pipe_name, sizeof(g_ipc_parent.pipe_name) - 1);
-    g_ipc_parent.pipe_name[sizeof(g_ipc_parent.pipe_name) - 1] = '\0';
+    utils_strcpy(g_ipc_parent.pipe_name, pipe_name, sizeof(g_ipc_parent.pipe_name));
     g_ipc_parent.is_connected = FALSE;
     g_ipc_parent.last_error = 0;
 
@@ -179,8 +179,7 @@ int ipc_worker_init(const char *worker_id) {
 
         if (pipe != INVALID_HANDLE_VALUE) {
             g_ipc_worker.pipe_handle = pipe;
-            strncpy(g_ipc_worker.pipe_name, pipe_name, sizeof(g_ipc_worker.pipe_name) - 1);
-            g_ipc_worker.pipe_name[sizeof(g_ipc_worker.pipe_name) - 1] = '\0';
+            utils_strcpy(g_ipc_worker.pipe_name, pipe_name, sizeof(g_ipc_worker.pipe_name));
             g_ipc_worker.is_connected = TRUE;
             g_ipc_worker.last_error = 0;
             IPC_DEBUG("Connected to parent successfully (attempt %d/%d)", i + 1, IPC_RETRY_ATTEMPTS);
