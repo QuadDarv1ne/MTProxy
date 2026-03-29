@@ -36,26 +36,26 @@ static struct {
     bool running;
     char cluster_name[CLUSTER_MAX_NAME_LEN];
     char local_node_name[CLUSTER_MAX_NAME_LEN];
-    
+
     cluster_node_config_t nodes[CLUSTER_MAX_NODES];
-    cluster_node_status_t node_status[CLUSTER_MAX_NODES];
+    cluster_node_info_t node_status[CLUSTER_MAX_NODES];
     int node_count;
-    
+
     cluster_role_t local_role;
     char leader_name[CLUSTER_MAX_NAME_LEN];
     int64_t leader_last_seen;
-    
+
     int listen_port;
     int64_t start_time;
     int64_t last_heartbeat;
-    
+
     cluster_stats_t stats;
-    
+
     // Callback функции
     cluster_node_change_callback_t node_change_callback;
     cluster_leader_change_callback_t leader_change_callback;
     cluster_message_handler_t message_handlers[16];
-    
+
     // Потоки
 #ifdef _WIN32
     HANDLE heartbeat_thread;
@@ -64,7 +64,7 @@ static struct {
     pthread_t heartbeat_thread;
     pthread_t listener_thread;
 #endif
-    
+
     // Синхронизация
     bool auto_failover_enabled;
     int election_timeout_ms;
@@ -100,7 +100,7 @@ static cluster_node_config_t* find_node_config(const char *name) {
     return NULL;
 }
 
-static cluster_node_status_t* find_node_status(const char *name) {
+static cluster_node_info_t* find_node_status(const char *name) {
     if (!name) return NULL;
     for (int i = 0; i < g_cluster.node_count; i++) {
         if (strcmp(g_cluster.nodes[i].name, name) == 0) {
@@ -158,21 +158,21 @@ static int send_tcp_message(const char *host, int port, const cluster_message_t 
     return 0;
 }
 
-static void update_node_status(const char *name, cluster_node_status_t new_status) {
-    cluster_node_status_t *status = find_node_status(name);
+static void update_node_status(const char *name, cluster_node_state_t new_status) {
+    cluster_node_info_t *status = find_node_status(name);
     if (!status) return;
-    
-    cluster_node_status_t old_status = status->status;
+
+    cluster_node_state_t old_status = status->status;
     if (old_status == new_status) return;
-    
+
     status->status = new_status;
     status->last_seen = get_current_time_ms();
-    
-    kprintf("[CLUSTER] Node %s status changed: %s -> %s\n", 
-            name, 
+
+    kprintf("[CLUSTER] Node %s status changed: %s -> %s\n",
+            name,
             cluster_node_status_to_string(old_status),
             cluster_node_status_to_string(new_status));
-    
+
     // Callback
     if (g_cluster.node_change_callback) {
         g_cluster.node_change_callback(name, old_status, new_status);
@@ -1092,7 +1092,7 @@ const char* cluster_role_to_string(cluster_role_t role) {
     }
 }
 
-const char* cluster_node_status_to_string(cluster_node_status_t status) {
+const char* cluster_node_status_to_string(cluster_node_state_t status) {
     switch (status) {
         case CLUSTER_NODE_OFFLINE: return "Offline";
         case CLUSTER_NODE_STARTING: return "Starting";

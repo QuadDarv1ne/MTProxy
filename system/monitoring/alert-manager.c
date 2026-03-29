@@ -25,6 +25,7 @@
 
 #include "system/monitoring/alert-manager.h"
 #include "common/utils.h"
+#include "common/kprintf.h"
 
 // ============================================================================
 // Глобальные переменные

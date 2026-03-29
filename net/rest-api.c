@@ -21,18 +21,38 @@
 #include <sys/select.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/time.h>
 #endif
 
 #include <errno.h>
+
+// Windows compatibility for socklen_t
+#ifdef _WIN32
+#ifndef socklen_t
+#define socklen_t int
+#endif
+#ifndef close
+#define close closesocket
+#endif
+#endif
 
 /* ============================================================================
  * Вспомогательные функции
  * ============================================================================ */
 
 static uint64_t get_timestamp_ms(void) {
+#ifdef _WIN32
+    FILETIME ft;
+    ULARGE_INTEGER uli;
+    GetSystemTimeAsFileTime(&ft);
+    uli.LowPart = ft.dwLowDateTime;
+    uli.HighPart = ft.dwHighDateTime;
+    return (uint64_t)((uli.QuadPart - 116444736000000000ULL) / 10000);
+#else
     struct timeval tv;
     gettimeofday(&tv, NULL);
     return (uint64_t)tv.tv_sec * 1000 + tv.tv_usec / 1000;
+#endif
 }
 
 static char *generate_request_id(char *buffer, size_t size) {
@@ -576,13 +596,15 @@ int rest_api_init(rest_api_server_t *server, const rest_api_config_t *config) {
         free(server->routes);
         return -1;
     }
-    
+
     // Initialize mutex
     pthread_mutex_init(&server->mutex, NULL);
-    
-    // Ignore SIGPIPE
+
+    // Ignore SIGPIPE (not needed on Windows)
+#ifndef _WIN32
     signal(SIGPIPE, SIG_IGN);
-    
+#endif
+
     server->initialized = true;
     return 0;
 }
@@ -597,17 +619,21 @@ int rest_api_start(rest_api_server_t *server) {
     if (server->server_fd < 0) {
         return -1;
     }
-    
+
     // Set socket options
     int opt = 1;
+#ifdef _WIN32
+    setsockopt(server->server_fd, SOL_SOCKET, SO_REUSEADDR, (const char*)&opt, sizeof(opt));
+#else
     setsockopt(server->server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-    
+#endif
+
     // Bind
     struct sockaddr_in addr;
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_port = htons(server->config.port);
-    
+
     if (strcmp(server->config.bind_address, "0.0.0.0") == 0) {
         addr.sin_addr.s_addr = INADDR_ANY;
     } else {

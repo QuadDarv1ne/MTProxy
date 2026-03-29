@@ -55,7 +55,7 @@ typedef enum {
     CLUSTER_NODE_ONLINE = 2,
     CLUSTER_NODE_DEGRADED = 3,
     CLUSTER_NODE_FAILED = 4
-} cluster_node_status_t;
+} cluster_node_state_t;
 
 // Типы сообщений кластера
 typedef enum {
@@ -85,7 +85,7 @@ typedef struct {
 // Статус узла
 typedef struct {
     char name[CLUSTER_MAX_NAME_LEN];
-    cluster_node_status_t status;
+    cluster_node_state_t status;
     cluster_role_t role;
     uint64_t uptime_ms;
     int active_connections;
@@ -97,7 +97,7 @@ typedef struct {
     int64_t last_heartbeat;
     int64_t last_seen;
     char error_message[256];
-} cluster_node_status_t;
+} cluster_node_info_t;
 
 // Сообщение кластера
 typedef struct {
@@ -437,7 +437,7 @@ const char* cluster_role_to_string(cluster_role_t role);
  * @param status Статус
  * @return Строка статуса
  */
-const char* cluster_node_status_to_string(cluster_node_status_t status);
+const char* cluster_node_status_to_string(cluster_node_state_t status);
 
 /**
  * Конвертировать тип сообщения в строку

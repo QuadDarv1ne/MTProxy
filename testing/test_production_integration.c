@@ -291,10 +291,10 @@ static int test_full_stack_integration(void) {
         simulate_load(1, 10);
         tracing_end_span(span);
         tracing_end_trace(trace);
-        
+
         // Health Check
-        health_check_run_health_check();
-        
+        health_check_run_once();
+
         // Auto-Scaler
         auto_scaler_check_and_scale();
     }
