@@ -28,11 +28,11 @@ FAILED_TESTS=0
 run_test() {
     local test_name=$1
     local test_executable=$2
-    
+
     echo "----------------------------------------"
     echo "Запуск: $test_name"
     echo "----------------------------------------"
-    
+
     if [ -f "$test_executable" ]; then
         # Запуск теста с таймаутом
         if timeout 60 "$test_executable" 2>&1; then
@@ -46,17 +46,56 @@ run_test() {
     else
         echo "⚠️  $test_name: executable not found ($test_executable)"
     fi
-    
+
     echo ""
 }
 
-# Запуск всех тестов
-run_test "New Modules Tests" "./test-new-modules.exe"
-run_test "Utils Tests" "./test-utils.exe"
-run_test "Traffic Stats Tests" "./test-traffic-stats.exe"
-run_test "Integration Tests" "./integration-tests-simple.exe"
-run_test "Cache Performance Tests" "./cache-performance-test-simple.exe"
-run_test "Rate Limiter Tests" "./rate-limiter-highload-test-simple.exe"
+# Функция для запуска Python теста
+run_python_test() {
+    local test_name=$1
+    local test_script=$2
+
+    echo "----------------------------------------"
+    echo "Запуск: $test_name"
+    echo "----------------------------------------"
+
+    if [ -f "$test_script" ]; then
+        if timeout 120 python3 "$test_script" 2>&1; then
+            echo "✅ $test_name: PASSED"
+            ((PASSED_TESTS++)) || true
+        else
+            echo "❌ $test_name: FAILED"
+            ((FAILED_TESTS++)) || true
+        fi
+        ((TOTAL_TESTS++)) || true
+    else
+        echo "⚠️  $test_name: script not found ($test_script)"
+    fi
+
+    echo ""
+}
+
+# C тесты
+run_test "Utils Security Tests" "./test-utils-security"
+run_test "Cache Pool Tests" "./test-cache-pool"
+run_test "Cache No-Copy Tests" "./test-cache-no-copy"
+run_test "Admin CLI Tests" "./test-admin-cli"
+run_test "Admin CLI Integration" "./test-admin-cli-integration"
+run_test "IO_URING Tests" "./test-io-uring"
+
+# Бенчмарки
+run_test "Memory Allocator Benchmark" "./benchmark-memory-allocator"
+run_test "IO_URING Benchmark" "./benchmark-io-uring"
+run_test "Highload Benchmark (100K+)" "./benchmark-highload"
+
+# Интеграционные тесты
+run_test "Integration Tests Simple" "./integration-tests-simple"
+run_test "Cache Performance Simple" "./cache-performance-test-simple"
+run_test "Rate Limiter Simple" "./rate-limiter-highload-test-simple"
+
+# Python тесты
+run_python_test "Metrics + Docker Integration" "../testing/test_metrics_docker_integration.py"
+run_python_test "Metrics Collector" "../testing/test_metrics_collector.py"
 
 # Вывод статистики
 echo "========================================"

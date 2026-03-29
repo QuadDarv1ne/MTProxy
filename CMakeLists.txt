@@ -1066,6 +1066,20 @@ set_target_properties(benchmark-io-uring PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# Highload benchmark executable (100K+ operations)
+add_executable(benchmark-highload
+    testing/benchmark_highload.c
+)
+
+target_link_libraries(benchmark-highload
+    ${PLATFORM_LIBS}
+    pthread
+)
+
+set_target_properties(benchmark-highload PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # Utils security test executable
 add_executable(test-utils-security
     testing/test_utils_security.c
@@ -1317,15 +1331,25 @@ add_test(NAME test-admin-cli-integration COMMAND test-admin-cli-integration)
 add_test(NAME test-io-uring COMMAND test-io-uring)
 add_test(NAME benchmark-memory-allocator COMMAND benchmark-memory-allocator)
 add_test(NAME benchmark-io-uring COMMAND benchmark-io-uring)
+add_test(NAME benchmark-highload COMMAND benchmark-highload)
 add_test(NAME integration-tests-simple COMMAND integration-tests-simple)
+
+# Python integration tests
+find_package(Python3 COMPONENTS Interpreter)
+if(Python3_Interpreter_FOUND)
+    add_test(NAME test-metrics-docker-integration
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/testing/test_metrics_docker_integration.py
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/testing
+    )
+endif()
 
 # Installation rules - Windows excludes some targets
 if(WIN32)
-    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils test-admin-cli cache-performance-test-simple rate-limiter-highload-test-simple integration-tests-simple
+    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils test-admin-cli cache-performance-test-simple rate-limiter-highload-test-simple integration-tests-simple benchmark-highload
         RUNTIME DESTINATION bin
     )
 else()
-    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils test-ffi-api test-performance test-admin-cli-integration cache-performance-test rate-limiter-highload-test integration-tests
+    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils test-ffi-api test-performance test-admin-cli-integration cache-performance-test rate-limiter-highload-test integration-tests benchmark-highload
         RUNTIME DESTINATION bin
     )
 endif()
