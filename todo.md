@@ -1,9 +1,9 @@
 # MTProxy Project TODO
 
 > **Актуально на:** 29 марта 2026 г.
-> **Коммит:** 1f02d32 (HEAD -> dev)
+> **Коммит:** 734dd54 (HEAD -> dev)
 > **Версия:** v1.0.30 ✅ RELEASED | v1.0.31-dev (Q1 2027 в работе)
-> **Ветки:** dev = origin/dev ✅ | master = origin/master ✅ (синхронизированы)
+> **Ветки:** dev (ahead origin/dev by 8) | master (synced)
 > **Тег:** v1.0.30 ✅
 
 ---
@@ -75,7 +75,7 @@
 
 | Метрика | Значение | Изменение |
 |---------|----------|-----------|
-| **Всего коммитов** | 505 | +1 |
+| **Всего коммитов** | 505 | +7 (Q4 2026) |
 | **C/H файлов** | 426+ | +11 (Q4 2026) |
 | **Workflow** | 8 | 0 |
 | **Тестов** | 250 (230 C + 8 Python + 4 Dart) | +110 (Q4 2026) |
@@ -87,10 +87,10 @@
 
 ## 📚 Документация
 
-### Основная (35 файлов)
+### Основная (36 файлов)
 - README.md, PROJECT_INDEX.md, TESTING.md, BENCHMARKS.md
 - CHANGELOG.md, SECURITY.md, CONTRIBUTING.md, DEPLOYMENT.md
-- API_REFERENCE.md, ROADMAP.md, RELEASE_NOTES_v1.0.28.md, RELEASE_NOTES_v1.0.29.md
+- API_REFERENCE.md, ROADMAP.md, RELEASE_NOTES_v1.0.28.md, RELEASE_NOTES_v1.0.29.md, RELEASE_NOTES_v1.0.30.md
 - docs/*.md (8 файлов: ADMIN_CLI_GUIDE.md, DEBUGGING.md, PERFORMANCE_TUNING.md, TROUBLESHOOTING.md, FREEBSD_SUPPORT.md, ARM64_SUPPORT.md, GRPC_API.md, CLI_GUIDE.md)
 - grafana/README.md, prometheus/mtproxy-alerts.yml
 - webui/README.md
@@ -112,19 +112,20 @@
 | gRPC интерфейс | Q3 2026 | 🟢 Низкий | ✅ Выполнено |
 | Grafana дашборд | Q3 2026 | 🟢 Низкий | ✅ Выполнено |
 | Web UI | Q3 2026 | 🔴 Высокий | ✅ Выполнено |
-| **CLI утилита** | **Q4 2026** | **🔴 Высокий** | **⏳ В работе** |
-| **Alert manager** | **Q4 2026** | **🔴 Высокий** | **⏳ Планирование** |
-| **Health checks** | **Q4 2026** | **🔴 Высокий** | **⏳ Планирование** |
-| **Кластеризация** | **Q4 2026** | **🟡 Средний** | **⏳ Планирование** |
-| **Load balancing** | **Q4 2026** | **🟡 Средний** | **⏳ Планирование** |
+| CLI утилита | Q4 2026 | 🔴 Высокий | ✅ Выполнено |
+| Alert manager | Q4 2026 | 🔴 Высокий | ✅ Выполнено |
+| Health checks | Q4 2026 | 🔴 Высокий | ✅ Выполнено |
+| Кластеризация | Q4 2026 | 🟡 Средний | ✅ Выполнено |
+| Load balancing | Q4 2026 | 🟡 Средний | ✅ Выполнено |
 
 ---
 
 ## 📝 Правила
 
-- **Качество важнее количества**
-- **Workflow:** dev → проверка → main
-- **Без документации без запроса**
+- **Качество важнее количества** — фокус на стабильность и тесты
+- **Workflow:** dev → проверка (тесты, сборка) → main
+- **Без документации без запроса** — только код и исправления
+- **Синхронизация:** все изменения в dev, затем merge в main
 
 ---
 
