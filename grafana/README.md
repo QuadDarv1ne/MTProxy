@@ -2,9 +2,13 @@
 
 ## Обзор
 
-Этот каталог содержит Grafana дашборд для мониторинга MTProxy.
+Этот каталог содержит Grafana дашборды для мониторинга MTProxy.
 
-## Установка
+**Доступные дашборды:**
+- `mtproxy-dashboard.json` — базовый дашборд (8 панелей)
+- `mtproxy-enhanced-dashboard.json` — расширенный дашборд (16 панелей) ✅ NEW
+
+## Быстрый старт
 
 ### 1. Запуск Prometheus Exporter
 
@@ -95,6 +99,8 @@ scrape_configs:
 
 ## Дашборд панели
 
+### Базовый дашборд (8 панелей)
+
 | Панель | Описание |
 |--------|----------|
 | Server Status | Текущий статус сервера (Running/Stopped/Error) |
@@ -104,9 +110,37 @@ scrape_configs:
 | Connections | График подключений (active + per second) |
 | Network Traffic | График сетевого трафика (in/out) |
 | CPU Usage | График использования CPU |
-| Cache Performance | Hit rate, entries, evictions |
-| Rate Limiting | Активные правила, заблокированные IP |
 | Errors & Rate Limiting | График ошибок и rate limiting |
+
+### Расширенный дашборд (16 панелей) ✅ NEW
+
+Дополнительно к базовым панелям:
+
+| Панель | Описание |
+|--------|----------|
+| Cache Performance | Hit rate, hit/miss ratio с порогами |
+| Cache Statistics | Entries, evictions/sec, memory usage |
+| Rate Limiting | Active rules, blocked IPs, whitelisted IPs |
+| gRPC API Performance | Requests/sec, errors/sec, active streams |
+| Secrets Management | Total secrets, secrets in use |
+| gRPC API Latency | p50, p95, p99 latency percentiles |
+| Connections by Status | Active, idle, closed, rejected connections |
+| Total Connections History | Total connections + max limit |
+
+## Новые метрики для расширенного дашборда
+
+### gRPC API Metrics (NEW)
+- **mtproxy_grpc_requests_total** — Всего gRPC запросов
+- **mtproxy_grpc_errors_total** — Всего gRPC ошибок
+- **mtproxy_grpc_active_streams** — Активные gRPC стримы
+- **mtproxy_grpc_request_duration_seconds** — Duration histogram для latency
+
+### Secrets Metrics (NEW)
+- **mtproxy_secrets_count** — Общее количество секретов
+- **mtproxy_secrets_in_use** — Количество используемых секретов
+
+### Connection Limits (NEW)
+- **mtproxy_max_connections_limit** — Максимальный лимит подключений
 
 ## Скриншот
 
@@ -155,6 +189,32 @@ mtproxy_cache_hit_rate < 50
 
 # Possible DDoS Attack
 rate(mtproxy_rate_limited_total[1m]) > 500
+
+# gRPC API Performance (NEW)
+rate(mtproxy_grpc_requests_total[1m])
+rate(mtproxy_grpc_errors_total[1m])
+mtproxy_grpc_active_streams
+
+# gRPC API Latency (NEW)
+histogram_quantile(0.50, rate(mtproxy_grpc_request_duration_seconds_bucket[5m]))
+histogram_quantile(0.95, rate(mtproxy_grpc_request_duration_seconds_bucket[5m]))
+histogram_quantile(0.99, rate(mtproxy_grpc_request_duration_seconds_bucket[5m]))
+
+# Cache Hit Rate calculation
+rate(mtproxy_cache_hits_total[1m]) * 100 / (rate(mtproxy_cache_hits_total[1m]) + rate(mtproxy_cache_misses_total[1m]))
+
+# Secrets usage
+mtproxy_secrets_count
+mtproxy_secrets_in_use
+
+# Connection limit percentage
+mtproxy_active_connections / mtproxy_max_connections_limit * 100
+
+# Connections by status
+mtproxy_connections_by_status{status="active"}
+mtproxy_connections_by_status{status="idle"}
+mtproxy_connections_by_status{status="closed"}
+mtproxy_connections_by_status{status="rejected"}
 ```
 
 ## Docker Compose (полный стек)
@@ -238,5 +298,5 @@ volumes:
 
 ---
 
-*Версия: 1.0.0*  
-*Последнее обновление: 20 марта 2026 г.*
+*Версия: 2.0.0*
+*Последнее обновление: 29 марта 2026 г. — Enhanced Dashboard (16 панелей)*

@@ -183,6 +183,114 @@ if(ENABLE_IOURING)
     endif()
 endif()
 
+# ============================================================================
+# gRPC API Support
+# ============================================================================
+option(ENABLE_GRPC "Enable gRPC API for remote management" OFF)
+if(ENABLE_GRPC)
+    find_package(PkgConfig QUIET)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(PROTOBUF protobuf)
+        pkg_check_modules(GRPC grpc)
+    endif()
+
+    # Поиск protoc и grpc_cpp_plugin
+    find_program(PROTOC_EXECUTABLE protoc)
+    find_program(GRPC_CPP_PLUGIN grpc_cpp_plugin)
+
+    if(PROTOBUF_FOUND AND GRPC_FOUND AND PROTOC_EXECUTABLE AND GRPC_CPP_PLUGIN)
+        set(GRPC_ENABLED TRUE)
+        add_definitions(-DHAVE_GRPC)
+
+        include_directories(${PROTOBUF_INCLUDE_DIRS} ${GRPC_INCLUDE_DIRS})
+        link_directories(${PROTOBUF_LIBRARY_DIRS} ${GRPC_LIBRARY_DIRS})
+
+        # Генерация кода из .proto файла
+        set(PROTO_FILE "${CMAKE_CURRENT_SOURCE_DIR}/api/protobuf/mtproxy.proto")
+        set(PROTO_GEN_DIR "${CMAKE_CURRENT_BINARY_DIR}/grpc_gen")
+        file(MAKE_DIRECTORY ${PROTO_GEN_DIR})
+
+        set(PROTO_SRCS "${PROTO_GEN_DIR}/mtproxy.pb.c")
+        set(PROTO_HDRS "${PROTO_GEN_DIR}/mtproxy.pb.h")
+        set(GRPC_SRCS "${PROTO_GEN_DIR}/mtproxy.grpc.pb.c")
+        set(GRPC_HDRS "${PROTO_GEN_DIR}/mtproxy.grpc.pb.h")
+
+        # Команды генерации
+        add_custom_command(
+            OUTPUT ${PROTO_SRCS} ${PROTO_HDRS}
+            COMMAND ${PROTOC_EXECUTABLE}
+            ARGS -I${CMAKE_CURRENT_SOURCE_DIR}/api/protobuf
+                 --c_out=${PROTO_GEN_DIR}
+                 ${PROTO_FILE}
+            DEPENDS ${PROTO_FILE}
+            COMMENT "Generating C code from protobuf"
+        )
+
+        add_custom_command(
+            OUTPUT ${GRPC_SRCS} ${GRPC_HDRS}
+            COMMAND ${PROTOC_EXECUTABLE}
+            ARGS -I${CMAKE_CURRENT_SOURCE_DIR}/api/protobuf
+                 --grpc_out=${PROTO_GEN_DIR}
+                 --plugin=protoc-gen-grpc=${GRPC_CPP_PLUGIN}
+                 ${PROTO_FILE}
+            DEPENDS ${PROTO_FILE}
+            COMMENT "Generating gRPC code from protobuf"
+        )
+
+        # Добавляем gRPC источники
+        list(APPEND API_SOURCES
+            ${PROTO_SRCS}
+            ${PROTO_HDRS}
+            ${GRPC_SRCS}
+            ${GRPC_HDRS}
+            api/grpc-server.c
+            api/grpc-server.h
+        )
+
+        list(APPEND PLATFORM_LIBS ${PROTOBUF_LIBRARIES} ${GRPC_LIBRARIES})
+
+        message(STATUS "gRPC API enabled")
+        message(STATUS "  protoc: ${PROTOC_EXECUTABLE}")
+        message(STATUS "  grpc_cpp_plugin: ${GRPC_CPP_PLUGIN}")
+    else()
+        set(GRPC_ENABLED FALSE)
+        message(STATUS "gRPC API disabled - protobuf/grpc not found")
+        message(STATUS "  To enable: apt install libprotobuf-dev protobuf-compiler grpc-tools")
+        # Добавляем только grpc-server без сгенерированного кода
+        list(APPEND API_SOURCES
+            api/grpc-server.c
+            api/grpc-server.h
+        )
+    endif()
+else()
+    # gRPC отключён, но добавляем заглушку для совместимости
+    list(APPEND API_SOURCES
+        api/grpc-server.c
+        api/grpc-server.h
+    )
+endif()
+
+# ============================================================================
+# Web UI Support
+# ============================================================================
+option(ENABLE_WEBUI "Enable Web UI for monitoring and management" ON)
+if(ENABLE_WEBUI)
+    # Копирование Web UI файлов в build директорию
+    set(WEBUI_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/webui")
+    set(WEBUI_DEST_DIR "${CMAKE_BINARY_DIR}/webui")
+    
+    file(COPY ${WEBUI_SOURCE_DIR}/ DESTINATION ${WEBUI_DEST_DIR}
+         PATTERN "*.md" EXCLUDE
+         PATTERN "*.gitignore" EXCLUDE)
+    
+    message(STATUS "Web UI enabled")
+    message(STATUS "  Source: ${WEBUI_SOURCE_DIR}")
+    message(STATUS "  Destination: ${WEBUI_DEST_DIR}")
+    message(STATUS "  Access: http://localhost:8080/ (requires REST API)")
+else()
+    message(STATUS "Web UI disabled")
+endif()
+
 # Cache compiler checks to speed up reconfiguration
 set(CMAKE_C_COMPILER_LAUNCHER "" CACHE STRING "C compiler launcher")
 if(CMAKE_GENERATOR STREQUAL "Ninja")
@@ -903,13 +1011,30 @@ set(MTPROTO_SOURCES
     mtproto/mtproto-version-manager.h
 )
 
+# API sources (gRPC, REST)
+# API_SOURCES is already defined in gRPC section above
+
 # Create a static library for crypto modules (compiled without -ffast-math for security)
 add_library(kdb_crypto STATIC ${CRYPTO_SOURCES})
 target_compile_options(kdb_crypto PRIVATE -fno-fast-math)
 target_include_directories(kdb_crypto PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/common)
 
 # Create a static library for common functionality
-add_library(kdb_common STATIC ${COMMON_SOURCES} ${JOBS_SOURCES} ${VV_SOURCES} ${CONN_POOL_SOURCES} ${GENERAL_SOURCES} ${INFRASTRUCTURE_SOURCES} ${THREAD_SYSTEM_SOURCES} ${SYSTEM_SOURCES} ${SECURITY_SOURCES} ${ADVANCED_OPTIMIZATION_SOURCES} ${OBFUSCATION_SOURCES} ${PERF_MONITOR_SOURCES})
+add_library(kdb_common STATIC 
+    ${COMMON_SOURCES} 
+    ${JOBS_SOURCES} 
+    ${VV_SOURCES} 
+    ${CONN_POOL_SOURCES} 
+    ${GENERAL_SOURCES} 
+    ${INFRASTRUCTURE_SOURCES} 
+    ${THREAD_SYSTEM_SOURCES} 
+    ${SYSTEM_SOURCES} 
+    ${SECURITY_SOURCES} 
+    ${ADVANCED_OPTIMIZATION_SOURCES} 
+    ${OBFUSCATION_SOURCES} 
+    ${PERF_MONITOR_SOURCES}
+    ${API_SOURCES}
+)
 target_include_directories(kdb_common PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/common)
 
 # Target for the main mtproto-proxy executable
@@ -1209,6 +1334,151 @@ set_target_properties(test-rest-api PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# gRPC Server test executable
+add_executable(test-grpc-server
+    testing/test_grpc_server.c
+    api/grpc-server.c
+)
+
+target_link_libraries(test-grpc-server
+    ${PLATFORM_LIBS}
+    pthread
+)
+
+target_compile_definitions(test-grpc-server PRIVATE
+    -DTEST_MODE
+)
+
+target_include_directories(test-grpc-server PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(test-grpc-server PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# ============================================================================
+# MTProxy CLI Utility (Q4 2026)
+# ============================================================================
+
+add_executable(mtproxy-cli
+    cli/mtcli.c
+    cli/mtcli.h
+)
+
+target_link_libraries(mtproxy-cli
+    ${PLATFORM_LIBS}
+)
+
+target_include_directories(mtproxy-cli PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+)
+
+set_target_properties(mtproxy-cli PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# ============================================================================
+# Alert Manager (Q4 2026)
+# ============================================================================
+
+# Alert Manager test executable
+add_executable(test-alert-manager
+    testing/test_alert_manager.c
+    system/monitoring/alert-manager.c
+)
+
+target_link_libraries(test-alert-manager
+    ${PLATFORM_LIBS}
+)
+
+target_include_directories(test-alert-manager PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/testing
+    ${CMAKE_CURRENT_SOURCE_DIR}/system
+)
+
+set_target_properties(test-alert-manager PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# ============================================================================
+# Health Check System (Q4 2026)
+# ============================================================================
+
+# Health Check test executable
+add_executable(test-health-check
+    testing/test_health_check.c
+    system/monitoring/health-check.c
+)
+
+target_link_libraries(test-health-check
+    ${PLATFORM_LIBS}
+)
+
+target_include_directories(test-health-check PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/testing
+    ${CMAKE_CURRENT_SOURCE_DIR}/system
+)
+
+set_target_properties(test-health-check PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# ============================================================================
+# Cluster Manager (Q4 2026)
+# ============================================================================
+
+# Cluster Manager test executable
+add_executable(test-cluster-manager
+    testing/test_cluster_manager.c
+    system/cluster/cluster-manager.c
+)
+
+target_link_libraries(test-cluster-manager
+    ${PLATFORM_LIBS}
+)
+
+target_include_directories(test-cluster-manager PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/testing
+    ${CMAKE_CURRENT_SOURCE_DIR}/system
+)
+
+set_target_properties(test-cluster-manager PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# ============================================================================
+# Load Balancer (Q4 2026)
+# ============================================================================
+
+# Load Balancer test executable
+add_executable(test-load-balancer
+    testing/test_load_balancer.c
+    system/cluster/load-balancer.c
+)
+
+target_link_libraries(test-load-balancer
+    ${PLATFORM_LIBS}
+)
+
+target_include_directories(test-load-balancer PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/testing
+    ${CMAKE_CURRENT_SOURCE_DIR}/system
+)
+
+set_target_properties(test-load-balancer PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # WS Tunnel test executable - ОТКЛЮЧЕН (tg-ws-proxy integration)
 # add_executable(test-ws-tunnel
 #     testing/test_ws_tunnel.c
@@ -1369,6 +1639,12 @@ add_test(NAME test-admin-cli COMMAND test-admin-cli)
 add_test(NAME test-admin-cli-integration COMMAND test-admin-cli-integration)
 add_test(NAME test-io-uring COMMAND test-io-uring)
 add_test(NAME test-rest-api COMMAND test-rest-api)
+add_test(NAME test-grpc-server COMMAND test-grpc-server)
+add_test(NAME test-cli COMMAND test-cli)
+add_test(NAME test-alert-manager COMMAND test-alert-manager)
+add_test(NAME test-health-check COMMAND test-health-check)
+add_test(NAME test-cluster-manager COMMAND test-cluster-manager)
+add_test(NAME test-load-balancer COMMAND test-load-balancer)
 add_test(NAME benchmark-memory-allocator COMMAND benchmark-memory-allocator)
 add_test(NAME benchmark-io-uring COMMAND benchmark-io-uring)
 add_test(NAME benchmark-highload COMMAND benchmark-highload)
@@ -1386,11 +1662,11 @@ endif()
 
 # Installation rules - Windows excludes some targets
 if(WIN32)
-    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils test-admin-cli cache-performance-test-simple rate-limiter-highload-test-simple integration-tests-simple benchmark-highload benchmark-cache-performance test-rest-api
+    install(TARGETS mtproto-proxy mtproxy-admin mtproxy-cli test-new-modules test-traffic-stats test-utils test-admin-cli cache-performance-test-simple rate-limiter-highload-test-simple integration-tests-simple benchmark-highload benchmark-cache-performance test-rest-api test-cli test-alert-manager test-health-check test-cluster-manager test-load-balancer
         RUNTIME DESTINATION bin
     )
 else()
-    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils test-ffi-api test-performance test-admin-cli-integration cache-performance-test rate-limiter-highload-test integration-tests benchmark-highload benchmark-cache-performance test-rest-api
+    install(TARGETS mtproto-proxy mtproxy-admin mtproxy-cli test-new-modules test-traffic-stats test-utils test-ffi-api test-performance test-admin-cli-integration cache-performance-test rate-limiter-highload-test integration-tests benchmark-highload benchmark-cache-performance test-rest-api test-cli test-alert-manager test-health-check test-cluster-manager test-load-balancer
         RUNTIME DESTINATION bin
     )
 endif()

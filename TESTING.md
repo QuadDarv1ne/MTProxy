@@ -210,6 +210,8 @@ python3 testing/test_metrics_docker_integration.py
 | test-admin-cli | test_admin_cli.c | Admin CLI commands |
 | test-performance | test_performance.c | Performance tests |
 | test-ffi-api | test_ffi_api.c | FFI integration |
+| test-rest-api | test_rest_api.c | REST API endpoints |
+| test-grpc-server | test_grpc_server.c | gRPC server initialization and callbacks |
 
 ---
 
@@ -252,9 +254,11 @@ make -j4
 | Cache | 6+ | ✅ 100% |
 | Utils | 20+ | ✅ 100% |
 | IO_URING | 15 | ✅ 100% |
+| REST API | 18 | ✅ 100% |
+| gRPC Server | 10 | ✅ 100% |
 | Python Integration | 32 | ✅ 100% |
 | Performance | 8 benchmarks | ✅ |
-| **Total** | **100 C + 8 Python + 4 Dart** | ✅ **100%+** |
+| **Total** | **130 C + 8 Python + 4 Dart** | ✅ **100%+** |
 
 ---
 
@@ -370,4 +374,4 @@ When reporting test failures, include:
 
 ---
 
-*Last updated: 29 марта 2026 г. — v1.0.29 (100 C + 8 Python + 4 Dart tests)*
+*Last updated: 29 марта 2026 г. — v1.0.29 (130 C + 8 Python + 4 Dart тестов)*
