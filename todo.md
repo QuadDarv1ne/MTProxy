@@ -1,8 +1,8 @@
 # MTProxy Project TODO
 
 > **Актуально на:** 29 марта 2026 г.
-> **Коммит:** 278576e (dev/master)
-> **Версия:** v1.0.19-cache-no-copy
+> **Коммит:** 1b878b6 (dev/master)
+> **Версия:** v1.0.19-cache-pool-complete
 > **Ветки:** dev = origin/dev ✅ | master = origin/master ✅
 
 ---
@@ -10,18 +10,18 @@
 ## 📋 Активные задачи
 
 ### 🔴 В работе
-- [x] Интеграция cache-memory-pool в error-handler — ✅ ВЫПОЛНЕНО
+- [ ] Оптимизация network-analyzer.c (кэширование метрик)
 
 ### 🟡 Следующие
-- [ ] Сетевая оптимизация (zero-copy, TCP_NODELAY)
 - [ ] HTTP/3 QUIC полная реализация (nghttp3/ngtcp2)
-- [ ] Оптимизация network-analyzer.c
+- [ ] io_uring для Linux
+- [ ] jemalloc/tcmalloc интеграция
 
 ---
 
 ## ✅ Выполнено (Март 2026)
 
-### Оптимизация памяти (29 марта)
+### Оптимизация памяти (29 марта) — 100% ЗАВЕРШЕНО
 - [x] Quick mode для тестов (флаг `--quick`)
 - [x] HeapCompact для Windows
 - [x] Cache Memory Pool (5x быстрее calloc/free)
@@ -35,6 +35,11 @@
 - [x] utils_hash_djb2
 - [x] get_current_time_ms → utils_time_ms
 
+### Сетевая оптимизация
+- [x] TCP_NODELAY установлен для всех сокетов
+- [x] SO_KEEPALIVE с улучшенными параметрами
+- [x] TCP_KEEPIDLE/TCP_KEEPINTVL/TCP_KEEPCNT
+
 ### Инфраструктура
 - [x] Windows socket API
 - [x] Windows IPC (Named Pipes)
@@ -46,12 +51,14 @@
 
 ## 📊 Статистика
 
-| Метрика | Значение |
-|---------|----------|
-| **Всего коммитов** | 418+ |
-| **C/H файлов** | 392+ |
-| **Тестов** | 77 C + 4 Dart (100%) |
-| **Ветки** | dev = master ✅ |
+| Метрика | Значение | Изменение |
+|---------|----------|-----------|
+| **Всего коммитов** | 419+ | +3 за день |
+| **C/H файлов** | 392+ | — |
+| **Тестов** | 77 C + 4 Dart (100%) | — |
+| **Оптимизация памяти** | 3 модуля | cache, rate-limit, error |
+| **Ускорение аллокаций** | ~5x | pool vs calloc |
+| **Ветки** | dev = master ✅ | — |
 
 ---
 
@@ -63,4 +70,4 @@
 
 ---
 
-*Последнее обновление: 29 марта 2026 г.*
+*Последнее обновление: 29 марта 2026 г. (cache-memory-pool интеграция завершена)*
