@@ -1107,6 +1107,24 @@ set_target_properties(test-admin-cli PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# io_uring test executable
+add_executable(test-io-uring
+    testing/test_io_uring.c
+    net/io_uring.c
+)
+
+target_link_libraries(test-io-uring
+    ${PLATFORM_LIBS}
+)
+
+target_compile_definitions(test-io-uring PRIVATE
+    $<$<BOOL:${LIBURING_FOUND}>:HAVE_IO_URING>
+)
+
+set_target_properties(test-io-uring PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # WS Tunnel test executable - ОТКЛЮЧЕН (tg-ws-proxy integration)
 # add_executable(test-ws-tunnel
 #     testing/test_ws_tunnel.c
