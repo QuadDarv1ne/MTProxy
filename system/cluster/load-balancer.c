@@ -26,6 +26,7 @@
 
 #include "system/cluster/load-balancer.h"
 #include "common/utils.h"
+#include "common/kprintf.h"
 
 // ============================================================================
 // Глобальные переменные

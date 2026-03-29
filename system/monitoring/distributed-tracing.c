@@ -26,6 +26,7 @@
 
 #include "system/monitoring/distributed-tracing.h"
 #include "common/utils.h"
+#include "common/kprintf.h"
 
 // ============================================================================
 // Глобальные переменные
@@ -341,27 +342,27 @@ span_t* tracing_start_span(trace_context_t *trace, const char *name, tracing_spa
     if (!trace->sampled) {
         return NULL;  // Не сэмплируется
     }
-    
+
     span_t *span = create_span();
     if (!span) return NULL;
-    
+
     // Генерация span ID
-    tracing_generate_span_id(span->span_id, sizeof(span->span->span_id));
+    tracing_generate_span_id(span->span_id, sizeof(span->span_id));
     snprintf(span->trace_id, sizeof(span->trace_id), "%s", trace->id);
     snprintf(span->name, sizeof(span->name), "%s", name);
-    
+
     span->kind = kind;
     span->status = TRACING_STATUS_UNSET;
     span->start_time = get_time_ns();
     span->trace = trace;
-    
+
     // Parent span ID
     if (trace->root_span_id[0] != '\0') {
         snprintf(span->parent_span_id, sizeof(span->parent_span_id), "%s", trace->root_span_id);
     }
-    
+
     kprintf("[TRACING] Started span: %s (kind: %s)\n", name, tracing_span_kind_to_string(kind));
-    
+
     return span;
 }
 
