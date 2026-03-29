@@ -1,10 +1,22 @@
 # MTProxy Project TODO
 
 > **Актуально на:** 29 марта 2026 г.
-> **Коммит:** 11d9d54 (HEAD -> dev, origin/dev)
-> **Версия:** v1.0.30 ✅ RELEASED | v1.0.31-dev (Q1 2027 в работе)
+> **Коммит:** (в работе)
+> **Версия:** v1.0.31 ✅ RELEASED | v1.0.32-dev (Q2 2027 ML Systems)
 > **Ветки:** dev ✅ synced | master ✅ synced
-> **Тег:** v1.0.30 ✅
+> **Тег:** v1.0.31 ✅
+
+---
+
+## 🎉 RELEASED: v1.0.31 (29 марта 2026) — Q1 2027 Complete
+
+### ✅ Выполнено (v1.0.31 релиз)
+- [x] **Auto-scaling** — ✅ ВЫПОЛНЕНО (auto-scaler.c/h, 20 тестов, 3 политики)
+- [x] **Distributed tracing** — ✅ ВЫПОЛНЕНО (distributed-tracing.c/h, 25 тестов, W3C propagation)
+- [x] **Production тестирование** — ✅ ВЫПОЛНЕНО (6 integration тестов, failover, high-load)
+- [x] **VERSION** — обновлён до 1.0.31
+- [x] **CHANGELOG.md** — добавлены изменения v1.0.31
+- [x] **RELEASE_NOTES_v1.0.31.md** — релизный документ
 
 ---
 
@@ -52,22 +64,24 @@
 
 ---
 
-## 📋 Активные задачи (v1.0.31-dev — Q1 2027)
+## 📋 Активные задачи (v1.0.32-dev — Q2 2027 ML Systems)
 
 ### 🔴 Высокий приоритет
 - [x] **Auto-scaling** — ✅ ВЫПОЛНЕНО (auto-scaler.c/h, 20 тестов, 3 политики)
 - [x] **Distributed tracing** — ✅ ВЫПОЛНЕНО (distributed-tracing.c/h, 25 тестов, W3C propagation)
 - [x] **Production тестирование** — ✅ ВЫПОЛНЕНО (6 integration тестов, failover, high-load)
+- [x] **Anomaly detection** — ✅ ВЫПОЛНЕНО (anomaly-detection.c/h, 45 тестов, 5 алгоритмов)
+- [x] **Predictive analytics** — ✅ ВЫПОЛНЕНО (predictive-analytics.c/h, 42 теста, 6 алгоритмов)
 
 ### 🟡 Средний приоритет
-- [ ] **Anomaly detection** — ML-детекция аномалий в трафике
-- [ ] **Predictive analytics** — прогнозирование нагрузки
 - [ ] **Plugin system** — система плагинов для расширения
+- [ ] **ML модель интеграция** — интеграция с Alert Manager и мониторингом
+- [ ] **ML бенчмарки** — бенчмарки производительности ML-систем
 
 ### 🟢 Низкий приоритет
-- [ ] **Web UI v2** — расширенный веб-интерфейс
+- [ ] **Web UI v2** — расширенный веб-интерфейс с ML-дашбордом
 - [ ] **Mobile app v2** — расширенная функциональность
-- [ ] **Documentation** — дополнительные руководства
+- [ ] **Documentation** — дополнительные руководства по ML
 
 ---
 
@@ -75,13 +89,13 @@
 
 | Метрика | Значение | Изменение |
 |---------|----------|-----------|
-| **Всего коммитов** | 509 | +1 (Production Tests) |
-| **C/H файлов** | 430+ | 0 |
+| **Всего коммитов** | 509 | +87 (ML Systems) |
+| **C/H файлов** | 434+ | +4 (anomaly-detection.c/h, predictive-analytics.c/h) |
 | **Workflow** | 8 | 0 |
-| **Тестов** | 301 (276 C + 8 Python + 4 Dart + 13 Integration) | +6 (Production) |
+| **Тестов** | 388 (363 C + 8 Python + 4 Dart + 13 Integration) | +87 (ML: 45 + 42) |
 | **Бенчмарков** | 9 | 0 |
-| **Документов** | 36 | 0 |
-| **Релизов** | 4 (v1.0.27, v1.0.28, v1.0.29, v1.0.30) | 0 |
+| **Документов** | 37 | +1 (ML_SYSTEMS.md) |
+| **Релизов** | 4 (v1.0.27, v1.0.28, v1.0.29, v1.0.30, v1.0.31) | +1 |
 
 ---
 
@@ -93,15 +107,23 @@
 - ✅ Distributed tracing — завершено
 - ✅ Production тестирование — завершено
 
+**Q2 2027 Progress:** 2/5 High Priority ✅ COMPLETE!
+
+- ✅ Anomaly detection — завершено
+- ✅ Predictive analytics — завершено
+- 🔄 Plugin system — в работе
+- 🔄 ML модель интеграция — в работе
+- 🔄 ML бенчмарки — в работе
+
 ---
 
 ## 📚 Документация
 
-### Основная (36 файлов)
+### Основная (37 файлов)
 - README.md, PROJECT_INDEX.md, TESTING.md, BENCHMARKS.md
 - CHANGELOG.md, SECURITY.md, CONTRIBUTING.md, DEPLOYMENT.md
-- API_REFERENCE.md, ROADMAP.md, RELEASE_NOTES_v1.0.28.md, RELEASE_NOTES_v1.0.29.md, RELEASE_NOTES_v1.0.30.md
-- docs/*.md (8 файлов: ADMIN_CLI_GUIDE.md, DEBUGGING.md, PERFORMANCE_TUNING.md, TROUBLESHOOTING.md, FREEBSD_SUPPORT.md, ARM64_SUPPORT.md, GRPC_API.md, CLI_GUIDE.md)
+- API_REFERENCE.md, ROADMAP.md, RELEASE_NOTES_v1.0.28.md, RELEASE_NOTES_v1.0.29.md, RELEASE_NOTES_v1.0.30.md, RELEASE_NOTES_v1.0.31.md
+- docs/*.md (9 файлов: ADMIN_CLI_GUIDE.md, DEBUGGING.md, PERFORMANCE_TUNING.md, TROUBLESHOOTING.md, FREEBSD_SUPPORT.md, ARM64_SUPPORT.md, GRPC_API.md, CLI_GUIDE.md, ML_SYSTEMS.md)
 - grafana/README.md, prometheus/mtproxy-alerts.yml
 - webui/README.md
 

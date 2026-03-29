@@ -1555,6 +1555,52 @@ set_target_properties(test-production-integration PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# ============================================================================
+# ML Systems Tests (Q2 2027 - Anomaly Detection & Predictive Analytics)
+# ============================================================================
+
+# Anomaly Detection Test executable
+add_executable(test-anomaly-detection
+    testing/test_anomaly_detection.c
+    system/ml/anomaly-detection.c
+)
+
+target_link_libraries(test-anomaly-detection
+    ${PLATFORM_LIBS}
+)
+
+target_include_directories(test-anomaly-detection PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/testing
+    ${CMAKE_CURRENT_SOURCE_DIR}/system
+)
+
+set_target_properties(test-anomaly-detection PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# Predictive Analytics Test executable
+add_executable(test-predictive-analytics
+    testing/test_predictive_analytics.c
+    system/ml/predictive-analytics.c
+)
+
+target_link_libraries(test-predictive-analytics
+    ${PLATFORM_LIBS}
+)
+
+target_include_directories(test-predictive-analytics PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/testing
+    ${CMAKE_CURRENT_SOURCE_DIR}/system
+)
+
+set_target_properties(test-predictive-analytics PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # WS Tunnel test executable - ОТКЛЮЧЕН (tg-ws-proxy integration)
 # add_executable(test-ws-tunnel
 #     testing/test_ws_tunnel.c
@@ -1724,6 +1770,8 @@ add_test(NAME test-load-balancer COMMAND test-load-balancer)
 add_test(NAME test-auto-scaler COMMAND test-auto-scaler)
 add_test(NAME test-distributed-tracing COMMAND test-distributed-tracing)
 add_test(NAME test-production-integration COMMAND test-production-integration)
+add_test(NAME test-anomaly-detection COMMAND test-anomaly-detection)
+add_test(NAME test-predictive-analytics COMMAND test-predictive-analytics)
 add_test(NAME benchmark-memory-allocator COMMAND benchmark-memory-allocator)
 add_test(NAME benchmark-io-uring COMMAND benchmark-io-uring)
 add_test(NAME benchmark-highload COMMAND benchmark-highload)
@@ -1741,11 +1789,11 @@ endif()
 
 # Installation rules - Windows excludes some targets
 if(WIN32)
-    install(TARGETS mtproto-proxy mtproxy-admin mtproxy-cli test-new-modules test-traffic-stats test-utils test-admin-cli cache-performance-test-simple rate-limiter-highload-test-simple integration-tests-simple benchmark-highload benchmark-cache-performance test-rest-api test-cli test-alert-manager test-health-check test-cluster-manager test-load-balancer test-auto-scaler test-distributed-tracing test-production-integration
+    install(TARGETS mtproto-proxy mtproxy-admin mtproxy-cli test-new-modules test-traffic-stats test-utils test-admin-cli cache-performance-test-simple rate-limiter-highload-test-simple integration-tests-simple benchmark-highload benchmark-cache-performance test-rest-api test-cli test-alert-manager test-health-check test-cluster-manager test-load-balancer test-auto-scaler test-distributed-tracing test-production-integration test-anomaly-detection test-predictive-analytics
         RUNTIME DESTINATION bin
     )
 else()
-    install(TARGETS mtproto-proxy mtproxy-admin mtproxy-cli test-new-modules test-traffic-stats test-utils test-ffi-api test-performance test-admin-cli-integration cache-performance-test rate-limiter-highload-test integration-tests benchmark-highload benchmark-cache-performance test-rest-api test-cli test-alert-manager test-health-check test-cluster-manager test-load-balancer test-auto-scaler test-distributed-tracing test-production-integration
+    install(TARGETS mtproto-proxy mtproxy-admin mtproxy-cli test-new-modules test-traffic-stats test-utils test-ffi-api test-performance test-admin-cli-integration cache-performance-test rate-limiter-highload-test integration-tests benchmark-highload benchmark-cache-performance test-rest-api test-cli test-alert-manager test-health-check test-cluster-manager test-load-balancer test-auto-scaler test-distributed-tracing test-production-integration test-anomaly-detection test-predictive-analytics
         RUNTIME DESTINATION bin
     )
 endif()
