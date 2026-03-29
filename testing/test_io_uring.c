@@ -10,11 +10,7 @@
  * Требования: Linux kernel 5.1+, liburing-dev
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <errno.h>
+#include "test_common.h"
 
 #ifdef __linux__
 #include <sys/socket.h>
@@ -23,21 +19,6 @@
 #endif
 
 #include "net/io_uring.h"
-
-static int tests_passed = 0;
-static int tests_failed = 0;
-
-#define TEST(name) static int test_##name(void)
-#define RUN_TEST(name) do { \
-    printf("Running %s... ", #name); \
-    if (test_##name() == 0) { \
-        printf("PASSED\n"); \
-        tests_passed++; \
-    } else { \
-        printf("FAILED\n"); \
-        tests_failed++; \
-    } \
-} while(0)
 
 /* ============================================================================
  * io_uring_is_available Tests
@@ -367,55 +348,44 @@ TEST(disable_connection_null_ctx) {
 }
 
 /* ============================================================================
- * Main
+ * Test runner
  * ============================================================================ */
 
-int main(void) {
-    printf("=== io_uring Module Tests ===\n\n");
-    
-    /* io_uring_is_available Tests */
-    printf("--- io_uring_is_available ---\n");
+void run_all_tests(void) {
+    PRINT_HEADER("io_uring_is_available");
     RUN_TEST(is_available_basic);
-    printf("\n");
-    
-    /* io_uring_init/cleanup Tests */
-    printf("--- io_uring_init/cleanup ---\n");
+
+    PRINT_HEADER("io_uring_init/cleanup");
     RUN_TEST(init_null_ctx);
     RUN_TEST(init_invalid_depth);
     RUN_TEST(init_and_cleanup);
-    printf("\n");
-    
-    /* io_uring_submit_* Tests */
-    printf("--- io_uring_submit_* ---\n");
+
+    PRINT_HEADER("io_uring_submit_*");
     RUN_TEST(submit_read_null_ctx);
     RUN_TEST(submit_write_null_ctx);
     RUN_TEST(submit_read_null_buffer);
     RUN_TEST(submit_invalid_fd);
-    printf("\n");
-    
-    /* io_uring_stats Tests */
-    printf("--- io_uring_stats ---\n");
+
+    PRINT_HEADER("io_uring_stats");
     RUN_TEST(get_stats_null_ctx);
     RUN_TEST(get_stats_null_stats);
     RUN_TEST(reset_stats);
-    printf("\n");
-    
-    /* io_uring_queue_usage Tests */
-    printf("--- io_uring_queue_usage ---\n");
+
+    PRINT_HEADER("io_uring_queue_usage");
     RUN_TEST(get_queue_usage_null_ctx);
-    printf("\n");
-    
-    /* io_uring_enable/disable_connection Tests */
-    printf("--- io_uring_enable/disable_connection ---\n");
+
+    PRINT_HEADER("io_uring_enable/disable_connection");
     RUN_TEST(enable_connection_null_ctx);
     RUN_TEST(disable_connection_null_ctx);
-    printf("\n");
-    
-    /* Summary */
-    printf("=== Test Summary ===\n");
-    printf("Passed: %d\n", tests_passed);
-    printf("Failed: %d\n", tests_failed);
-    printf("Total:  %d\n", tests_passed + tests_failed);
+}
+
+/* ============================================================================
+ * Main
+ * ============================================================================ */
+
+int main(void) {
+    RUN_ALL_TESTS();
+}
     
     return tests_failed > 0 ? 1 : 0;
 }
