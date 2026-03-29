@@ -1357,6 +1357,48 @@ set_target_properties(test-grpc-server PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# ============================================================================
+# MTProxy CLI Utility (Q4 2026)
+# ============================================================================
+
+add_executable(mtproxy-cli
+    cli/mtcli.c
+    cli/mtcli.h
+)
+
+target_link_libraries(mtproxy-cli
+    ${PLATFORM_LIBS}
+)
+
+target_include_directories(mtproxy-cli PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+)
+
+set_target_properties(mtproxy-cli PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# CLI test executable
+add_executable(test-cli
+    testing/test_cli.c
+    cli/mtcli.c
+)
+
+target_link_libraries(test-cli
+    ${PLATFORM_LIBS}
+)
+
+target_include_directories(test-cli PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/testing
+)
+
+set_target_properties(test-cli PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # WS Tunnel test executable - ОТКЛЮЧЕН (tg-ws-proxy integration)
 # add_executable(test-ws-tunnel
 #     testing/test_ws_tunnel.c
@@ -1518,6 +1560,7 @@ add_test(NAME test-admin-cli-integration COMMAND test-admin-cli-integration)
 add_test(NAME test-io-uring COMMAND test-io-uring)
 add_test(NAME test-rest-api COMMAND test-rest-api)
 add_test(NAME test-grpc-server COMMAND test-grpc-server)
+add_test(NAME test-cli COMMAND test-cli)
 add_test(NAME benchmark-memory-allocator COMMAND benchmark-memory-allocator)
 add_test(NAME benchmark-io-uring COMMAND benchmark-io-uring)
 add_test(NAME benchmark-highload COMMAND benchmark-highload)
@@ -1535,11 +1578,11 @@ endif()
 
 # Installation rules - Windows excludes some targets
 if(WIN32)
-    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils test-admin-cli cache-performance-test-simple rate-limiter-highload-test-simple integration-tests-simple benchmark-highload benchmark-cache-performance test-rest-api
+    install(TARGETS mtproto-proxy mtproxy-admin mtproxy-cli test-new-modules test-traffic-stats test-utils test-admin-cli cache-performance-test-simple rate-limiter-highload-test-simple integration-tests-simple benchmark-highload benchmark-cache-performance test-rest-api test-cli
         RUNTIME DESTINATION bin
     )
 else()
-    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils test-ffi-api test-performance test-admin-cli-integration cache-performance-test rate-limiter-highload-test integration-tests benchmark-highload benchmark-cache-performance test-rest-api
+    install(TARGETS mtproto-proxy mtproxy-admin mtproxy-cli test-new-modules test-traffic-stats test-utils test-ffi-api test-performance test-admin-cli-integration cache-performance-test rate-limiter-highload-test integration-tests benchmark-highload benchmark-cache-performance test-rest-api test-cli
         RUNTIME DESTINATION bin
     )
 endif()
