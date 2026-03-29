@@ -21,26 +21,47 @@
 #include "common/kprintf.h"
 #include "common/crc32.h"
 #include "common/utils.h"
+#include "common/cache-memory-pool.h"
+
+// Глобальный пул для кэша (инициализируется при первом использовании)
+static cache_entry_pool_t g_cache_pool;
+static int g_cache_pool_initialized = 0;
+
+// Инициализация глобального пула
+static void cache_pool_ensure_init(void) {
+    if (!g_cache_pool_initialized) {
+        cache_pool_init(&g_cache_pool, CACHE_POOL_INITIAL_SIZE);
+        g_cache_pool_initialized = 1;
+    }
+}
 
 // Создание новой записи кэша
-static cache_entry_t* cache_create_entry(const char *key, const void *data, 
+static cache_entry_t* cache_create_entry(const char *key, const void *data,
                                          size_t data_size, time_t ttl) {
-    cache_entry_t *entry = calloc(1, sizeof(cache_entry_t));
-    if (!entry) return NULL;
+    cache_pool_ensure_init();
     
+    // Выделение из пула (быстрее calloc)
+    cache_entry_t *entry = CACHE_POOL_ALLOC(&g_cache_pool, cache_entry_t);
+    if (!entry) {
+        // Fallback на calloc если пул пуст
+        entry = calloc(1, sizeof(cache_entry_t));
+        if (!entry) return NULL;
+    }
+    memset(entry, 0, sizeof(cache_entry_t));
+
     entry->key = strdup(key);
     if (!entry->key) {
-        free(entry);
+        CACHE_POOL_FREE(&g_cache_pool, entry);
         return NULL;
     }
-    
+
     entry->data = malloc(data_size);
     if (!entry->data) {
         free(entry->key);
-        free(entry);
+        CACHE_POOL_FREE(&g_cache_pool, entry);
         return NULL;
     }
-    
+
     memcpy(entry->data, data, data_size);
     entry->data_size = data_size;
     entry->creation_time = time(NULL);
@@ -56,10 +77,13 @@ static cache_entry_t* cache_create_entry(const char *key, const void *data,
 // Освобождение записи кэша
 static void cache_free_entry(cache_entry_t *entry) {
     if (!entry) return;
-    
+
     if (entry->key) free(entry->key);
     if (entry->data) free(entry->data);
-    free(entry);
+    
+    // Возврат в пул (быстрее free)
+    cache_pool_ensure_init();
+    CACHE_POOL_FREE(&g_cache_pool, entry);
 }
 
 // Проверка истечения TTL
