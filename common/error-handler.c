@@ -675,3 +675,96 @@ void error_handler_set_global_context(error_handler_context_t *ctx) {
 error_handler_context_t* error_handler_get_global_context(void) {
     return &global_error_ctx;
 }
+
+// ============================================================================
+// Улучшенные сообщения об ошибках (User-friendly error messages)
+// ============================================================================
+
+const char* error_get_user_hint(int error_code) {
+    switch (error_code) {
+        // Системные ошибки
+        case MTERR_SYSTEM_INIT: return "Проверьте права доступа и наличие необходимых системных библиотек";
+        case MTERR_SYSTEM_MUTEX: return "Не удалось заблокировать ресурс. Попробуйте перезапустить сервис";
+        case MTERR_SYSTEM_THREAD: return "Ошибка создания потока. Проверьте лимиты системы";
+        
+        // Ошибки памяти
+        case MTERR_MEMORY_ALLOC: return "Недостаточно памяти. Уменьшите размер кэша или увеличьте RAM";
+        case MTERR_MEMORY_LEAK: return "Обнаружена утечка памяти. Рекомендуется перезапуск";
+        
+        // Сетевые ошибки
+        case MTERR_NETWORK_CONNECT: return "Не удалось подключиться. Проверьте доступность сервера";
+        case MTERR_NETWORK_TIMEOUT: return "Превышено время ожидания. Проверьте сетевое соединение";
+        case MTERR_NETWORK_DNS: return "Ошибка разрешения имени. Проверьте DNS настройки";
+        case MTERR_NETWORK_SSL: return "Ошибка SSL/TLS. Проверьте сертификаты";
+        
+        // Ошибки ввода-вывода
+        case MTERR_IO_READ: return "Ошибка чтения. Проверьте права доступа к файлу";
+        case MTERR_IO_WRITE: return "Ошибка записи. Проверьте место на диске и права доступа";
+        case MTERR_IO_OPEN: return "Не удалось открыть файл. Проверьте путь и права доступа";
+        
+        // Ошибки конфигурации
+        case MTERR_CONFIG_PARSE: return "Ошибка парсинга конфигурации. Проверьте синтаксис файла";
+        case MTERR_CONFIG_MISSING: return "Файл конфигурации не найден. Создайте или укажите правильный путь";
+        case MTERR_CONFIG_INVALID: return "Неверное значение параметра. Проверьте документацию";
+        
+        // Ошибки безопасности
+        case MTERR_SECURITY_AUTH_FAILED: return "Аутентификация не удалась. Проверьте токен или ключ";
+        case MTERR_SECURITY_ACCESS_DENIED: return "Доступ запрещён. Проверьте права пользователя";
+        
+        // Ошибки протокола
+        case MTERR_PROTOCOL_HANDSHAKE: return "Ошибка рукопожатия. Проверьте совместимость версий";
+        case MTERR_PROTOCOL_DECRYPT: return "Ошибка расшифровки. Проверьте ключи шифрования";
+        
+        // Ошибки ресурсов
+        case MTERR_RESOURCE_EXHAUSTED: return "Ресурсы исчерпаны. Увеличьте лимиты или уменьшите нагрузку";
+        case MTERR_RESOURCE_LIMIT: return "Достигнут лимит ресурсов. Проверьте настройки";
+        
+        // Таймауты
+        case MTERR_TIMEOUT_REQUEST: return "Таймаут запроса. Увеличьте таймаут или проверьте сеть";
+        case MTERR_TIMEOUT_CONNECTION: return "Таймаут подключения. Проверьте доступность сервера";
+        
+        // Ошибки аутентификации
+        case MTERR_AUTH_INVALID_TOKEN: return "Неверный токен. Проверьте API ключ";
+        case MTERR_AUTH_EXPIRED: return "Токен истёк. Обновите токен доступа";
+        
+        // Rate limiting
+        case MTERR_RATE_LIMIT_EXCEEDED: return "Превышен лимит запросов. Подождите или увеличьте лимит";
+        
+        default: return "Обратитесь к документации или логам для подробной информации";
+    }
+}
+
+char* error_format_user_message(const error_info_t *error, char *buffer, size_t buffer_size) {
+    if (!error || !buffer || buffer_size == 0) return NULL;
+    
+    const char *level_str = error_level_to_string(error->level);
+    const char *category_str = error_category_to_string(error->category);
+    const char *hint = error_get_user_hint(error->error_code);
+    
+    snprintf(buffer, buffer_size,
+        "╔═══════════════════════════════════════════════════════════╗\n"
+        "║  %s: %s\n"
+        "║  Категория: %s\n"
+        "║  Код ошибки: %d\n"
+        "╠═══════════════════════════════════════════════════════════╣\n"
+        "║  %s\n"
+        "╠═══════════════════════════════════════════════════════════╣\n"
+        "║  Подсказка: %s\n"
+        "╚═══════════════════════════════════════════════════════════╝",
+        level_str, error->message,
+        category_str,
+        error->error_code,
+        error->details[0] ? error->details : "Нет дополнительных деталей",
+        hint
+    );
+    
+    return buffer;
+}
+
+void error_print_user_friendly(const error_info_t *error) {
+    if (!error) return;
+    
+    char buffer[1024];
+    error_format_user_message(error, buffer, sizeof(buffer));
+    fprintf(stderr, "%s\n", buffer);
+}

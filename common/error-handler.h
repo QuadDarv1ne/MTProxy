@@ -248,6 +248,12 @@ const char* error_level_to_string(error_level_t level);
 const char* error_category_to_string(error_category_t category);
 int error_code_from_string(const char *str);
 
+// Улучшенные сообщения об ошибках
+char* error_format_user_message(const error_info_t *error, char *buffer, size_t buffer_size);
+void error_print_user_friendly(const error_info_t *error);
+const char* error_get_user_hint(int error_code);
+int error_is_recoverable(const error_info_t *error);
+
 // Вспомогательные макросы
 #define ERROR_CREATE(code, level, category, msg) \
     error_create((code), (level), (category), (msg))
