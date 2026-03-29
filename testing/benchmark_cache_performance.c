@@ -276,14 +276,15 @@ static void benchmark_cache_algorithms_comparison(void) {
     cache_config_t configs[] = {
         {.type = CACHE_TYPE_MEMORY, .policy = CACHE_LRU,  .max_entries = 10000, .max_size_mb = 64, .default_ttl_sec = 3600, .enable_statistics = 1},
         {.type = CACHE_TYPE_MEMORY, .policy = CACHE_LFU,  .max_entries = 10000, .max_size_mb = 64, .default_ttl_sec = 3600, .enable_statistics = 1},
-        {.type = CACHE_MEMORY,      .policy = CACHE_FIFO, .max_entries = 10000, .max_size_mb = 64, .default_ttl_sec = 3600, .enable_statistics = 1},
+        {.type = CACHE_TYPE_MEMORY, .policy = CACHE_FIFO, .max_entries = 10000, .max_size_mb = 64, .default_ttl_sec = 3600, .enable_statistics = 1},
         {.type = CACHE_TYPE_MEMORY, .policy = CACHE_TTL,  .max_entries = 10000, .max_size_mb = 64, .default_ttl_sec = 60,   .enable_statistics = 1}
     };
 
     const char *policy_names[] = {"LRU", "LFU", "FIFO", "TTL"};
 
     for (int p = 0; p < 4; p++) {
-        if (cache_manager_init(&cache, &configs[p]) != 0) {
+        cache_manager_t *cache = cache_manager_init(&configs[p]);
+        if (!cache) {
             printf("  ERROR: Failed to initialize cache (%s)\n", policy_names[p]);
             continue;
         }
@@ -307,9 +308,9 @@ static void benchmark_cache_algorithms_comparison(void) {
             snprintf(value, sizeof(value), "value_%d", key_idx);
 
             if (i % 2 == 0) {
-                cache_manager_set(&cache, key, value, strlen(value) + 1);
+                cache_manager_set(cache, key, value, strlen(value) + 1);
             } else {
-                if (cache_manager_get(&cache, key, value, sizeof(value), &value_len) == CACHE_OK) {
+                if (cache_manager_get(cache, key, value, sizeof(value), &value_len) == CACHE_OK) {
                     hits++;
                 } else {
                     misses++;
@@ -331,7 +332,7 @@ static void benchmark_cache_algorithms_comparison(void) {
         printf("    Hit rate:      %10.2f%%\n", (hits * 100.0) / (hits + misses));
         printf("    Evictions:     %10lld\n", cache_stats.evictions);
 
-        cache_manager_cleanup(&cache);
+        cache_manager_cleanup(cache);
     }
 }
 
