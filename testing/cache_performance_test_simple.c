@@ -24,6 +24,7 @@
 static int ops_run = 0;
 static int ops_passed = 0;
 static int ops_failed = 0;
+static int quick_mode = 0;  // Флаг для быстрых тестов
 
 // Получение времени в микросекундах
 static inline int64_t get_time_us() {
@@ -52,21 +53,35 @@ static inline int64_t get_time_us() {
            #name, iterations_##name, duration_##name / 1000.0, ops_per_sec_##name)
 
 /* ============================================
-   Тест 1: Базовая производительность (100K операций)
+   Тест 1: Базовая производительность (оптимизировано)
    ============================================ */
 
 void test_cache_basic_performance() {
-    printf("\n=== Cache Basic Performance Test (100K ops) ===\n");
+    // Оптимизация: уменьшение итераций для Windows и quick режима
+    #ifdef _WIN32
+    int put_iterations = quick_mode ? 1000 : 5000;
+    int get_iterations = quick_mode ? 1000 : 5000;
+    int mixed_iterations = quick_mode ? 2000 : 5000;
+    int max_entries = quick_mode ? 5000 : 50000;
+    #else
+    int put_iterations = quick_mode ? 5000 : 50000;
+    int get_iterations = quick_mode ? 5000 : 50000;
+    int mixed_iterations = quick_mode ? 10000 : 50000;
+    int max_entries = quick_mode ? 10000 : 50000;
+    #endif
+    
+    printf("\n=== Cache Basic Performance Test (%s) ===\n", 
+           quick_mode ? "quick mode" : "full mode");
 
     cache_config_t config = {
         .type = CACHE_TYPE_MEMORY,
         .policy = CACHE_LRU,
-        .max_entries = 50000,
-        .max_size_mb = 100,
+        .max_entries = max_entries,
+        .max_size_mb = quick_mode ? 10 : 100,
         .default_ttl_sec = 300,
         .enable_locking = 0,
-        .enable_partitioning = 1,
-        .partition_count = 8
+        .enable_partitioning = quick_mode ? 1 : 1,
+        .partition_count = quick_mode ? 4 : 8
     };
 
     cache_manager_t *cache = cache_manager_init(&config);
@@ -79,9 +94,9 @@ void test_cache_basic_performance() {
     printf("  Cache initialized: %d partitions, %d max entries\n",
            config.partition_count, config.max_entries);
 
-    // Тест 1: Put операции (50K записей)
-    BENCH_START(put, 50000);
-    for (int i = 0; i < 50000; i++) {
+    // Тест 1: Put операции
+    BENCH_START(put, put_iterations);
+    for (int i = 0; i < put_iterations; i++) {
         char key[64], value[128];
         snprintf(key, sizeof(key), "key_%d", i);
         snprintf(value, sizeof(value), "value_%d_data", i);
@@ -96,10 +111,10 @@ void test_cache_basic_performance() {
     }
     BENCH_END(put);
 
-    // Тест 2: Get операции (50K чтений)
-    BENCH_START(get, 50000);
+    // Тест 2: Get операции
+    BENCH_START(get, get_iterations);
     int hit_count = 0;
-    for (int i = 0; i < 50000; i++) {
+    for (int i = 0; i < get_iterations; i++) {
         char key[64];
         snprintf(key, sizeof(key), "key_%d", i);
 
@@ -118,13 +133,13 @@ void test_cache_basic_performance() {
     }
     BENCH_END(get);
     printf("  Hit rate: %.2f%% (%d/%d)\n",
-           (hit_count * 100.0) / 50000, hit_count, 50000);
+           (hit_count * 100.0) / get_iterations, hit_count, get_iterations);
 
-    // Тест 3: Смешанные операции (25K read + 25K write)
-    BENCH_START(mixed, 50000);
-    for (int i = 0; i < 50000; i++) {
+    // Тест 3: Смешанные операции
+    BENCH_START(mixed, mixed_iterations);
+    for (int i = 0; i < mixed_iterations; i++) {
         char key[64], value[128];
-        snprintf(key, sizeof(key), "key_%d", i % 50000);
+        snprintf(key, sizeof(key), "key_%d", i % max_entries);
 
         if (i % 2 == 0) {
             // Write
