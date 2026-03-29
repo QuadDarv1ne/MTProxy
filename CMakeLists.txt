@@ -1379,23 +1379,28 @@ set_target_properties(mtproxy-cli PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
-# CLI test executable
-add_executable(test-cli
-    testing/test_cli.c
-    cli/mtcli.c
+# ============================================================================
+# Alert Manager (Q4 2026)
+# ============================================================================
+
+# Alert Manager test executable
+add_executable(test-alert-manager
+    testing/test_alert_manager.c
+    system/monitoring/alert-manager.c
 )
 
-target_link_libraries(test-cli
+target_link_libraries(test-alert-manager
     ${PLATFORM_LIBS}
 )
 
-target_include_directories(test-cli PRIVATE
+target_include_directories(test-alert-manager PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${CMAKE_CURRENT_SOURCE_DIR}/testing
+    ${CMAKE_CURRENT_SOURCE_DIR}/system
 )
 
-set_target_properties(test-cli PROPERTIES
+set_target_properties(test-alert-manager PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
@@ -1561,6 +1566,7 @@ add_test(NAME test-io-uring COMMAND test-io-uring)
 add_test(NAME test-rest-api COMMAND test-rest-api)
 add_test(NAME test-grpc-server COMMAND test-grpc-server)
 add_test(NAME test-cli COMMAND test-cli)
+add_test(NAME test-alert-manager COMMAND test-alert-manager)
 add_test(NAME benchmark-memory-allocator COMMAND benchmark-memory-allocator)
 add_test(NAME benchmark-io-uring COMMAND benchmark-io-uring)
 add_test(NAME benchmark-highload COMMAND benchmark-highload)
@@ -1578,11 +1584,11 @@ endif()
 
 # Installation rules - Windows excludes some targets
 if(WIN32)
-    install(TARGETS mtproto-proxy mtproxy-admin mtproxy-cli test-new-modules test-traffic-stats test-utils test-admin-cli cache-performance-test-simple rate-limiter-highload-test-simple integration-tests-simple benchmark-highload benchmark-cache-performance test-rest-api test-cli
+    install(TARGETS mtproto-proxy mtproxy-admin mtproxy-cli test-new-modules test-traffic-stats test-utils test-admin-cli cache-performance-test-simple rate-limiter-highload-test-simple integration-tests-simple benchmark-highload benchmark-cache-performance test-rest-api test-cli test-alert-manager
         RUNTIME DESTINATION bin
     )
 else()
-    install(TARGETS mtproto-proxy mtproxy-admin mtproxy-cli test-new-modules test-traffic-stats test-utils test-ffi-api test-performance test-admin-cli-integration cache-performance-test rate-limiter-highload-test integration-tests benchmark-highload benchmark-cache-performance test-rest-api test-cli
+    install(TARGETS mtproto-proxy mtproxy-admin mtproxy-cli test-new-modules test-traffic-stats test-utils test-ffi-api test-performance test-admin-cli-integration cache-performance-test rate-limiter-highload-test integration-tests benchmark-highload benchmark-cache-performance test-rest-api test-cli test-alert-manager
         RUNTIME DESTINATION bin
     )
 endif()
