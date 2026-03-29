@@ -1,7 +1,7 @@
 # MTProxy Project TODO
 
 > **Актуально на:** 29 марта 2026 г.
-> **Коммит:** 8299ce1 (HEAD -> dev, origin/master, origin/dev)
+> **Коммит:** 7484372 (HEAD -> dev, origin/master, origin/dev)
 > **Версия:** v1.0.29-dev (в разработке)
 > **Ветки:** dev = origin/dev ✅ | master = origin/master ✅ (синхронизированы)
 > **Тег:** v1.0.28 ✅
@@ -45,11 +45,13 @@
 - [x] FreeBSD поддержка — toolchain + документация — ✅ ВЫПОЛНЕНО
 - [x] ARM64 Linux — toolchain + документация — ✅ ВЫПОЛНЕНО
 
-### 🔵 Q3 2026 (планирование)
+### 🟢 Q3 2026 (в работе)
+- [x] Prometheus экспортёр — расширенные метрики — ✅ ВЫПОЛНЕНО
+- [x] Alerting rules — 20+ правил для Prometheus — ✅ ВЫПОЛНЕНО
+- [x] Grafana README — обновлённая документация — ✅ ВЫПОЛНЕНО
 - [ ] gRPC интерфейс — управление через gRPC
 - [ ] REST API — HTTP API для управления
-- [ ] Prometheus экспортёр — метрики для Prometheus
-- [ ] Grafana дашборды — визуализация метрик
+- [ ] Grafana дашборд — расширение панелей
 
 ---
 
@@ -57,23 +59,24 @@
 
 | Метрика | Значение | Изменение |
 |---------|----------|-----------|
-| **Всего коммитов** | 493 | +2 |
-| **C/H файлов** | 411+ | +2 |
+| **Всего коммитов** | 495 | +2 |
+| **C/H файлов** | 411+ | 0 |
 | **Workflow** | 8 | 0 |
 | **Тестов** | 112 (100 C + 8 Python + 4 Dart) | 0 |
 | **Бенчмарков** | 9 | 0 |
-| **Документов** | 27 | +2 |
+| **Документов** | 28 | +1 |
 | **Релизов** | 2 (v1.0.27, v1.0.28) | 0 |
 
 ---
 
 ## 📚 Документация
 
-### Основная (27 файлов)
+### Основная (28 файлов)
 - README.md, PROJECT_INDEX.md, TESTING.md, BENCHMARKS.md
 - CHANGELOG.md, SECURITY.md, CONTRIBUTING.md, DEPLOYMENT.md
 - API_REFERENCE.md, ROADMAP.md, RELEASE_NOTES_v1.0.28.md
 - docs/*.md (6 файлов: ADMIN_CLI_GUIDE.md, DEBUGGING.md, PERFORMANCE_TUNING.md, TROUBLESHOOTING.md, FREEBSD_SUPPORT.md, ARM64_SUPPORT.md)
+- grafana/README.md, prometheus/mtproxy-alerts.yml
 
 ---
 
@@ -87,6 +90,7 @@
 | Кэш performance | Q2 2026 | 🔴 Высокий | ✅ Выполнено |
 | FreeBSD поддержка | Q2 2026 | 🔵 Планирование | ✅ Выполнено |
 | ARM64 сборка | Q2 2026 | 🔵 Планирование | ✅ Выполнено |
+| Prometheus/Grafana | Q3 2026 | 🟢 Средний | ✅ Выполнено |
 | gRPC интерфейс | Q3 2026 | 🟢 Низкий | ⏳ Ожидает |
 | REST API | Q3 2026 | 🟢 Низкий | ⏳ Ожидает |
 
@@ -100,4 +104,4 @@
 
 ---
 
-*Последнее обновление: 29 марта 2026 г. — FreeBSD/ARM64 поддержка (493 коммита)*
+*Последнее обновление: 29 марта 2026 г. — Prometheus/Grafana мониторинг (495 коммитов)*
