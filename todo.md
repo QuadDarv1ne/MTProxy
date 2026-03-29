@@ -2,7 +2,7 @@
 
 > **Актуально на:** 29 марта 2026 г.
 > **Коммит:** 80d1022 (HEAD -> dev, origin/master, origin/dev)
-> **Версия:** v1.0.29-dev (в разработке)
+> **Версия:** v1.0.29-dev (Q3 2026 ✅ завершено, RELEASE_NOTES подготовлены)
 > **Ветки:** dev = origin/dev ✅ | master = origin/master ✅ (синхронизированы)
 > **Тег:** v1.0.28 ✅
 
@@ -50,8 +50,8 @@
 - [x] Alerting rules — 20+ правил для Prometheus — ✅ ВЫПОЛНЕНО
 - [x] Grafana README — обновлённая документация — ✅ ВЫПОЛНЕНО
 - [x] REST API тесты — 18 тестов для REST API endpoints — ✅ ВЫПОЛНЕНО
-- [ ] gRPC интерфейс — управление через gRPC
-- [ ] Grafana дашборд — расширение панелей
+- [x] gRPC интерфейс — управление через gRPC — ✅ ВЫПОЛНЕНО (grpc-server.c/h, 10 тестов, документация)
+- [x] Grafana дашборд — расширение панелей — ✅ ВЫПОЛНЕНО (16 панелей, enhanced dashboard)
 
 ---
 
@@ -60,23 +60,24 @@
 | Метрика | Значение | Изменение |
 |---------|----------|-----------|
 | **Всего коммитов** | 497 | +2 |
-| **C/H файлов** | 412+ | +1 |
+| **C/H файлов** | 415+ | +1 |
 | **Workflow** | 8 | 0 |
-| **Тестов** | 130 (118 C + 8 Python + 4 Dart) | +18 |
+| **Тестов** | 140 (120 C + 8 Python + 4 Dart) | 0 |
 | **Бенчмарков** | 9 | 0 |
-| **Документов** | 28 | 0 |
+| **Документов** | 32 | +2 (RELEASE_NOTES_v1.0.29.md, webui/README.md) |
 | **Релизов** | 2 (v1.0.27, v1.0.28) | 0 |
 
 ---
 
 ## 📚 Документация
 
-### Основная (28 файлов)
+### Основная (32 файлов)
 - README.md, PROJECT_INDEX.md, TESTING.md, BENCHMARKS.md
 - CHANGELOG.md, SECURITY.md, CONTRIBUTING.md, DEPLOYMENT.md
-- API_REFERENCE.md, ROADMAP.md, RELEASE_NOTES_v1.0.28.md
-- docs/*.md (6 файлов: ADMIN_CLI_GUIDE.md, DEBUGGING.md, PERFORMANCE_TUNING.md, TROUBLESHOOTING.md, FREEBSD_SUPPORT.md, ARM64_SUPPORT.md)
+- API_REFERENCE.md, ROADMAP.md, RELEASE_NOTES_v1.0.28.md, RELEASE_NOTES_v1.0.29.md
+- docs/*.md (7 файлов: ADMIN_CLI_GUIDE.md, DEBUGGING.md, PERFORMANCE_TUNING.md, TROUBLESHOOTING.md, FREEBSD_SUPPORT.md, ARM64_SUPPORT.md, GRPC_API.md)
 - grafana/README.md, prometheus/mtproxy-alerts.yml
+- webui/README.md
 
 ---
 
@@ -92,8 +93,9 @@
 | ARM64 сборка | Q2 2026 | 🔵 Планирование | ✅ Выполнено |
 | Prometheus/Grafana | Q3 2026 | 🟢 Средний | ✅ Выполнено |
 | REST API тесты | Q3 2026 | 🟢 Средний | ✅ Выполнено |
-| gRPC интерфейс | Q3 2026 | 🟢 Низкий | ⏳ Ожидает |
-| Grafana дашборд | Q3 2026 | 🟢 Низкий | ⏳ Ожидает |
+| gRPC интерфейс | Q3 2026 | 🟢 Низкий | ✅ Выполнено |
+| Grafana дашборд | Q3 2026 | 🟢 Низкий | ✅ Выполнено |
+| Web UI | Q4 2026 | 🔴 Высокий | ✅ Выполнено |
 
 ---
 
