@@ -5,7 +5,60 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — v1.0.30 (29 марта 2026)
+## [Unreleased] — v1.0.31 (29 марта 2026)
+
+### Summary (29 марта 2026 — Q1 2027 Complete)
+
+#### Итоги v1.0.31
+- **Auto-Scaler**: автоматическое масштабирование (3 политики, 5 метрик)
+- **Distributed Tracing**: трассировка запросов (W3C Trace Context)
+- **Production Tests**: 6 интеграционных тестов
+- **Тесты**: +31 C тестов (Auto-Scaler, Distributed Tracing, Production)
+- **Документация**: +1 файл (RELEASE_NOTES_v1.0.31.md)
+- **Всего коммитов**: 509
+- **Всего тестов**: 301 (276 C + 8 Python + 4 Dart + 13 Integration)
+
+### Added (Q1 2027)
+
+#### Auto-Scaler
+- **system/cluster/auto-scaler.c/h**: система масштабирования (1000+ строк)
+  - 3 политики: Conservative, Moderate, Aggressive
+  - 5 метрик: CPU, Memory, Connections, Requests/sec, Latency
+  - Автоматическое увеличение/уменьшение узлов
+  - Cooldown периоды для предотвращения колебаний
+- **testing/test_auto_scaler.c**: 20 тестов
+
+#### Distributed Tracing
+- **system/monitoring/distributed-tracing.c/h**: трассировка (800+ строк)
+  - W3C Trace Context propagation
+  - 5 типов span: Server, Client, Producer, Consumer, Internal
+  - 3 статуса: Unset, OK, Error
+  - Атрибуты и события для span
+  - Sampling с настраиваемой частотой
+- **testing/test_distributed_tracing.c**: 25 тестов
+
+#### Production Integration Tests
+- **testing/test_production_integration.c**: 6 интеграционных тестов
+  - Cluster + Load Balancer Integration
+  - Auto-Scaler + Health Check Integration
+  - Distributed Tracing + Alert Manager Integration
+  - Full Stack Integration (все компоненты)
+  - Failover Scenario
+  - High Load Scenario (1000+ запросов)
+
+### Changed (Q1 2027)
+
+#### Build System
+- **CMakeLists.txt**: добавлены тесты auto-scaler, distributed-tracing, production-integration
+- **VERSION**: обновлён до 1.0.31
+
+#### Documentation
+- **todo.md**: Q1 2027 100% complete
+- **RELEASE_NOTES_v1.0.31.md**: релизный документ v1.0.31
+
+---
+
+## [Released] — v1.0.30 (29 марта 2026)
 
 ### Summary (29 марта 2026 — Q4 2026 Complete)
 
