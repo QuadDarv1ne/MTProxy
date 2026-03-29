@@ -590,3 +590,174 @@ void utils_hexdump(const void *data, size_t len, const char *prefix) {
 }
 
 #endif
+
+/* ============================================================================
+ * Encoding Utilities (Base64, Hex)
+ * ============================================================================ */
+
+// Base64 encoding table
+static const char base64_table[] =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+// Base64 encode
+int utils_base64_encode(const uint8_t *input, size_t input_len,
+                        char *output, size_t output_size) {
+    if (!input || !output || input_len == 0) {
+        return -1;
+    }
+
+    size_t encoded_len = 4 * ((input_len + 2) / 3);
+    if (output_size <= encoded_len) {
+        return -1;
+    }
+
+    size_t i, j;
+    for (i = 0, j = 0; i < input_len;) {
+        uint32_t octet_a = i < input_len ? input[i++] : 0;
+        uint32_t octet_b = i < input_len ? input[i++] : 0;
+        uint32_t octet_c = i < input_len ? input[i++] : 0;
+
+        uint32_t triple = (octet_a << 16) + (octet_b << 8) + octet_c;
+
+        output[j++] = base64_table[(triple >> 18) & 0x3F];
+        output[j++] = base64_table[(triple >> 12) & 0x3F];
+        output[j++] = base64_table[(triple >> 6) & 0x3F];
+        output[j++] = base64_table[triple & 0x3F];
+    }
+
+    // Add padding
+    size_t mod = input_len % 3;
+    if (mod > 0) {
+        for (size_t k = 0; k < 3 - mod; k++) {
+            output[encoded_len - 1 - k] = '=';
+        }
+    }
+
+    output[encoded_len] = '\0';
+    return (int)encoded_len;
+}
+
+// Base64 decoding table
+static const int base64_decode_table[256] = {
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,62,-1,-1,-1,63,
+    52,53,54,55,56,57,58,59,60,61,-1,-1,-1,-1,-1,-1,
+    -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,
+    15,16,17,18,19,20,21,22,23,24,25,-1,-1,-1,-1,-1,
+    -1,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,
+    41,42,43,44,45,46,47,48,49,50,51,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+};
+
+// Base64 decode
+int utils_base64_decode(const char *input, size_t input_len,
+                        uint8_t *output, size_t output_size, size_t *output_len) {
+    if (!input || !output || !output_len || input_len == 0) {
+        return -1;
+    }
+
+    if (input_len % 4 != 0) {
+        return -1;
+    }
+
+    size_t decoded_len = (input_len / 4) * 3;
+    if (output_size < decoded_len) {
+        return -1;
+    }
+
+    // Count padding
+    int padding = 0;
+    if (input[input_len - 1] == '=') padding++;
+    if (input[input_len - 2] == '=') padding++;
+
+    size_t i, j;
+    for (i = 0, j = 0; i < input_len;) {
+        int a = (i < input_len) ? base64_decode_table[(unsigned char)input[i++]] : -1;
+        int b = (i < input_len) ? base64_decode_table[(unsigned char)input[i++]] : -1;
+        int c = (i < input_len) ? base64_decode_table[(unsigned char)input[i++]] : -1;
+        int d = (i < input_len) ? base64_decode_table[(unsigned char)input[i++]] : -1;
+
+        if (a == -1 || b == -1) {
+            return -1;
+        }
+
+        uint32_t triple = (a << 18) | (b << 12) | ((c == -1 ? 0 : c) << 6) | (d == -1 ? 0 : d);
+
+        if (j < decoded_len - padding) output[j++] = (triple >> 16) & 0xFF;
+        if (j < decoded_len - padding) output[j++] = (triple >> 8) & 0xFF;
+        if (j < decoded_len - padding) output[j++] = triple & 0xFF;
+    }
+
+    *output_len = decoded_len - padding;
+    return (int)*output_len;
+}
+
+// Hex encode
+int utils_hex_encode(const uint8_t *input, size_t input_len,
+                     char *output, size_t output_size) {
+    if (!input || !output || input_len == 0) {
+        return -1;
+    }
+
+    if (output_size < input_len * 2 + 1) {
+        return -1;
+    }
+
+    static const char hex_chars[] = "0123456789abcdef";
+    size_t i, j;
+    for (i = 0, j = 0; i < input_len; i++) {
+        output[j++] = hex_chars[(input[i] >> 4) & 0x0F];
+        output[j++] = hex_chars[input[i] & 0x0F];
+    }
+    output[j] = '\0';
+
+    return (int)(input_len * 2);
+}
+
+// Hex decode value
+static int hex_char_to_int(char c) {
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    return -1;
+}
+
+// Hex decode
+int utils_hex_decode(const char *input, size_t input_len,
+                     uint8_t *output, size_t output_size, size_t *output_len) {
+    if (!input || !output || !output_len || input_len == 0) {
+        return -1;
+    }
+
+    if (input_len % 2 != 0) {
+        return -1;
+    }
+
+    size_t decoded_len = input_len / 2;
+    if (output_size < decoded_len) {
+        return -1;
+    }
+
+    size_t i, j;
+    for (i = 0, j = 0; i < input_len; i += 2) {
+        int high = hex_char_to_int(input[i]);
+        int low = hex_char_to_int(input[i + 1]);
+
+        if (high == -1 || low == -1) {
+            return -1;
+        }
+
+        output[j++] = (uint8_t)((high << 4) | low);
+    }
+
+    *output_len = decoded_len;
+    return (int)*output_len;
+}

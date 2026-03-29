@@ -133,6 +133,26 @@ uint32_t utils_swap32(uint32_t val);
 uint64_t utils_swap64(uint64_t val);
 
 /* ============================================================================
+ * Encoding Utilities (Base64, Hex)
+ * ============================================================================ */
+
+// Base64 encode
+int utils_base64_encode(const uint8_t *input, size_t input_len,
+                        char *output, size_t output_size);
+
+// Base64 decode
+int utils_base64_decode(const char *input, size_t input_len,
+                        uint8_t *output, size_t output_size, size_t *output_len);
+
+// Hex encode
+int utils_hex_encode(const uint8_t *input, size_t input_len,
+                     char *output, size_t output_size);
+
+// Hex decode
+int utils_hex_decode(const char *input, size_t input_len,
+                     uint8_t *output, size_t output_size, size_t *output_len);
+
+/* ============================================================================
  * Debug Utilities
  * ============================================================================ */
 
