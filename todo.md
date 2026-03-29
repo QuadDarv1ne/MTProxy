@@ -1,7 +1,7 @@
 # MTProxy Project TODO
 
 > **Актуально на:** 29 марта 2026 г.
-> **Коммит:** 19a2052 (HEAD -> dev, origin/master, origin/dev)
+> **Коммит:** f5b62ff (HEAD -> dev, origin/master, origin/dev)
 > **Версия:** v1.0.28-dev (в разработке)
 > **Ветки:** dev = origin/dev ✅ | master = origin/master ✅ (синхронизированы)
 > **Тег:** v1.0.27 ✅
@@ -25,10 +25,17 @@
 - [x] Очистка документации — ✅ ВЫПОЛНЕНО (-6869 строк)
 - [x] README.md — обновление ссылок — ✅ ВЫПОЛНЕНО (19a2052)
 
-### 🟡 Следующие
-- [ ] HTTP/3 QUIC (nghttp3/ngtcp2 интеграция)
-- [ ] io_uring для Linux
-- [ ] Web UI базовый
+### 🟡 Следующие (приоритет)
+- [ ] **VERSION файл** — обновить с 1.0.1 на 1.0.28
+- [ ] **HTTP/3 QUIC** — nghttp3/ngtcp2 интеграция (net/http3-quic.c уже существует)
+- [ ] **io_uring** — для Linux (zero-copy операции)
+- [ ] **Web UI** — базовый интерфейс (webui/ директория пуста)
+
+### 🟢 Q2 2026 (планирование)
+- [ ] Интеграционные тесты (admin-cli, metrics_collector, Docker)
+- [ ] Бенчмарки производительности (100K+ операций)
+- [ ] FreeBSD поддержка
+- [ ] ARM64 Linux сборка (Raspberry Pi)
 
 ---
 
@@ -36,8 +43,8 @@
 
 | Метрика | Значение |
 |---------|----------|
-| **Всего коммитов** | 434+ |
-| **C/H файлов** | 399+ |
+| **Всего коммитов** | 435+ |
+| **C/H файлов** | 400+ |
 | **Workflow** | 6 |
 | **Тестов** | 98 C + 4 Dart |
 | **Бенчмарков** | 5 |
@@ -51,15 +58,19 @@
 ### Основная (24 файла)
 - README.md, PROJECT_INDEX.md, TESTING.md, BENCHMARKS.md
 - CHANGELOG.md, SECURITY.md, CONTRIBUTING.md, DEPLOYMENT.md
-- API_REFERENCE.md, docs/*.md (4 файла: ADMIN_CLI_GUIDE.md, DEBUGGING.md, PERFORMANCE_TUNING.md, TROUBLESHOOTING.md)
+- API_REFERENCE.md, ROADMAP.md
+- docs/*.md (4 файла: ADMIN_CLI_GUIDE.md, DEBUGGING.md, PERFORMANCE_TUNING.md, TROUBLESHOOTING.md)
 
 ---
 
 ## 🎯 Roadmap v1.0.28
 
-- [ ] HTTP/3 QUIC
-- [ ] io_uring
-- [ ] Web UI
+| Задача | Приоритет | Статус |
+|--------|-----------|--------|
+| VERSION файл | 🔴 Высокий | Ожидает |
+| HTTP/3 QUIC | 🟡 Средний | Ожидает |
+| io_uring | 🟡 Средний | Ожидает |
+| Web UI | 🟢 Низкий | Ожидает |
 
 ---
 
@@ -71,4 +82,4 @@
 
 ---
 
-*Последнее обновление: 29 марта 2026 г. — README.md обновлён, готов к следующим улучшениям v1.0.28*
+*Последнее обновление: 29 марта 2026 г. — todo.md актуализирован, готов к v1.0.28*
