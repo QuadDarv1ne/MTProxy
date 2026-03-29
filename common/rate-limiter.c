@@ -20,18 +20,39 @@
 #include "common/kprintf.h"
 #include "common/crc32.h"
 #include "common/utils.h"
+#include "common/cache-memory-pool.h"
+
+// Глобальный пул для rate limiter (инициализируется при первом использовании)
+static cache_entry_pool_t g_rate_pool;
+static int g_rate_pool_initialized = 0;
+
+// Инициализация глобального пула
+static void rate_pool_ensure_init(void) {
+    if (!g_rate_pool_initialized) {
+        cache_pool_init(&g_rate_pool, CACHE_POOL_INITIAL_SIZE);
+        g_rate_pool_initialized = 1;
+    }
+}
 
 // Создание новой записи
 static rate_limit_entry_t* rate_limit_create_entry(const char *key) {
-    rate_limit_entry_t *entry = calloc(1, sizeof(rate_limit_entry_t));
-    if (!entry) return NULL;
+    rate_pool_ensure_init();
     
+    // Выделение из пула (быстрее calloc)
+    rate_limit_entry_t *entry = CACHE_POOL_ALLOC(&g_rate_pool, rate_limit_entry_t);
+    if (!entry) {
+        // Fallback на calloc если пул пуст
+        entry = calloc(1, sizeof(rate_limit_entry_t));
+        if (!entry) return NULL;
+    }
+    memset(entry, 0, sizeof(rate_limit_entry_t));
+
     entry->key = strdup(key);
     if (!entry->key) {
-        free(entry);
+        CACHE_POOL_FREE(&g_rate_pool, entry);
         return NULL;
     }
-    
+
     entry->tokens = 0;
     entry->last_refill = time(NULL);
     entry->current_count = 0;
@@ -43,7 +64,7 @@ static rate_limit_entry_t* rate_limit_create_entry(const char *key) {
     entry->recent_rejections = 0;
     entry->last_request_time = 0;
     entry->last_rejection_time = 0;
-    
+
     return entry;
 }
 
@@ -51,7 +72,10 @@ static rate_limit_entry_t* rate_limit_create_entry(const char *key) {
 static void rate_limit_free_entry(rate_limit_entry_t *entry) {
     if (!entry) return;
     if (entry->key) free(entry->key);
-    free(entry);
+    
+    // Возврат в пул (быстрее free)
+    rate_pool_ensure_init();
+    CACHE_POOL_FREE(&g_rate_pool, entry);
 }
 
 // Поиск записи
