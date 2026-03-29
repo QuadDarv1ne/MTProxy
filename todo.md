@@ -56,7 +56,7 @@
 
 ### 🔴 Высокий приоритет
 - [x] **Auto-scaling** — ✅ ВЫПОЛНЕНО (auto-scaler.c/h, 20 тестов, 3 политики)
-- [ ] **Distributed tracing** — трассировка запросов между узлами
+- [x] **Distributed tracing** — ✅ ВЫПОЛНЕНО (distributed-tracing.c/h, 25 тестов, W3C propagation)
 - [ ] **Production тестирование** — тесты на реальном кластере
 
 ### 🟡 Средний приоритет
@@ -75,10 +75,10 @@
 
 | Метрика | Значение | Изменение |
 |---------|----------|-----------|
-| **Всего коммитов** | 507 | +2 (Auto-scaler + todo) |
-| **C/H файлов** | 428+ | +2 (auto-scaler.c/h) |
+| **Всего коммитов** | 508 | +1 (Distributed Tracing) |
+| **C/H файлов** | 430+ | +2 (distributed-tracing.c/h) |
 | **Workflow** | 8 | 0 |
-| **Тестов** | 270 (250 C + 8 Python + 4 Dart) | +20 (Auto-scaler) |
+| **Тестов** | 295 (275 C + 8 Python + 4 Dart) | +25 (Distributed Tracing) |
 | **Бенчмарков** | 9 | 0 |
 | **Документов** | 36 | 0 |
 | **Релизов** | 4 (v1.0.27, v1.0.28, v1.0.29, v1.0.30) | 0 |
@@ -87,10 +87,10 @@
 
 ## 📋 Текущий фокус
 
-**Q1 2027 Progress:** 1/3 High Priority ✅
+**Q1 2027 Progress:** 2/3 High Priority ✅
 
 - ✅ Auto-scaling — завершено
-- ⏳ Distributed tracing — в работе
+- ✅ Distributed tracing — завершено
 - ⏳ Production тестирование — планируется
 
 ---
@@ -139,4 +139,4 @@
 
 ---
 
-*Последнее обновление: 29 марта 2026 г. — v1.0.31-dev, Auto-scaling ✅ (507 коммитов)*
+*Последнее обновление: 29 марта 2026 г. — v1.0.31-dev, Distributed Tracing ✅ (508 коммитов)*
