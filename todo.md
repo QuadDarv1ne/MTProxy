@@ -1,8 +1,8 @@
 # MTProxy Project TODO
 
 > **Актуально на:** 29 марта 2026 г.
-> **Коммит:** 5577684 (dev/master)
-> **Версия:** v1.0.27 ✅ RELEASED
+> **Коммит:** b131a24 (dev/master)
+> **Версия:** v1.0.28-dev (в разработке)
 > **Ветки:** dev = origin/dev ✅ | master = origin/master ✅
 > **Тег:** v1.0.27 ✅
 
@@ -16,76 +16,70 @@
 - [x] Тег v1.0.27 создан и запушен
 - [x] Ветки синхронизированы
 - [x] TESTING.md создан
+- [x] PROJECT_INDEX.md создан
 
 ---
 
-## 📋 Активные задачи
+## 📋 Активные задачи (v1.0.28)
 
-### 🔴 В работе (v1.0.28)
-- [x] TESTING.md документация — ✅ ВЫПОЛНЕНО
+### 🔴 В работе
+- [x] PROJECT_INDEX.md — ✅ ВЫПОЛНЕНО
 
-### 🟡 Следующие (v1.0.28)
+### 🟡 Следующие
+- [ ] README.md обновление (ссылки на новую документацию)
 - [ ] HTTP/3 QUIC полная реализация (nghttp3/ngtcp2)
 - [ ] io_uring для Linux
 - [ ] Web UI базовый мониторинг
-- [ ] Исправления по результатам security audit
 
 ---
 
-## 📊 Итоги релиза v1.0.27
-
-### Производительность
-- ✅ Cache Memory Pool (5x ускорение)
-- ✅ jemalloc/tcmalloc поддержка (+60% ops/sec)
-- ✅ Network analyzer кэширование (~80% CPU)
-
-### Безопасность
-- ✅ Security utils (3 функции)
-- ✅ 18 security тестов (100% покрытие)
-- ✅ Security audit CI workflow
-
-### Тестирование
-- ✅ 98 C тестов + 4 Dart (100%+)
-- ✅ 5 бенчмарков производительности
-
-### Документация
-- ✅ BENCHMARKS.md
-- ✅ RELEASE_NOTES_v1.0.27.md
-- ✅ CHANGELOG.md
-- ✅ TESTING.md
-
----
-
-## 📈 Статистика проекта
+## 📊 Статистика проекта
 
 | Метрика | Значение |
 |---------|----------|
-| **Всего коммитов** | 429+ |
+| **Всего коммитов** | 430+ |
 | **C/H файлов** | 399+ |
 | **Workflow** | 6 |
 | **Тестов** | 98 C + 4 Dart |
 | **Бенчмарков** | 5 |
-| **Документов** | 42+ |
+| **Документов** | **43+** |
 | **Релизов** | 1 (v1.0.27) |
 | **Ветки** | dev = master ✅ |
 
 ---
 
-## 🎯 Roadmap v1.0.28
+## 📚 Документация
 
-### Q2 2026 (Апрель - Июнь)
-- [ ] HTTP/3 QUIC (nghttp3/ngtcp2 интеграция)
-- [ ] io_uring для Linux (async I/O)
-- [ ] Web UI базовый мониторинг
-- [ ] Performance fixes
+### Основная
+- [README.md](README.md) — основная информация
+- [PROJECT_INDEX.md](PROJECT_INDEX.md) — навигация по проекту
+- [TESTING.md](TESTING.md) — тестирование
+- [BENCHMARKS.md](BENCHMARKS.md) — бенчмарки
+- [CHANGELOG.md](CHANGELOG.md) — история изменений
 
-### Q3 2026 (Июль - Сентябрь)
+### Руководства
+- [DEPLOYMENT.md](DEPLOYMENT.md) — развёртывание
+- [API_REFERENCE.md](API_REFERENCE.md) — API справочник
+- [PERFORMANCE_TUNING.md](docs/PERFORMANCE_TUNING.md) — оптимизация
+- [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) — диагностика
+
+---
+
+## 🎯 Roadmap
+
+### v1.0.28 (Q2 2026)
+- [ ] README.md обновление
+- [ ] HTTP/3 QUIC (nghttp3/ngtcp2)
+- [ ] io_uring для Linux
+- [ ] Web UI базовый
+
+### v1.0.29 (Q3 2026)
 - [ ] gRPC интерфейс
 - [ ] WebSocket поддержка
 - [ ] Prometheus экспортёр
 - [ ] Grafana дашборды
 
-### Q4 2026 (Октябрь - Декабрь)
+### v1.1.0 (Q4 2026)
 - [ ] Кластеризация
 - [ ] Load balancing
 - [ ] Auto-scaling
@@ -101,4 +95,4 @@
 
 ---
 
-*Последнее обновление: 29 марта 2026 г. — 🎉 RELEASE v1.0.27 ЗАВЕРШЁН, начинаем v1.0.28!*
+*Последнее обновление: 29 марта 2026 г. — v1.0.28-dev (в разработке)*
