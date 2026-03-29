@@ -18,6 +18,19 @@
 
 #include "common/error-handler.h"
 #include "common/kprintf.h"
+#include "common/cache-memory-pool.h"
+
+// Глобальный пул для error handler (инициализируется при первом использовании)
+static cache_entry_pool_t g_error_pool;
+static int g_error_pool_initialized = 0;
+
+// Инициализация глобального пула
+static void error_pool_ensure_init(void) {
+    if (!g_error_pool_initialized) {
+        cache_pool_init(&g_error_pool, CACHE_POOL_INITIAL_SIZE);
+        g_error_pool_initialized = 1;
+    }
+}
 
 // Глобальный контекст
 static error_handler_context_t global_error_ctx = {0};
@@ -161,15 +174,23 @@ void error_handler_cleanup(error_handler_context_t *ctx) {
 // Создание ошибки
 error_info_t* error_create(int error_code, error_level_t level,
                           error_category_t category, const char *message) {
-    error_info_t *error = calloc(1, sizeof(error_info_t));
-    if (!error) return NULL;
+    error_pool_ensure_init();
     
+    // Выделение из пула (быстрее calloc)
+    error_info_t *error = CACHE_POOL_ALLOC(&g_error_pool, error_info_t);
+    if (!error) {
+        // Fallback на calloc если пул пуст
+        error = calloc(1, sizeof(error_info_t));
+        if (!error) return NULL;
+    }
+    memset(error, 0, sizeof(error_info_t));
+
     error->error_code = error_code;
     error->level = level;
     error->category = category;
     error->timestamp = time(NULL);
     error->os_error = errno;
-    
+
     // Сообщение об ошибке
     if (message) {
         strncpy(error->message, message, sizeof(error->message) - 1);
@@ -177,7 +198,7 @@ error_info_t* error_create(int error_code, error_level_t level,
         strncpy(error->message, error_get_default_message(error_code),
                 sizeof(error->message) - 1);
     }
-    
+
     return error;
 }
 
@@ -215,7 +236,10 @@ error_info_t* error_create_with_details(int error_code, error_level_t level,
 void error_free(error_info_t *error) {
     if (error) {
         if (error->context) free(error->context);
-        free(error);
+        
+        // Возврат в пул (быстрее free)
+        error_pool_ensure_init();
+        CACHE_POOL_FREE(&g_error_pool, error);
     }
 }
 

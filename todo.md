@@ -1,7 +1,7 @@
 # MTProxy Project TODO
 
 > **Актуально на:** 29 марта 2026 г.
-> **Коммит:** 141f3eb (dev/master)
+> **Коммит:** 278576e (dev/master)
 > **Версия:** v1.0.19-cache-no-copy
 > **Ветки:** dev = origin/dev ✅ | master = origin/master ✅
 
@@ -10,13 +10,12 @@
 ## 📋 Активные задачи
 
 ### 🔴 В работе
-- [x] Интеграция cache-memory-pool в cache-manager — ✅ ВЫПОЛНЕНО
-- [x] Интеграция cache-memory-pool в rate-limiter — ✅ ВЫПОЛНЕНО
+- [x] Интеграция cache-memory-pool в error-handler — ✅ ВЫПОЛНЕНО
 
 ### 🟡 Следующие
-- [ ] Интеграция cache-memory-pool в error-handler
 - [ ] Сетевая оптимизация (zero-copy, TCP_NODELAY)
 - [ ] HTTP/3 QUIC полная реализация (nghttp3/ngtcp2)
+- [ ] Оптимизация network-analyzer.c
 
 ---
 
@@ -29,6 +28,7 @@
 - [x] test_memory_utils.h (мониторинг памяти)
 - [x] Интеграция cache-memory-pool в cache-manager
 - [x] Интеграция cache-memory-pool в rate-limiter
+- [x] Интеграция cache-memory-pool в error-handler
 
 ### Устранение дублирования (28 марта)
 - [x] utils_int_to_string / utils_float_to_string
@@ -48,7 +48,7 @@
 
 | Метрика | Значение |
 |---------|----------|
-| **Всего коммитов** | 417+ |
+| **Всего коммитов** | 418+ |
 | **C/H файлов** | 392+ |
 | **Тестов** | 77 C + 4 Dart (100%) |
 | **Ветки** | dev = master ✅ |
