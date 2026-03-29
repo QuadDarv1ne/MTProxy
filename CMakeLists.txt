@@ -1022,6 +1022,20 @@ set_target_properties(benchmark-memory-allocator PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# Utils security test executable
+add_executable(test-utils-security
+    testing/test_utils_security.c
+    common/utils.c
+)
+
+target_link_libraries(test-utils-security
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-utils-security PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # Cache memory pool test executable
 add_executable(test-cache-pool
     testing/test_cache_memory_pool.c
