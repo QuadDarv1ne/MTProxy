@@ -1,19 +1,21 @@
-# Admin CLI User Guide
+# MTProxy CLI Guides
 
-Руководство пользователя Admin CLI для MTProxy.
+Полное руководство по инструментам командной строки MTProxy.
 
-## Содержание
+## 📋 Обзор
 
-1. [Быстрый старт](#быстрый-старт)
-2. [Режимы работы](#режимы-работы)
-3. [Команды](#команды)
-4. [Примеры использования](#примеры-использования)
-5. [Настройка](#настройка)
-6. [Скрипты и автоматизация](#скрипты-и-автоматизация)
+MTProxy предоставляет два инструмента для управления через командную строку:
+
+| Инструмент | Файл | Описание |
+|------------|------|----------|
+| **mtproxy-admin** | `admin/admin-cli.c` | Интерактивный CLI с историей команд |
+| **mtproxy-cli** | `cli/mtcli.c` | Утилита для скриптов и автоматизации |
 
 ---
 
-## Быстрый старт
+# Часть 1: mtproxy-admin (Интерактивный CLI)
+
+## 🚀 Быстрый старт
 
 ### Запуск CLI
 
@@ -37,8 +39,6 @@ mtproxy-admin.exe "cache-stats"
 ```bash
 mtproxy-admin.exe --host 192.168.1.100 --port 8888 --token mysecret
 ```
-
----
 
 ## Режимы работы
 
@@ -115,9 +115,7 @@ mtproxy-admin.exe --json stats
 }
 ```
 
----
-
-## Команды
+## Команды управления сервером
 
 ### Управление сервером
 
@@ -143,7 +141,7 @@ mtproxy-admin.exe --json stats
 |---------|----------|--------|
 | `config show` | Показать конфигурацию | `config show [section]` |
 | `config-set` | Установить параметр | `config-set network.port 8889` |
-| `config-save` | Сохранить конфигурацию | `config-save [filename]` |
+| `config-save` | Сохранить конфигурацию | `config-save backup.conf` |
 
 ### Кэш
 
@@ -186,8 +184,6 @@ mtproxy-admin.exe --json stats
 | `help` | Общая справка | `help` |
 | `help <cmd>` | Справка по команде | `help cache-stats` |
 | `exit` / `quit` | Выход | `exit` |
-
----
 
 ## Примеры использования
 
@@ -265,8 +261,6 @@ mtproxy-admin.exe connections
 mtproxy-admin.exe "kill conn_12345"
 ```
 
----
-
 ## Настройка
 
 ### Переменные окружения
@@ -300,8 +294,6 @@ file = ~/.mtproxy_history
 max_size = 1000
 ```
 
----
-
 ## Скрипты и автоматизация
 
 ### Bash скрипт мониторинга
@@ -333,27 +325,6 @@ echo "=== Connections ==="
 mtproxy-admin.exe --host $HOST --port $PORT "connections active" | head -20
 ```
 
-### PowerShell скрипт
-
-```powershell
-# monitor.ps1
-
-$host = $env:MTPROXY_HOST ?? "localhost"
-$port = $env:MTPROXY_PORT ?? "8888"
-
-Write-Host "=== MTProxy Monitor ==="
-Write-Host "Host: $host`:$port"
-Write-Host "Time: $(Get-Date)"
-Write-Host ""
-
-Write-Host "=== Status ==="
-& mtproxy-admin.exe --host $host --port $port status
-
-Write-Host ""
-Write-Host "=== Statistics ==="
-& mtproxy-admin.exe --host $host --port $port "stats detail"
-```
-
 ### Python скрипт
 
 ```python
@@ -366,18 +337,18 @@ import sys
 
 def run_command(cmd, host='localhost', port=8888, token=None):
     args = ['mtproxy-admin.exe']
-    
+
     if host != 'localhost':
         args.extend(['--host', host])
     if port != 8888:
         args.extend(['--port', str(port)])
     if token:
         args.extend(['--token', token])
-    
+
     args.extend(['--json', cmd])
-    
+
     result = subprocess.run(args, capture_output=True, text=True)
-    
+
     if result.returncode == 0:
         return json.loads(result.stdout)
     else:
@@ -392,65 +363,6 @@ if __name__ == '__main__':
         print(f"Uptime: {status['server']['uptime']}s")
         print(f"Connections: {status['server']['connections']}")
 ```
-
-### Cron задача (Linux)
-
-```bash
-# Мониторинг каждые 5 минут
-*/5 * * * * /path/to/monitor.sh >> /var/log/mtproxy_monitor.log 2>&1
-
-# Сбор метрик для Prometheus
-*/1 * * * * mtproxy-admin.exe --json metrics > /var/lib/prometheus/mtproxy.metrics
-```
-
-### Task Scheduler (Windows)
-
-```powershell
-# Создание задачи
-$action = New-ScheduledTaskAction -Execute "mtproxy-admin.exe" `
-  -Argument "status"
-$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) `
-  -RepetitionInterval (New-TimeSpan -Minutes 5)
-Register-ScheduledTask -TaskName "MTProxy Monitor" `
-  -Action $action -Trigger $trigger
-```
-
----
-
-## Интеграция с системами мониторинга
-
-### Grafana Dashboard
-
-**Импорт метрик:**
-```bash
-# Экспорт метрик в Prometheus формат
-mtproxy-admin.exe metrics > /var/lib/prometheus/mtproxy.metrics
-```
-
-**Пример дашборда:**
-- Server Status (UP/DOWN)
-- Active Connections
-- Requests per Second
-- Cache Hit Rate
-- Error Rate
-
-### Zabbix Integration
-
-**Item:**
-```
-Type: External check
-Key: system.run["mtproxy-admin.exe status"]
-Type of information: Text
-Update interval: 60s
-```
-
-**Trigger:**
-```
-Expression: {MTProxy:system.run["mtproxy-admin.exe status"].str("running")}=0
-Severity: High
-```
-
----
 
 ## Советы и рекомендации
 
@@ -472,7 +384,7 @@ Severity: High
    ```bash
    # Быстро
    mtproxy-admin.exe stats
-   
+
    # Подробно (медленнее)
    mtproxy-admin.exe "stats detail"
    ```
@@ -483,7 +395,7 @@ Severity: High
    ```bash
    # Плохо
    mtproxy-admin.exe --token mysecret status
-   
+
    # Хорошо
    mtproxy-admin.exe --token $MTPROXY_TOKEN status
    ```
@@ -499,8 +411,6 @@ Severity: High
    chown root:admin mtproxy-admin.exe
    chmod 750 mtproxy-admin.exe
    ```
-
----
 
 ## Устранение проблем
 
@@ -545,8 +455,240 @@ mtproxy-admin.exe <Tab>
 
 ---
 
-## Дополнительные ресурсы
+# Часть 2: mtproxy-cli (Утилита для скриптов)
+
+## 📋 Обзор
+
+`mtproxy-cli` — это кроссплатформенная утилита для управления и мониторинга MTProxy сервера через командную строку.
+
+**Возможности:**
+- 📊 Мониторинг статуса и статистики сервера
+- ⚙️ Управление конфигурацией
+- 🔑 Управление секретами
+- 📝 Просмотр логов
+- 🚨 Проверка здоровья (health checks)
+- 🔄 Перезагрузка и перезапуск сервера
+
+## 🚀 Быстрый старт
+
+### Установка
+
+Утилита поставляется вместе с MTProxy и находится в директории `bin/`:
+
+```bash
+# Linux/macOS
+./bin/mtproxy-cli --help
+
+# Windows
+bin\mtproxy-cli.exe --help
+```
+
+### Подключение
+
+```bash
+# Локальное подключение (по умолчанию)
+mtproxy-cli status
+
+# Удалённое подключение
+mtproxy-cli --host 192.168.1.100 --port 8080 status
+
+# С API ключом
+mtproxy-cli --api-key your-api-key status
+```
+
+## Команды
+
+### Статус сервера
+
+```bash
+# Базовый статус
+mtproxy-cli status
+
+# В формате JSON
+mtproxy-cli status --json
+```
+
+**Пример вывода:**
+```
+Server Status: Running
+Version: 1.0.29
+Uptime: 2d 5h 30m 15s
+Platform: Linux x86_64
+```
+
+### Статистика
+
+```bash
+# Основная статистика
+mtproxy-cli stats
+
+# Подробная статистика в JSON
+mtproxy-cli stats --json --verbose
+```
+
+**Пример вывода:**
+```
+Active Connections: 1234
+Total Connections: 56789
+Bytes Sent: 1.50 GB
+Bytes Received: 3.20 GB
+Requests/sec: 450
+```
+
+### Конфигурация
+
+```bash
+# Показать конфигурацию
+mtproxy-cli config
+
+# Изменить параметр
+mtproxy-cli config-set network.port 8889
+
+# Сохранить конфигурацию
+mtproxy-cli config-save backup.conf
+```
+
+### Секреты
+
+```bash
+# Показать секреты
+mtproxy-cli secrets
+
+# Добавить секрет
+mtproxy-cli secret-add ddcafebabe1234567890abcdef "My Secret"
+
+# Удалить секрет
+mtproxy-cli secret-delete 0
+```
+
+### Логи
+
+```bash
+# Просмотр логов
+mtproxy-cli logs
+
+# С фильтром по уровню
+mtproxy-cli logs --level error
+
+# Следить в реальном времени
+mtproxy-cli logs --follow
+```
+
+### Health Check
+
+```bash
+# Проверка здоровья
+mtproxy-cli health
+
+# Подробный отчёт
+mtproxy-cli health --verbose
+```
+
+## Параметры командной строки
+
+| Параметр | Описание | По умолчанию |
+|----------|----------|--------------|
+| `--host` | Хост сервера | `localhost` |
+| `--port` | Порт REST API | `8080` |
+| `--api-key` | API ключ | - |
+| `--timeout` | Таймаут соединения (сек) | `30` |
+| `--json` | JSON вывод | `false` |
+| `--verbose` | Подробный вывод | `false` |
+| `--insecure` | Игнорировать SSL ошибки | `false` |
+
+## Примеры использования
+
+### Автоматизация мониторинга
+
+```bash
+#!/bin/bash
+# mtproxy_monitor.sh
+
+API_KEY="your-api-key"
+HOST="localhost"
+PORT="8080"
+
+# Получение статуса
+status=$(mtproxy-cli --host $HOST --port $PORT --api-key $API_KEY status --json)
+
+# Проверка статуса
+if echo "$status" | jq -r '.server.status' | grep -q "running"; then
+    echo "✅ Server is running"
+    connections=$(echo "$status" | jq -r '.server.connections')
+    echo "Active connections: $connections"
+else
+    echo "❌ Server is not running"
+    # Отправка алерта
+    curl -X POST https://alerts.example.com/webhook \
+      -H "Content-Type: application/json" \
+      -d "{\"status\": \"down\", \"time\": \"$(date)\"}"
+fi
+```
+
+### Интеграция с CI/CD
+
+```yaml
+# .github/workflows/deploy.yml
+- name: Deploy MTProxy
+  run: |
+    # Развёртывание
+    docker-compose up -d
+    
+    # Проверка здоровья
+    mtproxy-cli --host localhost --port 8080 health
+    
+    # Проверка статуса
+    mtproxy-cli status
+    
+    # Проверка конфигурации
+    mtproxy-cli config
+```
+
+### Сбор метрик для Prometheus
+
+```bash
+#!/bin/bash
+# prometheus_exporter.sh
+
+while true; do
+    mtproxy-cli --json metrics > /var/lib/prometheus/mtproxy.metrics
+    sleep 5
+done
+```
+
+## Устранение проблем
+
+### Ошибка: Connection refused
+
+**Причина:** REST API не запущен
+
+**Решение:**
+```bash
+# Проверка сервера
+netstat -tlnp | grep mtproxy
+
+# Запуск с REST API
+mtproto-proxy --rest-port 8080 -S <secret>
+```
+
+### Ошибка: Authentication failed
+
+**Причина:** Неправильный API ключ
+
+**Решение:**
+```bash
+# Проверка ключа
+mtproxy-cli --api-key your-key status
+
+# Генерация нового ключа
+mtproto-proxy --generate-api-key
+```
+
+---
+
+# Дополнительные ресурсы
 
 - [API_REFERENCE.md](../API_REFERENCE.md) — REST API документация
-- [TROUBLESHOOTING.md](../docs/TROUBLESHOOTING.md) — Диагностика проблем
-- [PERFORMANCE_TUNING.md](../docs/PERFORMANCE_TUNING.md) — Оптимизация производительности
+- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) — Диагностика проблем
+- [PERFORMANCE_TUNING.md](PERFORMANCE_TUNING.md) — Оптимизация производительности
+- [DEPLOYMENT.md](../DEPLOYMENT.md) — Развёртывание в production

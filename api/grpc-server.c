@@ -9,6 +9,10 @@
 #include <string.h>
 #include <time.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #ifdef __linux__
 #include <sys/utsname.h>
 #endif

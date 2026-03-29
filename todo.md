@@ -1,142 +1,81 @@
-# MTProxy Project TODO
+# MTProxy TODO
 
-> **Актуально на:** 29 марта 2026 г.
-> **Коммит:** 11d9d54 (HEAD -> dev, origin/dev)
-> **Версия:** v1.0.30 ✅ RELEASED | v1.0.31-dev (Q1 2027 в работе)
-> **Ветки:** dev ✅ synced | master ✅ synced
-> **Тег:** v1.0.30 ✅
+**Версия:** v1.0.33-dev  
+**Ветка:** dev → main  
+**Последнее обновление:** 29 марта 2026
 
 ---
 
-## 🎉 RELEASED: v1.0.30 (29 марта 2026) — Q4 2026 Complete
+## 🎯 Текущий спринт (Q2 2027)
 
-### ✅ Выполнено (v1.0.30 релиз)
-- [x] **CLI утилита** — mtproxy-cli (12 команд, 600+ строк, 10 тестов)
-- [x] **Alert Manager** — уведомления (5 каналов, 800+ строк, 25 тестов)
-- [x] **Health Check** — проверки (6 типов, 900+ строк, 20 тестов)
-- [x] **Cluster Manager** — кластеризация (1100+ строк, 30 тестов)
-- [x] **Load Balancer** — балансировка (700+ строк, 25 тестов)
-- [x] **VERSION** — обновлён до 1.0.30
-- [x] **CHANGELOG.md** — добавлены изменения v1.0.30
-- [x] **RELEASE_NOTES_v1.0.30.md** — релизный документ
+### ✅ Выполнено
+- [x] Очистка документации (26 → 16 файлов)
+- [x] Исправление сборки на Windows
+- [x] Консолидация руководств (CLI, Debugging, Platform, Monitoring)
 
 ---
 
-## 🎉 RELEASED: v1.0.29 (29 марта 2026)
+## 🔴 Критичные задачи
 
-### ✅ Выполнено (v1.0.29 релиз)
-- [x] **gRPC API** — grpc-server.c/h (400+ строк), 10 тестов, GRPC_API.md
-- [x] **Web UI** — index.html, css/style.css, js/*.js (dashboard, конфигурация, секреты, логи)
-- [x] **Grafana Enhanced Dashboard** — 16 панелей (cache, rate limiting, gRPC metrics)
-- [x] **CMakeLists.txt** — ENABLE_GRPC опция, генерация кода из protobuf
-- [x] **CHANGELOG.md, ROADMAP.md, todo.md** — обновлены для v1.0.29
-- [x] **RELEASE_NOTES_v1.0.29.md** — релизный документ
-- [x] **Тесты** — +10 C тестов (test_grpc_server.c)
-- [x] **Документация** — +2 файла (GRPC_API.md, webui/README.md)
+### Сборка и CI/CD
+- [ ] **Windows сборка** — проверить что все тесты проходят
+- [ ] **Linux сборка** — проверить с io_uring и jemalloc
+- [ ] **Docker образы** — обновить после очистки документации
 
----
-
-## 🎉 RELEASED: v1.0.28 (29 марта 2026)
-
-### ✅ Выполнено (v1.0.28 релиз)
-- [x] **VERSION файл** — ✅ ОБНОВЛЁН (1.0.1 → 1.0.28)
-- [x] **io_uring** — ✅ Linux io_uring (819 строк, ENABLE_IOURING)
-- [x] **io_uring тесты** — ✅ 15 тестов
-- [x] **io_uring бенчмарки** — ✅ 5 бенчмарков
-- [x] **admin-cli интеграция** — ✅ 18 тестов
-- [x] **metrics_collector тесты** — ✅ 20 Python тестов
-- [x] **Docker интеграция** — ✅ test_docker_integration.py + docker-test.sh
-- [x] **CHANGELOG v1.0.28** — ✅ полное описание
-- [x] **RELEASE_NOTES v1.0.28** — ✅ релизный документ
-- [x] **README.md** — ✅ обновлён для v1.0.28
+### Тесты
+- [ ] **test-alert-manager** — исправить kprintf на Windows
+- [ ] **test-distributed-tracing** — исправить span_t структуру
+- [ ] **test-production-integration** — исправить health_check вызов
 
 ---
 
-## 📋 Активные задачи (v1.0.31-dev — Q1 2027)
+## 🟡 Технические долги
 
-### 🔴 Высокий приоритет
-- [x] **Auto-scaling** — ✅ ВЫПОЛНЕНО (auto-scaler.c/h, 20 тестов, 3 политики)
-- [x] **Distributed tracing** — ✅ ВЫПОЛНЕНО (distributed-tracing.c/h, 25 тестов, W3C propagation)
-- [x] **Production тестирование** — ✅ ВЫПОЛНЕНО (6 integration тестов, failover, high-load)
+### Код
+- [ ] `cluster-manager.c` — исправить доступ к структуре (Windows compatibility)
+- [ ] `load-balancer.c` — исправить kprintf
+- [ ] `rest-api.c` — исправить Windows совместимость (gettimeofday, socklen_t)
+- [ ] `benchmark_cache_performance.c` — обновить API cache_manager
 
-### 🟡 Средний приоритет
-- [ ] **Anomaly detection** — ML-детекция аномалий в трафике
-- [ ] **Predictive analytics** — прогнозирование нагрузки
-- [ ] **Plugin system** — система плагинов для расширения
+### Производительность
+- [ ] Проверить утечки памяти через ASan
+- [ ] Оптимизировать размер бинарника (сейчас 85MB)
+- [ ] Benchmark для Windows сборки
 
-### 🟢 Низкий приоритет
-- [ ] **Web UI v2** — расширенный веб-интерфейс
-- [ ] **Mobile app v2** — расширенная функциональность
-- [ ] **Documentation** — дополнительные руководства
+---
+
+## 🟢 Улучшения
+
+### Документация
+- [x] Консолидация завершена
+- [ ] Обновить PROJECT_INDEX.md если существует
+- [ ] Проверить все ссылки в README.md
+
+### Код
+- [ ] Добавить обработку ошибок в CLI
+- [ ] Улучшить сообщения об ошибках
+- [ ] Добавить unit-тесты для новых модулей
 
 ---
 
 ## 📊 Статистика
 
-| Метрика | Значение | Изменение |
-|---------|----------|-----------|
-| **Всего коммитов** | 509 | +1 (Production Tests) |
-| **C/H файлов** | 430+ | 0 |
-| **Workflow** | 8 | 0 |
-| **Тестов** | 301 (276 C + 8 Python + 4 Dart + 13 Integration) | +6 (Production) |
-| **Бенчмарков** | 9 | 0 |
-| **Документов** | 36 | 0 |
-| **Релизов** | 4 (v1.0.27, v1.0.28, v1.0.29, v1.0.30) | 0 |
-
----
-
-## 📋 Текущий фокус
-
-**Q1 2027 Progress:** 3/3 High Priority ✅ COMPLETE!
-
-- ✅ Auto-scaling — завершено
-- ✅ Distributed tracing — завершено
-- ✅ Production тестирование — завершено
-
----
-
-## 📚 Документация
-
-### Основная (36 файлов)
-- README.md, PROJECT_INDEX.md, TESTING.md, BENCHMARKS.md
-- CHANGELOG.md, SECURITY.md, CONTRIBUTING.md, DEPLOYMENT.md
-- API_REFERENCE.md, ROADMAP.md, RELEASE_NOTES_v1.0.28.md, RELEASE_NOTES_v1.0.29.md, RELEASE_NOTES_v1.0.30.md
-- docs/*.md (8 файлов: ADMIN_CLI_GUIDE.md, DEBUGGING.md, PERFORMANCE_TUNING.md, TROUBLESHOOTING.md, FREEBSD_SUPPORT.md, ARM64_SUPPORT.md, GRPC_API.md, CLI_GUIDE.md)
-- grafana/README.md, prometheus/mtproxy-alerts.yml
-- webui/README.md
-
----
-
-## 🎯 Roadmap
-
-| Задача | Версия | Приоритет | Статус |
-|--------|--------|-----------|--------|
-| Интеграционные тесты | v1.0.29 | 🔴 Высокий | ✅ Выполнено |
-| Бенчмарки 100K+ | v1.0.29 | 🟡 Средний | ✅ Выполнено |
-| admin-cli тесты | Q2 2026 | 🔴 Высокий | ✅ Выполнено |
-| Кэш performance | Q2 2026 | 🔴 Высокий | ✅ Выполнено |
-| FreeBSD поддержка | Q2 2026 | 🔵 Планирование | ✅ Выполнено |
-| ARM64 сборка | Q2 2026 | 🔵 Планирование | ✅ Выполнено |
-| Prometheus/Grafana | Q3 2026 | 🟢 Средний | ✅ Выполнено |
-| REST API тесты | Q3 2026 | 🟢 Средний | ✅ Выполнено |
-| gRPC интерфейс | Q3 2026 | 🟢 Низкий | ✅ Выполнено |
-| Grafana дашборд | Q3 2026 | 🟢 Низкий | ✅ Выполнено |
-| Web UI | Q3 2026 | 🔴 Высокий | ✅ Выполнено |
-| CLI утилита | Q4 2026 | 🔴 Высокий | ✅ Выполнено |
-| Alert manager | Q4 2026 | 🔴 Высокий | ✅ Выполнено |
-| Health checks | Q4 2026 | 🔴 Высокий | ✅ Выполнено |
-| Кластеризация | Q4 2026 | 🟡 Средний | ✅ Выполнено |
-| Load balancing | Q4 2026 | 🟡 Средний | ✅ Выполнено |
+| Метрика | Значение |
+|---------|----------|
+| MD файлов | 16 (было 26) |
+| Строк кода | ~7500 |
+| Тестов | 398 |
+| Бенчмарков | 10 |
 
 ---
 
 ## 📝 Правила
 
-- **Качество важнее количества** — фокус на стабильность и тесты
-- **Workflow:** dev → проверка (тесты, сборка) → main
-- **Без документации без запроса** — только код и исправления
-- **Синхронизация:** все изменения в dev, затем merge в main
+1. **Качество важнее количества** — фокус на стабильность
+2. **Workflow:** dev → проверка → main
+3. **Без документации без запроса** — только код и исправления
+4. **Синхронизация:** все изменения в dev, затем merge в main
 
 ---
 
-*Последнее обновление: 29 марта 2026 г. — v1.0.31-dev, Q1 2027 100% COMPLETE! (509 коммитов)*
+*Последнее обновление: 29 марта 2026 — v1.0.33-dev*

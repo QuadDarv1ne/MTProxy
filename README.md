@@ -25,15 +25,25 @@ ctest --output-on-failure
 
 ## 📚 Документация
 
-- **[PROJECT_INDEX.md](PROJECT_INDEX.md)** — полная навигация по проекту
-- **[TESTING.md](TESTING.md)** — руководство по тестированию (100 C + 8 Python + 4 Dart тестов)
-- **[BENCHMARKS.md](BENCHMARKS.md)** — бенчмарки производительности
+### Основная документация
+
+- **[README.md](README.md)** — этот файл (быстрый старт)
 - **[CHANGELOG.md](CHANGELOG.md)** — история изменений
-- **[API_REFERENCE.md](API_REFERENCE.md)** — API справочник
 - **[DEPLOYMENT.md](DEPLOYMENT.md)** — развёртывание в production
 - **[SECURITY.md](SECURITY.md)** — безопасность
-- **[docs/PERFORMANCE_TUNING.md](docs/PERFORMANCE_TUNING.md)** — оптимизация
-- **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** — диагностика проблем
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** — вклад в проект
+
+### Руководства
+
+- **[TESTING.md](TESTING.md)** — руководство по тестированию (100+ C + 8 Python + 4 Dart тестов)
+- **[BENCHMARKS.md](BENCHMARKS.md)** — бенчмарки производительности
+- **[API_REFERENCE.md](API_REFERENCE.md)** — API справочник
+- **[docs/CLI_GUIDES.md](docs/CLI_GUIDES.md)** — руководство по CLI (mtproxy-admin и mtproxy-cli)
+- **[docs/DEBUGGING_TROUBLESHOOTING.md](docs/DEBUGGING_TROUBLESHOOTING.md)** — отладка и диагностика проблем
+- **[docs/PERFORMANCE_TUNING.md](docs/PERFORMANCE_TUNING.md)** — оптимизация производительности
+- **[docs/PLATFORM_SUPPORT.md](docs/PLATFORM_SUPPORT.md)** — поддержка платформ (Linux, Windows, macOS, FreeBSD, ARM64)
+- **[docs/MONITORING_AND_API.md](docs/MONITORING_AND_API.md)** — мониторинг (Grafana, Web UI) и API (REST, gRPC)
+- **[docs/ML_SYSTEMS.md](docs/ML_SYSTEMS.md)** — ML системы (Anomaly Detection, Predictive Analytics)
 
 ## 🎉 RELEASE: v1.0.28 (29 марта 2026)
 
