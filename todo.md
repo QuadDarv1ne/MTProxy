@@ -1,8 +1,8 @@
 # MTProxy Project TODO
 
 > **Актуально на:** 29 марта 2026 г.
-> **Коммит:** b82c949 (dev/master)
-> **Версия:** v1.0.22-jemalloc-support
+> **Коммит:** f79d02d (dev/master)
+> **Версия:** v1.0.23-memory-benchmarks
 > **Ветки:** dev = origin/dev ✅ | master = origin/master ✅
 
 ---
@@ -10,33 +10,33 @@
 ## 📋 Активные задачи
 
 ### 🔴 В работе
-- [x] jemalloc/tcmalloc интеграция — ✅ ВЫПОЛНЕНО
+- [x] Бенчмарки производительности allocator — ✅ ВЫПОЛНЕНО
 
 ### 🟡 Следующие
-- [ ] Проверка сборки с jemalloc
-- [ ] Бенчмарки производительности (malloc vs jemalloc)
+- [ ] Запуск бенчмарков (malloc vs jemalloc vs tcmalloc)
 - [ ] HTTP/3 QUIC полная реализация
+- [ ] io_uring для Linux
 
 ---
 
 ## ✅ Выполнено (Март 2026)
 
 ### Оптимизация памяти (29 марта) — 100% ЗАВЕРШЕНО
-- [x] Quick mode, HeapCompact, Cache Memory Pool
-- [x] Интеграция: cache-manager, rate-limiter, error-handler (5x быстрее)
-
-### Оптимизация производительности (29 марта)
-- [x] network-analyzer.c — кэширование (~80% CPU)
-
-### Утилиты кодирования (29 марта)
-- [x] utils_base64/hex encode/decode
-- [x] Тесты: 14 тестов (Base64: 6, Hex: 8)
+- [x] Quick mode, HeapCompact, Cache Memory Pool (5x быстрее)
+- [x] Интеграция: cache-manager, rate-limiter, error-handler
 
 ### Memory Allocator (29 марта)
 - [x] memory-allocator.h — unified API
 - [x] jemalloc/tcmalloc поддержка
 - [x] mt_malloc_aligned (выравнивание)
-- [x] Тесты: 14 тестов для allocator
+- [x] Тесты: 14 тестов
+- [x] **Бенчмарки: 5 тестов производительности**
+
+### Утилиты кодирования (29 марта)
+- [x] utils_base64/hex encode/decode + 14 тестов
+
+### Оптимизация CPU (29 марта)
+- [x] network-analyzer.c — кэширование (~80% CPU)
 
 ### Инфраструктура
 - [x] CMakeLists.txt: ENABLE_JEMALLOC/ENABLE_TCMALLOC
@@ -49,39 +49,39 @@
 
 | Метрика | Значение |
 |---------|----------|
-| **Всего коммитов** | 423+ |
-| **C/H файлов** | 396+ |
-| **Тестов** | 79 C + 4 Dart |
+| **Всего коммитов** | 424+ |
+| **C/H файлов** | 397+ |
+| **Тестов** | 80 C + 4 Dart |
+| **Бенчмарков** | 5 (allocator) |
 | **Оптимизация памяти** | 3 модуля (5x) + allocator |
 | **Оптимизация CPU** | 1 модуль (~80%) |
 | **Ветки** | dev = master ✅ |
 
 ---
 
-## 🔧 Сборка с jemalloc/tcmalloc
+## 🔧 Бенчмарки производительности
 
-### Linux (jemalloc)
+### Запуск
 ```bash
-sudo apt-get install libjemalloc-dev
 mkdir build && cd build
-cmake -DENABLE_JEMALLOC=ON ..
+cmake -DENABLE_JEMALLOC=ON ..  # или -DENABLE_TCMALLOC=ON
 make -j4
-./bin/test-memory-allocator
+./bin/benchmark-memory-allocator
 ```
 
-### Linux (tcmalloc)
-```bash
-sudo apt-get install libtcmalloc-minimal4
-mkdir build && cd build
-cmake -DENABLE_TCMALLOC=ON ..
-make -j4
-```
+### Тесты
+1. **malloc/free** — базовая производительность
+2. **aligned malloc** — выравнивание 64 байта
+3. **Fragmentation** — фрагментация памяти
+4. **Multi-threaded** — 4 потока
+5. **Peak memory** — пиковое потребление
 
-### Windows (стандартный malloc)
-```bash
-cmake -B build -G "MinGW Makefiles"
-cmake --build build --config Release
-```
+### Ожидаемые результаты
+| Аллокатор | ops/sec | Память |
+|-----------|---------|--------|
+| **standard** | ~500K | базовая |
+| **jemalloc** | ~800K (+60%) | -30% |
+| **tcmalloc** | ~750K (+50%) | -25% |
 
 ---
 
@@ -93,4 +93,4 @@ cmake --build build --config Release
 
 ---
 
-*Последнее обновление: 29 марта 2026 г. (jemalloc/tcmalloc поддержка)*
+*Последнее обновление: 29 марта 2026 г. (бенчмарки памяти)*

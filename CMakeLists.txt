@@ -1008,6 +1008,20 @@ set_target_properties(test-memory-allocator PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# Memory allocator benchmark executable
+add_executable(benchmark-memory-allocator
+    testing/benchmark_memory_allocator.c
+)
+
+target_link_libraries(benchmark-memory-allocator
+    ${PLATFORM_LIBS}
+    pthread
+)
+
+set_target_properties(benchmark-memory-allocator PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # Cache memory pool test executable
 add_executable(test-cache-pool
     testing/test_cache_memory_pool.c
