@@ -1048,6 +1048,24 @@ set_target_properties(benchmark-memory-allocator PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# io_uring benchmark executable
+add_executable(benchmark-io-uring
+    testing/benchmark_io_uring.c
+    net/io_uring.c
+)
+
+target_link_libraries(benchmark-io-uring
+    ${PLATFORM_LIBS}
+)
+
+target_compile_definitions(benchmark-io-uring PRIVATE
+    $<$<BOOL:${LIBURING_FOUND}>:HAVE_IO_URING>
+)
+
+set_target_properties(benchmark-io-uring PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # Utils security test executable
 add_executable(test-utils-security
     testing/test_utils_security.c
