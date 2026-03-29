@@ -26,7 +26,7 @@ ctest --output-on-failure
 ## 📚 Документация
 
 - **[PROJECT_INDEX.md](PROJECT_INDEX.md)** — полная навигация по проекту
-- **[TESTING.md](TESTING.md)** — руководство по тестированию (100 C + 6 Python + 4 Dart тестов)
+- **[TESTING.md](TESTING.md)** — руководство по тестированию (100 C + 8 Python + 4 Dart тестов)
 - **[BENCHMARKS.md](BENCHMARKS.md)** — бенчмарки производительности
 - **[CHANGELOG.md](CHANGELOG.md)** — история изменений
 - **[API_REFERENCE.md](API_REFERENCE.md)** — API справочник
@@ -49,9 +49,10 @@ ctest --output-on-failure
 - ✅ Security audit CI workflow
 
 ### Тестирование
-- ✅ **110 тестов** (100 C + 6 Python + 4 Dart)
-- ✅ **7 бенчмарков** производительности
+- ✅ **112 тестов** (100 C + 8 Python + 4 Dart)
+- ✅ **8 бенчмарков** производительности
 - ✅ Docker integration tests (12 тестов)
+- ✅ Highload бенчмарки (100K-1M операций)
 
 ### Docker
 - ✅ Multi-stage Dockerfile (runtime, debug)

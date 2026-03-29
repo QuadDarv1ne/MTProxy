@@ -2,7 +2,7 @@
 
 ## 📋 Overview
 
-MTProxy has comprehensive test coverage with **98 C tests** and **4 Dart tests** covering:
+MTProxy has comprehensive test coverage with **100 C tests**, **8 Python tests**, and **4 Dart tests** covering:
 - Memory management
 - Security utilities
 - Performance benchmarks
@@ -147,7 +147,61 @@ Tests for Base64/Hex encoding:
 
 ---
 
-### 6. Other Tests
+### 6. IO_URING Tests (15 tests)
+**File:** `testing/test_io_uring.c`
+
+Tests for Linux io_uring module:
+- `io_uring_is_available`: 1 test
+- `io_uring_init/cleanup`: 3 tests
+- `io_uring_submit_*`: 4 tests
+- `io_uring_stats`: 3 tests
+- `io_uring_queue_usage`: 1 test
+- `io_uring_enable/disable_connection`: 2 tests
+
+**Run:**
+```bash
+./bin/test-io-uring
+```
+
+**Requirements:** Linux kernel 5.1+, liburing-dev
+
+---
+
+### 7. Python Integration Tests
+
+#### test_metrics_collector.py (20 tests)
+**File:** `testing/test_metrics_collector.py`
+
+Tests for metrics collector:
+- Initialization tests
+- Metrics collection tests
+- HTTP API tests
+- Error handling tests
+
+**Run:**
+```bash
+python3 testing/test_metrics_collector.py
+```
+
+#### test_metrics_docker_integration.py (12 tests)
+**File:** `testing/test_metrics_docker_integration.py`
+
+Combined integration tests:
+- Metrics collector unit tests
+- Docker container tests
+- Metrics endpoint tests
+- Combined integration tests
+
+**Run:**
+```bash
+python3 testing/test_metrics_docker_integration.py
+```
+
+**Requirements:** Docker installed, mtproxy:latest image
+
+---
+
+### 8. Other Tests
 
 | Test | File | Description |
 |------|------|-------------|
@@ -197,8 +251,10 @@ make -j4
 | Encoding | 14 | ✅ 100% |
 | Cache | 6+ | ✅ 100% |
 | Utils | 20+ | ✅ 100% |
-| Performance | 5 benchmarks | ✅ |
-| **Total** | **98 C + 4 Dart** | ✅ **100%+** |
+| IO_URING | 15 | ✅ 100% |
+| Python Integration | 32 | ✅ 100% |
+| Performance | 8 benchmarks | ✅ |
+| **Total** | **100 C + 8 Python + 4 Dart** | ✅ **100%+** |
 
 ---
 
@@ -314,4 +370,4 @@ When reporting test failures, include:
 
 ---
 
-*Last updated: 29 марта 2026 г. — v1.0.27*
+*Last updated: 29 марта 2026 г. — v1.0.29 (100 C + 8 Python + 4 Dart tests)*

@@ -1,5 +1,15 @@
 # MTProxy Benchmarks
 
+## 📊 Benchmark Suite Overview
+
+| Benchmark | Operations | Description |
+|-----------|------------|-------------|
+| **benchmark-memory-allocator** | 100K | Аллокации памяти (malloc/free/aligned) |
+| **benchmark-io-uring** | 10K-100K | io_uring операции (Linux only) |
+| **benchmark-highload** | 100K-1M | Высоконагруженные тесты производительности |
+
+---
+
 ## Memory Allocator Benchmarks
 
 ### Build with jemalloc
@@ -124,3 +134,103 @@ Passed: 18
 Failed: 0
 Total:  18
 ```
+
+---
+
+## Highload Benchmarks (100K-1M операций)
+
+### Запуск
+```bash
+./bin/benchmark-highload
+```
+
+### Тесты
+
+#### 1. 100K Memory Allocations
+```bash
+[BENCH] 100K Memory Allocations...
+  100K malloc/free cycles
+  Operations:        200000
+  Total time:        ~400.00 ms
+  Ops/sec:           ~500000
+  Avg time/op:       ~2.00 μs
+```
+
+#### 2. 100K Encryption/Decryption
+```bash
+[BENCH] 100K Encryption/Decryption...
+  100K encrypt/decrypt cycles
+  Operations:        200000
+  Total time:        ~150.00 ms
+  Ops/sec:         ~1333333
+  Avg time/op:       ~0.75 μs
+  Throughput:        ~350.00 MB/s
+```
+
+#### 3. 100K String Operations
+```bash
+[BENCH] 100K String Operations...
+  100K string operations
+  Operations:        400000
+  Total time:        ~100.00 ms
+  Ops/sec:         ~4000000
+  Avg time/op:       ~0.25 μs
+  Throughput:        ~4000.00 MB/s
+```
+
+#### 4. 500K Hash Operations
+```bash
+[BENCH] 500K Hash Operations...
+  500K hash operations
+  Operations:        500000
+  Total time:        ~200.00 ms
+  Ops/sec:         ~2500000
+  Avg time/op:       ~0.40 μs
+  Throughput:        ~1200.00 MB/s
+```
+
+#### 5. 1M Multi-threaded Operations (8 threads)
+```bash
+[BENCH] Multi-threaded 1M Operations (8 threads)...
+  1M multi-threaded operations
+  Operations:       1000000
+  Total time:        ~50.00 ms
+  Ops/sec:        ~20000000
+  Avg time/op:       ~0.05 μs
+  Thread count:             8
+  Ops per thread:      125000
+```
+
+#### 6. 1M Atomic Operations
+```bash
+[BENCH] 1M Atomic Operations (8 threads)...
+  1M atomic increment operations
+  Operations:       1000000
+  Total time:        ~80.00 ms
+  Ops/sec:        ~12500000
+  Avg time/op:       ~0.08 μs
+  Final counter:    1000000
+```
+
+---
+
+## io_uring Benchmarks (Linux only)
+
+### Build with io_uring support
+```bash
+sudo apt-get install liburing-dev
+mkdir build && cd build
+cmake -DENABLE_IOURING=ON ..
+make -j4
+```
+
+### Run benchmarks
+```bash
+./bin/benchmark-io-uring
+```
+
+### Requirements
+- Linux kernel 5.1+
+- liburing-dev (`apt install liburing-dev`)
+
+---
