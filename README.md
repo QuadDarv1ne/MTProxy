@@ -26,7 +26,7 @@ ctest --output-on-failure
 ## 📚 Документация
 
 - **[PROJECT_INDEX.md](PROJECT_INDEX.md)** — полная навигация по проекту
-- **[TESTING.md](TESTING.md)** — руководство по тестированию (98 C + 4 Dart тестов)
+- **[TESTING.md](TESTING.md)** — руководство по тестированию (100 C + 6 Python + 4 Dart тестов)
 - **[BENCHMARKS.md](BENCHMARKS.md)** — бенчмарки производительности
 - **[CHANGELOG.md](CHANGELOG.md)** — история изменений
 - **[API_REFERENCE.md](API_REFERENCE.md)** — API справочник
@@ -35,9 +35,10 @@ ctest --output-on-failure
 - **[docs/PERFORMANCE_TUNING.md](docs/PERFORMANCE_TUNING.md)** — оптимизация
 - **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** — диагностика проблем
 
-## 🎉 RELEASE: v1.0.27 (29 марта 2026)
+## 🎉 RELEASE: v1.0.28 (29 марта 2026)
 
 ### Производительность
+- ✅ **io_uring** поддержка (Linux zero-copy I/O, ENABLE_IOURING)
 - ✅ Cache Memory Pool (**5x ускорение** аллокаций)
 - ✅ jemalloc/tcmalloc поддержка (**+60% ops/sec**)
 - ✅ Network analyzer кэширование (**~80% снижение CPU**)
@@ -48,14 +49,22 @@ ctest --output-on-failure
 - ✅ Security audit CI workflow
 
 ### Тестирование
-- ✅ **98 C тестов** + 4 Dart (100%+ покрытие)
-- ✅ 5 бенчмарков производительности
+- ✅ **110 тестов** (100 C + 6 Python + 4 Dart)
+- ✅ **7 бенчмарков** производительности
+- ✅ Docker integration tests (12 тестов)
+
+### Docker
+- ✅ Multi-stage Dockerfile (runtime, debug)
+- ✅ docker-compose.yml (Prometheus, Grafana, Alertmanager)
+- ✅ scripts/docker-test.sh (test runner)
 
 ### См. также
 - **[CHANGELOG.md](CHANGELOG.md)** — полная история изменений
-- **[RELEASE_NOTES](RELEASE_NOTES_v1.0.27.md)** — заметки к релизу
+- **[RELEASE_NOTES_v1.0.28.md](RELEASE_NOTES_v1.0.28.md)** — заметки к релизу
 
 ---
+
+## 🎉 ПРЕДЫДУЩИЙ RELEASE: v1.0.27 (29 марта 2026)
 
 ## 📈 Программа улучшений (Март 2026)
 
