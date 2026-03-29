@@ -11,9 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Итоги v1.0.28
 - **io_uring**: полная поддержка Linux io_uring (819 строк кода)
-- **Тесты**: +1 C тест (test_io_uring.c — 15 тестов)
+- **Тесты**: +2 C теста (test_io_uring.c — 15 тестов, test_admin_cli_integration.c — 18 тестов)
+- **Бенчмарки**: +1 (benchmark_io_uring.c — 5 бенчмарков)
 - **VERSION**: обновлён с 1.0.1 на 1.0.28
-- **Всего коммитов**: 439+
+- **Всего коммитов**: 440+
 
 ### Added (29 марта 2026)
 
@@ -82,6 +83,20 @@ make -j4
 # Run tests
 ./bin/test-io-uring
 ```
+
+#### Integration Tests
+- **testing/test_admin_cli_integration.c**: 18 интеграционных тестов
+  - connect_to_server — подключение к серверу
+  - status_command — команда status
+  - stats_command, stats_detail_command — статистика
+  - cache_stats/set/get/delete — кэш операции
+  - config_show/set — конфигурация
+  - ratelimit_status/add/remove — rate limiting
+  - log_level/flush — логирование
+  - health_check — проверка здоровья
+  - metrics — метрики
+  - invalid_command — обработка ошибок
+  - command_latency — производительность
 
 ---
 
