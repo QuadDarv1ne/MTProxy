@@ -11,10 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Итоги v1.0.28
 - **io_uring**: полная поддержка Linux io_uring (819 строк кода)
-- **Тесты**: +2 C теста (test_io_uring.c — 15 тестов, test_admin_cli_integration.c — 18 тестов)
-- **Бенчмарки**: +1 (benchmark_io_uring.c — 5 бенчмарков)
+- **Тесты**: +4 C/Python теста (test_io_uring.c, test_admin_cli_integration.c, test_metrics_collector.py, test_docker_integration.py)
+- **Бенчмарки**: +2 (benchmark_io_uring.c, docker-test.sh)
 - **VERSION**: обновлён с 1.0.1 на 1.0.28
-- **Всего коммитов**: 440+
+- **Всего коммитов**: 479
+- **Всего тестов**: 110 (100 C + 6 Python + 4 Dart)
 
 ### Added (29 марта 2026)
 
@@ -97,6 +98,33 @@ make -j4
   - metrics — метрики
   - invalid_command — обработка ошибок
   - command_latency — производительность
+
+#### Python Tests
+- **testing/test_metrics_collector.py**: 20 Python тестов
+  - test_init_default/custom — инициализация коллектора
+  - test_fetch_stats/metrics — получение метрик
+  - test_parse_prometheus_format — парсинг Prometheus формата
+  - test_check_health — проверка здоровья
+  - test_get_connections — получение соединений
+  - test_export_prometheus/json — экспорт метрик
+  - test_cli_metrics/health/export — CLI тесты
+
+- **testing/test_docker_integration.py**: 12 Docker тестов
+  - test_docker_available — проверка Docker
+  - test_image_exists — проверка образа
+  - test_container_start/stop — запуск/остановка
+  - test_container_health — health check
+  - test_stats/metrics/health_endpoint — endpoint тесты
+  - test_container_logs — логи контейнера
+  - test_security_non_root — безопасность (non-root)
+  - test_image_multiarch — multi-arch поддержка
+
+#### Test Runner
+- **scripts/docker-test.sh**: Docker test runner
+  - build — сборка образа
+  - test — запуск тестов
+  - clean — очистка
+  - all — полный цикл
 
 ---
 
