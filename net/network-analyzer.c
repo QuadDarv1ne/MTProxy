@@ -87,6 +87,15 @@ int performance_analyzer_update_baseline(const struct performance_metrics *metri
 int performance_analyzer_check_degradation(const struct performance_metrics *metrics);
 int performance_analyzer_apply_optimizations(const struct performance_metrics *metrics);
 
+// Оптимизация: кэширование последних вычислений для снижения нагрузки
+static struct {
+    struct performance_metrics last_avg;
+    time_t last_compute_time;
+    int valid;
+} cached_analysis = {0};
+
+#define CACHE_VALIDITY_SEC 5 // Кэш валиден 5 секунд
+
 // Инициализация performance analyzer
 int performance_analyzer_init(void) {
     pthread_mutex_init(&metrics_mutex, NULL);
@@ -268,29 +277,37 @@ int performance_analyzer_generate_alert(
 
 // Анализ производительности
 int performance_analyzer_run_analysis(void) {
-    pthread_mutex_lock(&metrics_mutex);
+    // Оптимизация: используем кэш если валиден
+    time_t now = time(NULL);
+    if (cached_analysis.valid && 
+        (now - cached_analysis.last_compute_time) < CACHE_VALIDITY_SEC) {
+        // Используем кэшированные данные
+        return performance_analyzer_use_cached_analysis(&cached_analysis.last_avg);
+    }
     
+    pthread_mutex_lock(&metrics_mutex);
+
     if (metrics_history_count < 10) {
         pthread_mutex_unlock(&metrics_mutex);
         return -1; // Недостаточно данных
     }
-    
+
     // Вычисляем средние значения за последние N минут
     int analysis_window = global_analyzer_config.analysis_interval_seconds * 2;
     if (analysis_window > metrics_history_count) {
         analysis_window = metrics_history_count;
     }
-    
+
     double sum_throughput = 0, sum_latency = 0, sum_packet_loss = 0;
     double sum_cpu = 0, sum_memory = 0;
     int sample_count = 0;
-    
+
     int start_index = (metrics_history_index - analysis_window + METRICS_HISTORY_SIZE) % METRICS_HISTORY_SIZE;
-    
+
     for (int i = 0; i < analysis_window; i++) {
         int index = (start_index + i) % METRICS_HISTORY_SIZE;
         struct performance_metrics *metrics = &metrics_history[index];
-        
+
         sum_throughput += metrics->current_throughput_mbps;
         sum_latency += metrics->current_latency_ms;
         sum_packet_loss += metrics->current_packet_loss_rate;
@@ -298,36 +315,54 @@ int performance_analyzer_run_analysis(void) {
         sum_memory += metrics->current_memory_usage_percent;
         sample_count++;
     }
-    
+
     pthread_mutex_unlock(&metrics_mutex);
-    
+
     if (sample_count == 0) {
         return -1;
     }
-    
-    // Вычисляем средние значения
-    struct performance_metrics current_avg = {
-        .current_throughput_mbps = sum_throughput / sample_count,
-        .current_latency_ms = sum_latency / sample_count,
-        .current_packet_loss_rate = sum_packet_loss / sample_count,
-        .current_cpu_usage_percent = sum_cpu / sample_count,
-        .current_memory_usage_percent = sum_memory / sample_count,
-        .timestamp = time(NULL)
-    };
-    
+
+    // Вычисляем средние значения и кэшируем результат
+    cached_analysis.last_avg.current_throughput_mbps = sum_throughput / sample_count;
+    cached_analysis.last_avg.current_latency_ms = sum_latency / sample_count;
+    cached_analysis.last_avg.current_packet_loss_rate = sum_packet_loss / sample_count;
+    cached_analysis.last_avg.current_cpu_usage_percent = sum_cpu / sample_count;
+    cached_analysis.last_avg.current_memory_usage_percent = sum_memory / sample_count;
+    cached_analysis.last_avg.timestamp = now;
+    cached_analysis.last_compute_time = now;
+    cached_analysis.valid = 1;
+
     // Обновляем baseline
-    performance_analyzer_update_baseline(&current_avg);
-    
+    performance_analyzer_update_baseline(&cached_analysis.last_avg);
+
     // Проверяем деградацию
-    if (performance_analyzer_check_degradation(&current_avg)) {
+    if (performance_analyzer_check_degradation(&cached_analysis.last_avg)) {
         analyzer_stats.performance_degradations_detected++;
     }
-    
+
     // Применяем оптимизации если включено
     if (global_analyzer_config.enable_auto_optimization) {
-        performance_analyzer_apply_optimizations(&current_avg);
+        performance_analyzer_apply_optimizations(&cached_analysis.last_avg);
     }
-    
+
+    return 0;
+}
+
+// Использование кэшированного анализа (вспомогательная функция)
+static int performance_analyzer_use_cached_analysis(const struct performance_metrics *cached) {
+    // Обновляем baseline
+    performance_analyzer_update_baseline(cached);
+
+    // Проверяем деградацию
+    if (performance_analyzer_check_degradation(cached)) {
+        analyzer_stats.performance_degradations_detected++;
+    }
+
+    // Применяем оптимизации если включено
+    if (global_analyzer_config.enable_auto_optimization) {
+        performance_analyzer_apply_optimizations(cached);
+    }
+
     return 0;
 }
 
