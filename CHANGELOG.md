@@ -5,7 +5,78 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — v1.0.29 (29 марта 2026)
+## [Unreleased] — v1.0.30 (29 марта 2026)
+
+### Summary (29 марта 2026 — Q4 2026 Complete)
+
+#### Итоги v1.0.30
+- **CLI утилита**: mtproxy-cli для управления сервером (12 команд)
+- **Alert Manager**: уведомления через Telegram, Email, Slack, Webhook
+- **Health Check**: 6 типов проверок (HTTP, HTTPS, TCP, Process, Memory, Disk)
+- **Cluster Manager**: управление кластером с leader election и failover
+- **Load Balancer**: 6 алгоритмов балансировки нагрузки
+- **Тесты**: +110 C тестов (CLI, Alert, Health, Cluster, Load Balancer)
+- **Документация**: +3 файла (CLI_GUIDE.md, RELEASE_NOTES_v1.0.30.md)
+- **Всего коммитов**: 504
+- **Всего тестов**: 250 (230 C + 8 Python + 4 Dart)
+
+### Added (Q4 2026)
+
+#### CLI Utility (mtproxy-cli)
+- **cli/mtcli.c/h**: кроссплатформенный CLI (600+ строк)
+  - 12 команд: status, stats, config, secrets, logs, connections, ratelimit, health, metrics, reload, restart, stop
+  - REST API интеграция
+  - JSON вывод
+  - Интерактивный режим
+- **docs/CLI_GUIDE.md**: полное руководство пользователя
+
+#### Alert Manager
+- **system/monitoring/alert-manager.c/h**: система уведомлений (800+ строк)
+  - 5 каналов: Telegram, Email, Slack, Webhook, Custom
+  - 5 уровней: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  - 9 типов алертов: ServerDown/Up, HighCPU/Memory/Connections, RateLimit, Security
+  - Rate limiting и агрегация
+- **testing/test_alert_manager.c**: 25 тестов
+
+#### Health Check System
+- **system/monitoring/health-check.c/h**: проверка здоровья (900+ строк)
+  - 6 типов проверок: HTTP, HTTPS, TCP, Process, Memory, Disk
+  - 5 статусов: Unknown, Healthy, Unhealthy, Degraded, Failed
+  - Фоновый режим с настраиваемым интервалом
+  - Интеграция с Alert Manager
+- **testing/test_health_check.c**: 20 тестов
+
+#### Cluster Manager
+- **system/cluster/cluster-manager.c/h**: управление кластером (1100+ строк)
+  - 4 роли: Leader, Follower, Candidate, Standalone
+  - 5 статусов узлов: Offline, Starting, Online, Degraded, Failed
+  - Leader election
+  - Auto failover
+  - Config sync
+  - Heartbeat механизм
+- **testing/test_cluster_manager.c**: 30 тестов
+
+#### Load Balancer
+- **system/cluster/load-balancer.c/h**: балансировка нагрузки (700+ строк)
+  - 6 алгоритмов: Round Robin, Least Connections, Least Load, Weighted, IP Hash, Random
+  - Health check backend узлов
+  - Автоматическое перераспределение нагрузки
+  - Уведомления о подключениях
+- **testing/test_load_balancer.c**: 25 тестов
+
+### Changed (Q4 2026)
+
+#### Build System
+- **CMakeLists.txt**: добавлены тесты для CLI, Alert, Health, Cluster, Load Balancer
+- **VERSION**: обновлён до 1.0.30
+
+#### Documentation
+- **todo.md**: обновлена информация о задачах Q4 2026
+- **RELEASE_NOTES_v1.0.30.md**: релизный документ v1.0.30
+
+---
+
+## [Released] — v1.0.29 (29 марта 2026)
 
 ### Summary (29 марта 2026 — gRPC API)
 
