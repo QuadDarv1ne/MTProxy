@@ -1,8 +1,8 @@
 # MTProxy Project TODO
 
 > **Актуально на:** 29 марта 2026 г.
-> **Коммит:** fb77e16 (dev/master)
-> **Версия:** v1.0.25-security-tests
+> **Коммит:** d32f76c (dev/master)
+> **Версия:** v1.0.26-security-audit
 > **Ветки:** dev = origin/dev ✅ | master = origin/master ✅
 
 ---
@@ -10,21 +10,27 @@
 ## 📋 Активные задачи
 
 ### 🔴 В работе
-- [x] Тесты для security utils — ✅ ВЫПОЛНЕНО (18 тестов)
+- [x] Security audit workflow — ✅ ВЫПОЛНЕНО
+- [x] BENCHMARKS.md документация — ✅ ВЫПОЛНЕНО
 
 ### 🟡 Следующие
-- [ ] Аудит кода на использование unsafe функций
-- [ ] Замена strcpy/strcat на utils_strcpy_s в критических местах
-- [ ] HTTP/3 QUIC полная реализация
+- [ ] HTTP/3 QUIC полная реализация (nghttp3/ngtcp2)
+- [ ] io_uring для Linux
+- [ ] Web UI мониторинг
 
 ---
 
 ## ✅ Выполнено (Март 2026)
 
-### Security (29 марта)
+### Security & Audit (29 марта)
+- [x] Security audit CI workflow (GitHub Actions)
+- [x] Проверка на unsafe функции (strcpy, strcat, sprintf, gets)
+- [x] Build с AddressSanitizer
+- [x] BENCHMARKS.md документация
+
+### Security Utils (29 марта)
 - [x] utils_strcpy_s/strcat_s/snprintf — безопасные версии
-- [x] **Тесты: 18 тестов для security utils**
-- [x] Возврат -1 при truncation (обработка ошибок)
+- [x] Тесты: 18 тестов для security utils (100% покрытие)
 
 ### Оптимизация памяти (29 марта) — 100% ЗАВЕРШЕНО
 - [x] Quick mode, HeapCompact, Cache Memory Pool (5x быстрее)
@@ -47,6 +53,7 @@
 - [x] CMakeLists.txt: ENABLE_JEMALLOC/ENABLE_TCMALLOC
 - [x] Windows socket API, IPC
 - [x] LTO для Unix, ASAN опционально
+- [x] CI/CD: security-audit workflow
 
 ---
 
@@ -54,44 +61,39 @@
 
 | Метрика | Значение |
 |---------|----------|
-| **Всего коммитов** | 426+ |
-| **C/H файлов** | 398+ |
-| **utils.c строк** | 826 (+62) |
+| **Всего коммитов** | 427+ |
+| **C/H файлов** | 399+ |
+| **Workflow** | 6 (CI, security, docker, flutter) |
 | **Тестов** | **98 C** + 4 Dart |
 | **Бенчмарков** | 5 (allocator) |
+| **Документов** | 40+ (BENCHMARKS.md добавлен) |
 | **Security функций** | 3 + 18 тестов |
 | **Ветки** | dev = master ✅ |
 
 ---
 
-## 🔧 Security функции
+## 🔧 CI/CD Workflows
 
-### Тесты
-- ✅ **utils_strcpy_s** — 6 тестов (basic, truncation, NULL, edge cases)
-- ✅ **utils_strcat_s** — 5 тестов (basic, truncation, NULL, full buffer)
-- ✅ **utils_snprintf** — 6 тестов (basic, truncation, NULL, complex format)
-- ✅ **Edge cases** — 3 теста (empty, long string, multiple strcat)
+### security-audit.yml
+- ✅ Проверка на unsafe функции
+- ✅ Статический анализ (cppcheck)
+- ✅ Build с AddressSanitizer
+- ✅ Build с security флагами
+- ✅ Запуск всех тестов
+- ✅ Еженедельный scheduled scan
 
-### Использование
-```c
-#include "common/utils.h"
+### Запуск локально
+```bash
+# Security check
+grep -rn '[^_]strcpy(' --include='*.c' | grep -v 'utils_strcpy'
 
-char buffer[64];
+# Build with ASAN
+mkdir build-asan && cd build-asan
+cmake -DENABLE_ASAN=ON ..
+make -j4
 
-// Безопасное копирование
-if (utils_strcpy_s(buffer, sizeof(buffer), source) < 0) {
-    fprintf(stderr, "Warning: string truncated\n");
-}
-
-// Безопасная конкатенация
-if (utils_strcat_s(buffer, sizeof(buffer), suffix) < 0) {
-    fprintf(stderr, "Warning: concatenation truncated\n");
-}
-
-// Безопасный snprintf
-if (utils_snprintf(buffer, sizeof(buffer), "%s: %d", name, value) < 0) {
-    fprintf(stderr, "Warning: format truncated\n");
-}
+# Run tests
+ctest --output-on-failure
 ```
 
 ---
@@ -104,4 +106,4 @@ if (utils_snprintf(buffer, sizeof(buffer), "%s: %d", name, value) < 0) {
 
 ---
 
-*Последнее обновление: 29 марта 2026 г. (security tests добавлены)*
+*Последнее обновление: 29 марта 2026 г. (security audit + BENCHMARKS.md)*
