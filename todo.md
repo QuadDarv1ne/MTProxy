@@ -1,10 +1,10 @@
 # MTProxy Project TODO
 
 > **Актуально на:** 29 марта 2026 г. (quick mode для тестов + оптимизация памяти)
-> **Коммит:** 7701056 (HEAD → dev/master) — docs: todo.md — актуализирован коммит (c9160bd)
+> **Коммит:** ea61a1d (HEAD → dev/master) — feat: quick mode оптимизация тестов для Windows
 > **Версия:** v1.0.16-quick-mode-optimization
 > **Статус:** ✅ Quick mode реализован ✅ Оптимизация памяти для Windows ✅ Ветки синхронизированы
-> **Ветки:** dev = origin/dev ✅ | master = origin/master ✅ (синхронизированы, 7701056)
+> **Ветки:** dev = origin/dev ✅ | master = origin/master ✅ (синхронизизированы, ea61a1d)
 
 ## 📊 Программа улучшений (Март 2026) — ЗАВЕРШЕНА
 
