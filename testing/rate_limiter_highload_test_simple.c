@@ -19,6 +19,7 @@
 #endif
 
 #include "common/rate-limiter.h"
+#include "test_memory_utils.h"  // Утилиты управления памятью
 
 // Статистика тестов
 static int ops_run = 0;
@@ -293,14 +294,26 @@ void test_rate_limiter_highload() {
    Главная функция
    ============================================ */
 
-int main() {
+int main(int argc, char *argv[]) {
+    // Проверка флага --quick для быстрых тестов
+    if (argc > 1 && strcmp(argv[1], "--quick") == 0) {
+        printf("Quick mode enabled (reduced iterations)\n\n");
+    }
+
+    TEST_PRINT_MEMORY_USAGE("Start");
+
     printf("===========================================\n");
     printf("  Rate Limiter High-Load Test Suite\n");
     printf("===========================================\n\n");
 
-    test_rate_limiter_basic_performance();
-    test_rate_limiter_whitelist_blacklist();
-    test_rate_limiter_highload();
+    // Тест 1: Базовая производительность
+    TEST_WITH_MEMORY_CLEANUP(test_rate_limiter_basic_performance);
+
+    // Тест 2: Whitelist/Blacklist тест
+    TEST_WITH_MEMORY_CLEANUP(test_rate_limiter_whitelist_blacklist);
+
+    // Тест 3: High-Load тест
+    TEST_WITH_MEMORY_CLEANUP(test_rate_limiter_highload);
 
     printf("\n===========================================\n");
     printf("  Final Summary\n");
@@ -310,6 +323,8 @@ int main() {
     printf("  Failed: %d\n", ops_failed);
     printf("  Success rate: %.2f%%\n",
            (ops_run > 0) ? (ops_passed * 100.0) / ops_run : 0);
+    
+    TEST_PRINT_MEMORY_USAGE("End");
     printf("===========================================\n");
 
     return (ops_failed > 0) ? 1 : 0;

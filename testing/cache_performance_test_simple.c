@@ -19,6 +19,7 @@
 #endif
 
 #include "common/cache-manager.h"
+#include "test_memory_utils.h"  // Утилиты управления памятью
 
 // Статистика тестов
 static int ops_run = 0;
@@ -352,14 +353,27 @@ void test_cache_ttl() {
    Главная функция
    ============================================ */
 
-int main() {
+int main(int argc, char *argv[]) {
+    // Проверка флага --quick для быстрых тестов
+    if (argc > 1 && strcmp(argv[1], "--quick") == 0) {
+        quick_mode = 1;
+        printf("Quick mode enabled (reduced iterations)\n\n");
+    }
+
+    TEST_PRINT_MEMORY_USAGE("Start");
+
     printf("===========================================\n");
     printf("  Cache Performance Test Suite\n");
     printf("===========================================\n\n");
 
-    test_cache_basic_performance();
-    test_cache_lru_stress();
-    test_cache_ttl();
+    // Тест 1: Базовая производительность
+    TEST_WITH_MEMORY_CLEANUP(test_cache_basic_performance);
+
+    // Тест 2: LRU стресс-тест
+    TEST_WITH_MEMORY_CLEANUP(test_cache_lru_stress);
+
+    // Тест 3: TTL тест
+    TEST_WITH_MEMORY_CLEANUP(test_cache_ttl);
 
     printf("\n===========================================\n");
     printf("  Final Summary\n");
@@ -369,6 +383,8 @@ int main() {
     printf("  Failed: %d\n", ops_failed);
     printf("  Success rate: %.2f%%\n",
            (ops_run > 0) ? (ops_passed * 100.0) / ops_run : 0);
+    
+    TEST_PRINT_MEMORY_USAGE("End");
     printf("===========================================\n");
 
     return (ops_failed > 0) ? 1 : 0;
