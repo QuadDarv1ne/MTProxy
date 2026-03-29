@@ -1305,6 +1305,20 @@ set_target_properties(integration-tests-simple PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# Enable CTest for test discovery
+enable_testing()
+
+# Register tests with CTest
+add_test(NAME test-utils-security COMMAND test-utils-security)
+add_test(NAME test-cache-pool COMMAND test-cache-pool)
+add_test(NAME test-cache-no-copy COMMAND test-cache-no-copy)
+add_test(NAME test-admin-cli COMMAND test-admin-cli)
+add_test(NAME test-admin-cli-integration COMMAND test-admin-cli-integration)
+add_test(NAME test-io-uring COMMAND test-io-uring)
+add_test(NAME benchmark-memory-allocator COMMAND benchmark-memory-allocator)
+add_test(NAME benchmark-io-uring COMMAND benchmark-io-uring)
+add_test(NAME integration-tests-simple COMMAND integration-tests-simple)
+
 # Installation rules - Windows excludes some targets
 if(WIN32)
     install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils test-admin-cli cache-performance-test-simple rate-limiter-highload-test-simple integration-tests-simple
