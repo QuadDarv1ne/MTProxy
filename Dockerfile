@@ -13,6 +13,11 @@
 ARG ALPINE_VERSION=3.19
 ARG OPENSSL_VERSION=3
 
+# Build arguments for optimizations
+ARG ENABLE_JEMALLOC=OFF
+ARG ENABLE_TCMALLOC=OFF
+ARG ENABLE_LOW_MEMORY=OFF
+
 # =============================================================================
 # Stage 1: Builder
 # =============================================================================
@@ -68,6 +73,9 @@ RUN set -eux; \
         -DENABLE_LTO=${ENABLE_LTO} \
         -DENABLE_PGO=${ENABLE_PGO} \
         -DENABLE_IOURING=${ENABLE_IOURING} \
+        -DENABLE_JEMALLOC=${ENABLE_JEMALLOC} \
+        -DENABLE_TCMALLOC=${ENABLE_TCMALLOC} \
+        -DENABLE_LOW_MEMORY=${ENABLE_LOW_MEMORY} \
         -DBUILD_SHARED_LIB=ON \
         -DSTATIC_LINKING=OFF; \
     cmake --build build -j$(nproc); \

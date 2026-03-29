@@ -22,6 +22,8 @@ services:
       args:
         BUILD_TYPE: Release
         ENABLE_LTO: "ON"
+        ENABLE_JEMALLOC: "${ENABLE_JEMALLOC:-ON}"
+        ENABLE_IOURING: "${ENABLE_IOURING:-OFF}"
     image: mtproxy:latest
     container_name: mtproxy
     restart: unless-stopped

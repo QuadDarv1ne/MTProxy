@@ -1,0 +1,42 @@
+# Prometheus configuration for MTProxy
+# Сбор и агрегация метрик MTProxy сервера
+
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+  external_labels:
+    monitor: 'mtproxy-monitor'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+# Rule files
+rule_files:
+  - "mtproxy-alerts.yml"
+
+# Scrape configurations
+scrape_configs:
+  # MTProxy metrics
+  - job_name: 'mtproxy'
+    static_configs:
+      - targets: ['mtproxy:8888']
+    scrape_interval: 5s
+    metrics_path: /metrics
+    scheme: http
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 10s
+
+  # StatsD exporter (if used)
+  - job_name: 'statsd-exporter'
+    static_configs:
+      - targets: ['metrics-exporter:9102']
+    scrape_interval: 10s
+    metrics_path: /metrics

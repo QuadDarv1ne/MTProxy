@@ -36,7 +36,7 @@
 - [x] `cluster-manager.c` — исправлен доступ к структуре ✅
 - [x] `load-balancer.c` — исправлен kprintf ✅
 - [x] `rest-api.c` — исправлена Windows совместимость ✅
-- [ ] `benchmark_cache_performance.c` — обновить API cache_manager
+- [x] `benchmark_cache_performance.c` — обновлён API cache_manager ✅
 
 ### Производительность
 - [ ] Проверить утечки памяти через ASan
