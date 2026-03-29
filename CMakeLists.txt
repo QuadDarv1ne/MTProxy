@@ -961,6 +961,22 @@ set_target_properties(test-cache-pool PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# Cache no-copy optimization test executable
+add_executable(test-cache-no-copy
+    testing/test_cache_no_copy.c
+    common/cache-manager.c
+    common/crc32.c
+    common/utils.c
+)
+
+target_link_libraries(test-cache-no-copy
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-cache-no-copy PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # Admin CLI test executable
 add_executable(test-admin-cli
     testing/test_admin_cli.c

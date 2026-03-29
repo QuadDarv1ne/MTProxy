@@ -168,6 +168,11 @@ int cache_get_batch(cache_manager_t *cache, const char **keys,
                     void ***values, size_t **sizes, int count);
 int cache_delete_batch(cache_manager_t *cache, const char **keys, int count);
 
+// Оптимизированные операции (без копирования данных)
+const void* cache_get_ref(cache_manager_t *cache, const char *key, size_t *size);
+cache_status_t cache_get_no_copy(cache_manager_t *cache, const char *key,
+                                 const void **data, size_t *size);
+
 // Управление памятью
 int cache_evict(cache_manager_t *cache, int count);
 int cache_evict_expired(cache_manager_t *cache);

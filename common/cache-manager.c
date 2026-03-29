@@ -394,6 +394,46 @@ cache_status_t cache_get(cache_manager_t *cache, const char *key,
     return CACHE_OK;
 }
 
+// Получение ссылки на данные из кэша (без копирования)
+// ВНИМАНИЕ: данные действительны только пока кэш не модифицируется
+// Используйте для чтения в критических по производительности участках
+const void* cache_get_ref(cache_manager_t *cache, const char *key, size_t *size) {
+    if (!cache || !key || !size) return NULL;
+
+    cache_entry_t *entry = cache_find_entry(cache, key);
+    if (!entry) return NULL;
+
+    // Проверка TTL
+    if (cache_is_expired(entry)) return NULL;
+
+    // Обновление статистики доступа
+    entry->access_count++;
+    entry->last_access_time = time(NULL);
+    entry->frequency++;
+
+    // Перемещение в начало LRU списка
+    if (cache->config.policy == CACHE_LRU) {
+        cache_move_to_lru_head(cache, entry);
+    }
+
+    *size = entry->data_size;
+    return entry->data;  // Возвращаем ссылку на внутренние данные
+}
+
+// Получение данных без копирования (const-ссылка)
+cache_status_t cache_get_no_copy(cache_manager_t *cache, const char *key,
+                                 const void **data, size_t *size) {
+    if (!cache || !key || !data || !size) return CACHE_ERROR;
+
+    const void *result = cache_get_ref(cache, key, size);
+    if (!result) {
+        return CACHE_MISS;
+    }
+
+    *data = result;
+    return CACHE_OK;
+}
+
 // Запись в кэш
 cache_status_t cache_put(cache_manager_t *cache, const char *key,
                          const void *data, size_t data_size) {
