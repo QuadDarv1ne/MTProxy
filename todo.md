@@ -1,8 +1,8 @@
 # MTProxy Project TODO
 
 > **Актуально на:** 29 марта 2026 г.
-> **Коммит:** f79d02d (dev/master)
-> **Версия:** v1.0.23-memory-benchmarks
+> **Коммит:** 971fd10 (dev/master)
+> **Версия:** v1.0.24-security-utils
 > **Ветки:** dev = origin/dev ✅ | master = origin/master ✅
 
 ---
@@ -10,12 +10,12 @@
 ## 📋 Активные задачи
 
 ### 🔴 В работе
-- [x] Бенчмарки производительности allocator — ✅ ВЫПОЛНЕНО
+- [x] Security utils (strcpy_s, strcat_s, snprintf) — ✅ ВЫПОЛНЕНО
 
 ### 🟡 Следующие
-- [ ] Запуск бенчмарков (malloc vs jemalloc vs tcmalloc)
+- [ ] Тесты для utils_strcpy_s/strcat_s
+- [ ] Аудит кода на использование unsafe функций
 - [ ] HTTP/3 QUIC полная реализация
-- [ ] io_uring для Linux
 
 ---
 
@@ -25,12 +25,18 @@
 - [x] Quick mode, HeapCompact, Cache Memory Pool (5x быстрее)
 - [x] Интеграция: cache-manager, rate-limiter, error-handler
 
+### Security Utils (29 марта)
+- [x] utils_strcpy_s — безопасное копирование
+- [x] utils_strcat_s — безопасная конкатенация
+- [x] utils_snprintf — безопасный snprintf
+- [x] Возврат -1 при truncation
+
 ### Memory Allocator (29 марта)
 - [x] memory-allocator.h — unified API
 - [x] jemalloc/tcmalloc поддержка
 - [x] mt_malloc_aligned (выравнивание)
 - [x] Тесты: 14 тестов
-- [x] **Бенчмарки: 5 тестов производительности**
+- [x] Бенчмарки: 5 тестов производительности
 
 ### Утилиты кодирования (29 марта)
 - [x] utils_base64/hex encode/decode + 14 тестов
@@ -49,39 +55,45 @@
 
 | Метрика | Значение |
 |---------|----------|
-| **Всего коммитов** | 424+ |
+| **Всего коммитов** | 425+ |
 | **C/H файлов** | 397+ |
+| **utils.c строк** | 826 (+62) |
 | **Тестов** | 80 C + 4 Dart |
 | **Бенчмарков** | 5 (allocator) |
-| **Оптимизация памяти** | 3 модуля (5x) + allocator |
-| **Оптимизация CPU** | 1 модуль (~80%) |
+| **Security функций** | 3 (strcpy_s, strcat_s, snprintf) |
 | **Ветки** | dev = master ✅ |
 
 ---
 
-## 🔧 Бенчмарки производительности
+## 🔧 Security функции
 
-### Запуск
-```bash
-mkdir build && cd build
-cmake -DENABLE_JEMALLOC=ON ..  # или -DENABLE_TCMALLOC=ON
-make -j4
-./bin/benchmark-memory-allocator
+### Использование
+```c
+#include "common/utils.h"
+
+char buffer[64];
+
+// Безопасное копирование
+if (utils_strcpy_s(buffer, sizeof(buffer), source) < 0) {
+    // Произошло усечение
+}
+
+// Безопасная конкатенация
+if (utils_strcat_s(buffer, sizeof(buffer), suffix) < 0) {
+    // Произошло усечение
+}
+
+// Безопасный snprintf
+if (utils_snprintf(buffer, sizeof(buffer), "%s: %d", name, value) < 0) {
+    // Произошло усечение
+}
 ```
 
-### Тесты
-1. **malloc/free** — базовая производительность
-2. **aligned malloc** — выравнивание 64 байта
-3. **Fragmentation** — фрагментация памяти
-4. **Multi-threaded** — 4 потока
-5. **Peak memory** — пиковое потребление
-
-### Ожидаемые результаты
-| Аллокатор | ops/sec | Память |
-|-----------|---------|--------|
-| **standard** | ~500K | базовая |
-| **jemalloc** | ~800K (+60%) | -30% |
-| **tcmalloc** | ~750K (+50%) | -25% |
+### Преимущества
+- ✅ Возврат -1 при усечении (можно обработать)
+- ✅ Гарантированная null-терминация
+- ✅ Проверка всех параметров
+- ✅ Совместимость с существующим кодом
 
 ---
 
@@ -93,4 +105,4 @@ make -j4
 
 ---
 
-*Последнее обновление: 29 марта 2026 г. (бенчмарки памяти)*
+*Последнее обновление: 29 марта 2026 г. (security utils добавлены)*

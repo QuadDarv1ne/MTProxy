@@ -22,6 +22,7 @@
 #include <limits.h>
 #include <errno.h>
 #include <time.h>
+#include <stdarg.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -82,6 +83,67 @@ size_t utils_strcat(char *dest, const char *src, size_t dest_size) {
     dest[dest_len + copy_len] = '\0';
 
     return dest_len + copy_len;
+}
+
+// Secure string copy (returns 0 on success, -1 on truncation)
+int utils_strcpy_s(char *dest, size_t dest_size, const char *src) {
+    if (!dest || !src || dest_size == 0) {
+        return -1;
+    }
+    
+    size_t src_len = strlen(src);
+    if (src_len >= dest_size) {
+        // Truncation will occur
+        memcpy(dest, src, dest_size - 1);
+        dest[dest_size - 1] = '\0';
+        return -1;
+    }
+    
+    memcpy(dest, src, src_len);
+    dest[src_len] = '\0';
+    return 0;
+}
+
+// Secure string concatenation (returns 0 on success, -1 on truncation)
+int utils_strcat_s(char *dest, size_t dest_size, const char *src) {
+    if (!dest || !src || dest_size == 0) {
+        return -1;
+    }
+    
+    size_t dest_len = strlen(dest);
+    size_t src_len = strlen(src);
+    
+    if (dest_len + src_len >= dest_size) {
+        // Truncation will occur
+        size_t remaining = dest_size - dest_len - 1;
+        memcpy(dest + dest_len, src, remaining);
+        dest[dest_len + remaining] = '\0';
+        return -1;
+    }
+    
+    memcpy(dest + dest_len, src, src_len);
+    dest[dest_len + src_len] = '\0';
+    return 0;
+}
+
+// Secure snprintf (returns 0 on success, -1 on truncation)
+int utils_snprintf(char *dest, size_t dest_size, const char *format, ...) {
+    if (!dest || !format || dest_size == 0) {
+        return -1;
+    }
+    
+    va_list args;
+    va_start(args, format);
+    int result = vsnprintf(dest, dest_size, format, args);
+    va_end(args);
+    
+    if (result < 0 || (size_t)result >= dest_size) {
+        // Truncation or error
+        dest[dest_size - 1] = '\0';
+        return -1;
+    }
+    
+    return 0;
 }
 
 // Integer to string conversion

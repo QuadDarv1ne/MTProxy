@@ -46,6 +46,15 @@ char *utils_toupper_str(char *str);
 // String length with max check
 size_t utils_strnlen(const char *s, size_t maxlen);
 
+// Secure string copy (returns 0 on success, -1 on truncation)
+int utils_strcpy_s(char *dest, size_t dest_size, const char *src);
+
+// Secure string concatenation (returns 0 on success, -1 on truncation)
+int utils_strcat_s(char *dest, size_t dest_size, const char *src);
+
+// Secure snprintf (returns 0 on success, -1 on truncation)
+int utils_snprintf(char *dest, size_t dest_size, const char *format, ...);
+
 /* ============================================================================
  * Memory Utilities
  * ============================================================================ */
