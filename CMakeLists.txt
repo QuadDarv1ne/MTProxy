@@ -947,6 +947,20 @@ set_target_properties(test-utils PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# Utils encoding test executable
+add_executable(test-utils-encoding
+    testing/test_utils_encoding.c
+    common/utils.c
+)
+
+target_link_libraries(test-utils-encoding
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-utils-encoding PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # Cache memory pool test executable
 add_executable(test-cache-pool
     testing/test_cache_memory_pool.c
