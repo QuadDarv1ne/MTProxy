@@ -368,6 +368,9 @@ set(COMMON_SOURCES
     common/log-aggregator.h
     common/advanced-logger.c
     common/advanced-logger.h
+    # Cache memory pool (optimization)
+    common/cache-memory-pool.c
+    common/cache-memory-pool.h
     common/common-stats.c
     common/common-stats.h
     common/platform_network.c
@@ -941,6 +944,20 @@ target_link_libraries(test-utils
 )
 
 set_target_properties(test-utils PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# Cache memory pool test executable
+add_executable(test-cache-pool
+    testing/test_cache_memory_pool.c
+    common/cache-memory-pool.c
+)
+
+target_link_libraries(test-cache-pool
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-cache-pool PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
