@@ -1,0 +1,208 @@
+# MTProxy Prometheus Alerting Rules
+# Использование: добавить в prometheus.yml
+#
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets: ['localhost:9093']
+#
+# rule_files:
+#   - "mtproxy-alerts.yml"
+
+groups:
+  - name: mtproxy_alerts
+    interval: 30s
+    rules:
+      # ========================================================================
+      # Server Status Alerts
+      # ========================================================================
+
+      - alert: MTProxyServerDown
+        expr: mtproxy_info{state="error"} == 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MTProxy server is down"
+          description: "MTProxy server {{ $labels.instance }} is in error state"
+
+      - alert: MTProxyServerRestarting
+        expr: changes(mtproxy_uptime_seconds[5m]) > 2
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MTProxy server is restarting frequently"
+          description: "MTProxy server {{ $labels.instance }} has restarted multiple times in the last 5 minutes"
+
+      # ========================================================================
+      # Connection Alerts
+      # ========================================================================
+
+      - alert: MTProxyHighConnectionCount
+        expr: mtproxy_active_connections > 10000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MTProxy high connection count"
+          description: "MTProxy server {{ $labels.instance }} has {{ $value }} active connections (threshold: 10000)"
+
+      - alert: MTProxyConnectionSpike
+        expr: rate(mtproxy_total_connections_total[1m]) > 100
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MTProxy connection spike detected"
+          description: "MTProxy server {{ $labels.instance }} is receiving {{ $value }} connections per second"
+
+      - alert: MTProxyTooManyRejectedConnections
+        expr: rate(mtproxy_connections_by_status{status="rejected"}[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MTProxy high connection rejection rate"
+          description: "MTProxy server {{ $labels.instance }} is rejecting {{ $value }} connections per second"
+
+      # ========================================================================
+      # Resource Alerts
+      # ========================================================================
+
+      - alert: MTProxyHighCPUUsage
+        expr: mtproxy_cpu_usage_percent > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MTProxy high CPU usage"
+          description: "MTProxy server {{ $labels.instance }} CPU usage is {{ $value }}% (threshold: 80%)"
+
+      - alert: MTProxyCriticalCPUUsage
+        expr: mtproxy_cpu_usage_percent > 95
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MTProxy critical CPU usage"
+          description: "MTProxy server {{ $labels.instance }} CPU usage is {{ $value }}% (threshold: 95%)"
+
+      - alert: MTProxyHighMemoryUsage
+        expr: mtproxy_memory_usage_bytes / (1024 * 1024 * 1024) > 8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MTProxy high memory usage"
+          description: "MTProxy server {{ $labels.instance }} is using {{ $value }}GB of memory (threshold: 8GB)"
+
+      # ========================================================================
+      # Network Traffic Alerts
+      # ========================================================================
+
+      - alert: MTProxyHighNetworkTraffic
+        expr: rate(mtproxy_bytes_sent_total[1m]) + rate(mtproxy_bytes_received_total[1m]) > 1073741824
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MTProxy high network traffic"
+          description: "MTProxy server {{ $labels.instance }} network traffic is {{ $value | humanize1024 }}B/s (threshold: 1GB/s)"
+
+      - alert: MTProxyNetworkTrafficDrop
+        expr: rate(mtproxy_bytes_sent_total[5m]) < 1000 and rate(mtproxy_bytes_received_total[5m]) < 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MTProxy network traffic dropped"
+          description: "MTProxy server {{ $labels.instance }} network traffic has dropped significantly"
+
+      # ========================================================================
+      # Error Alerts
+      # ========================================================================
+
+      - alert: MTProxyHighErrorRate
+        expr: rate(mtproxy_errors_total[1m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MTProxy high error rate"
+          description: "MTProxy server {{ $labels.instance }} is experiencing {{ $value }} errors per second"
+
+      - alert: MTProxyCriticalErrorRate
+        expr: rate(mtproxy_errors_total[1m]) > 50
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MTProxy critical error rate"
+          description: "MTProxy server {{ $labels.instance }} is experiencing {{ $value }} errors per second"
+
+      # ========================================================================
+      # Rate Limiting Alerts
+      # ========================================================================
+
+      - alert: MTProxyHighRateLimiting
+        expr: rate(mtproxy_rate_limited_total[1m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MTProxy high rate limiting activity"
+          description: "MTProxy server {{ $labels.instance }} is rate limiting {{ $value }} requests per second"
+
+      - alert: MTProxyPossibleAttack
+        expr: rate(mtproxy_rate_limited_total[1m]) > 500
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MTProxy possible DDoS attack"
+          description: "MTProxy server {{ $labels.instance }} is rate limiting {{ $value }} requests per second - possible attack"
+
+      # ========================================================================
+      # Cache Alerts
+      # ========================================================================
+
+      - alert: MTProxyLowCacheHitRate
+        expr: mtproxy_cache_hit_rate < 50
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MTProxy low cache hit rate"
+          description: "MTProxy server {{ $labels.instance }} cache hit rate is {{ $value }}% (threshold: 50%)"
+
+      - alert: MTProxyCacheEvictionSpike
+        expr: rate(mtproxy_cache_evictions_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MTProxy high cache eviction rate"
+          description: "MTProxy server {{ $labels.instance }} is evicting {{ $value }} cache entries per second"
+
+      - alert: MTProxyCacheFull
+        expr: mtproxy_cache_entries / mtproxy_cache_max_entries > 0.95
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MTProxy cache nearly full"
+          description: "MTProxy server {{ $labels.instance }} cache is {{ $value | humanizePercentage }} full"
+
+      # ========================================================================
+      # Uptime Alerts
+      # ========================================================================
+
+      - alert: MTProxyLowUptime
+        expr: mtproxy_uptime_seconds < 300
+        for: 1m
+        labels:
+          severity: info
+        annotations:
+          summary: "MTProxy server recently restarted"
+          description: "MTProxy server {{ $labels.instance }} has been running for only {{ $value | humanizeDuration }}"

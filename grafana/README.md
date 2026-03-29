@@ -25,11 +25,24 @@ python scripts/prometheus_exporter.py \
 Добавьте в `prometheus.yml`:
 
 ```yaml
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['localhost:9093']
+
+rule_files:
+  - "mtproxy-alerts.yml"
+
 scrape_configs:
   - job_name: 'mtproxy'
     static_configs:
       - targets: ['localhost:9090']
     scrape_interval: 5s
+    metrics_path: /metrics
 ```
 
 ### 3. Импорт дашборда в Grafana
@@ -50,6 +63,7 @@ scrape_configs:
 - **mtproxy_active_connections** — Активные подключения
 - **mtproxy_total_connections_total** — Всего подключений
 - **mtproxy_connections_per_second** — Подключений в секунду
+- **mtproxy_connections_by_status** — Подключения по статусам (active, idle, closed, rejected)
 
 ### Network Traffic
 - **mtproxy_bytes_sent_total** — Отправлено байт (counter)
@@ -61,10 +75,23 @@ scrape_configs:
 - **mtproxy_cpu_usage_percent** — Использование CPU %
 - **mtproxy_memory_usage_bytes** — Использование памяти
 
+### Cache Metrics (NEW)
+- **mtproxy_cache_hits_total** — Всего попаданий в кэш
+- **mtproxy_cache_misses_total** — Всего промахов кэша
+- **mtproxy_cache_hit_rate** — Процент попаданий в кэш
+- **mtproxy_cache_entries** — Количество записей в кэше
+- **mtproxy_cache_memory_bytes** — Использование памяти кэшем
+- **mtproxy_cache_evictions_total** — Всего вытеснений из кэша
+
+### Rate Limiting Metrics (NEW)
+- **mtproxy_ratelimit_active_rules** — Количество активных правил
+- **mtproxy_ratelimit_blocked_ips** — Количество заблокированных IP
+- **mtproxy_ratelimit_whitelisted_ips** — Количество IP в белом списке
+- **mtproxy_rate_limited_total** — Всего rate limited запросов
+
 ### Errors
 - **mtproxy_errors_total** — Всего ошибок
 - **mtproxy_errors_per_second** — Ошибок в секунду
-- **mtproxy_rate_limited_total** — Rate limited запросов
 
 ## Дашборд панели
 
@@ -77,6 +104,8 @@ scrape_configs:
 | Connections | График подключений (active + per second) |
 | Network Traffic | График сетевого трафика (in/out) |
 | CPU Usage | График использования CPU |
+| Cache Performance | Hit rate, entries, evictions |
+| Rate Limiting | Активные правила, заблокированные IP |
 | Errors & Rate Limiting | График ошибок и rate limiting |
 
 ## Скриншот
@@ -85,35 +114,48 @@ scrape_configs:
 
 ## Алёртинг
 
-Примеры алертов для настройки:
+Полный список правил алертинга находится в `prometheus/mtproxy-alerts.yml`.
 
-### Server Down
+### Критические алерты
+
+| Алерт | Условие | Severity |
+|-------|---------|----------|
+| MTProxyServerDown | state="error" > 1m | Critical |
+| MTProxyCriticalCPUUsage | CPU > 95% > 2m | Critical |
+| MTProxyCriticalErrorRate | errors > 50/s > 1m | Critical |
+| MTProxyPossibleAttack | rate_limited > 500/s > 2m | Critical |
+
+### Предупреждения
+
+| Алерт | Условие | Severity |
+|-------|---------|----------|
+| MTProxyHighCPUUsage | CPU > 80% > 5m | Warning |
+| MTProxyHighConnectionCount | connections > 10000 > 5m | Warning |
+| MTProxyHighErrorRate | errors > 10/s > 2m | Warning |
+| MTProxyLowCacheHitRate | hit_rate < 50% > 10m | Warning |
+| MTProxyHighRateLimiting | rate_limited > 100/s > 5m | Warning |
+
+### Примеры PromQL запросов
+
 ```promql
+# Server Down
 mtproxy_info{state="error"} == 1
-```
-**For:** 1m  
-**Severity:** Critical
 
-### High CPU Usage
-```promql
+# High CPU Usage
 mtproxy_cpu_usage_percent > 80
-```
-**For:** 5m  
-**Severity:** Warning
 
-### High Error Rate
-```promql
+# High Error Rate
 rate(mtproxy_errors_total[1m]) > 10
-```
-**For:** 2m  
-**Severity:** Warning
 
-### Too Many Connections
-```promql
+# Too Many Connections
 mtproxy_active_connections > 10000
+
+# Low Cache Hit Rate
+mtproxy_cache_hit_rate < 50
+
+# Possible DDoS Attack
+rate(mtproxy_rate_limited_total[1m]) > 500
 ```
-**For:** 5m  
-**Severity:** Warning
 
 ## Docker Compose (полный стек)
 

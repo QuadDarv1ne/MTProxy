@@ -16,13 +16,16 @@ MTProxy Prometheus Exporter
     mtproxy_errors_total - Всего ошибок (counter)
     mtproxy_rate_limited_total - Rate limited запросов (counter)
     mtproxy_uptime_seconds - Время работы
+    mtproxy_cache_* - Метрики кэширования
+    mtproxy_ratelimit_* - Метрики ограничения скорости
+    mtproxy_connections_by_status - Подключения по статусам
 """
 
 import argparse
 import logging
 import time
 import sys
-from typing import Optional
+from typing import Optional, Dict, Any
 
 import requests
 from prometheus_client import (
@@ -134,6 +137,63 @@ class MTProxyMetricsCollector:
             registry=self.registry
         )
 
+        # Cache metrics
+        self.cache_hits = Gauge(
+            'mtproxy_cache_hits_total',
+            'Total cache hits',
+            registry=self.registry
+        )
+        self.cache_misses = Gauge(
+            'mtproxy_cache_misses_total',
+            'Total cache misses',
+            registry=self.registry
+        )
+        self.cache_hit_rate = Gauge(
+            'mtproxy_cache_hit_rate',
+            'Cache hit rate percentage',
+            registry=self.registry
+        )
+        self.cache_entries = Gauge(
+            'mtproxy_cache_entries',
+            'Number of entries in cache',
+            registry=self.registry
+        )
+        self.cache_memory_bytes = Gauge(
+            'mtproxy_cache_memory_bytes',
+            'Cache memory usage in bytes',
+            registry=self.registry
+        )
+        self.cache_evictions = Gauge(
+            'mtproxy_cache_evictions_total',
+            'Total cache evictions',
+            registry=self.registry
+        )
+
+        # Rate limiting metrics
+        self.ratelimit_active_rules = Gauge(
+            'mtproxy_ratelimit_active_rules',
+            'Number of active rate limit rules',
+            registry=self.registry
+        )
+        self.ratelimit_blocked_ips = Gauge(
+            'mtproxy_ratelimit_blocked_ips',
+            'Number of blocked IPs',
+            registry=self.registry
+        )
+        self.ratelimit_whitelisted_ips = Gauge(
+            'mtproxy_ratelimit_whitelisted_ips',
+            'Number of whitelisted IPs',
+            registry=self.registry
+        )
+
+        # Connection status metrics
+        self.connections_by_status = Gauge(
+            'mtproxy_connections_by_status',
+            'Connections by status',
+            ['status'],
+            registry=self.registry
+        )
+
     def get_statistics(self) -> Optional[dict]:
         """Получить статистику от MTProxy API"""
         try:
@@ -171,8 +231,6 @@ class MTProxyMetricsCollector:
             self.uptime.set(stats.get('uptime_seconds', 0))
 
             # Counters (используем _total для Prometheus)
-            # Примечание: Prometheus client сам отслеживает инкремент
-            # Здесь мы устанавливаем абсолютные значения
             self.total_connections._value.set(stats.get('total_connections', 0))
             self.bytes_sent._value.set(stats.get('bytes_sent', 0))
             self.bytes_received._value.set(stats.get('bytes_received', 0))
@@ -184,6 +242,28 @@ class MTProxyMetricsCollector:
             self.bytes_per_second_in.set(stats.get('bytes_per_second_in', 0))
             self.bytes_per_second_out.set(stats.get('bytes_per_second_out', 0))
             self.errors_per_second.set(stats.get('errors_per_second', 0))
+
+            # Cache metrics
+            cache_stats = stats.get('cache', {})
+            if cache_stats:
+                self.cache_hits.set(cache_stats.get('hits', 0))
+                self.cache_misses.set(cache_stats.get('misses', 0))
+                self.cache_hit_rate.set(cache_stats.get('hit_rate', 0) * 100)
+                self.cache_entries.set(cache_stats.get('entries', 0))
+                self.cache_memory_bytes.set(cache_stats.get('memory_bytes', 0))
+                self.cache_evictions.set(cache_stats.get('evictions', 0))
+
+            # Rate limiting metrics
+            ratelimit_stats = stats.get('ratelimit', {})
+            if ratelimit_stats:
+                self.ratelimit_active_rules.set(ratelimit_stats.get('active_rules', 0))
+                self.ratelimit_blocked_ips.set(ratelimit_stats.get('blocked_ips', 0))
+                self.ratelimit_whitelisted_ips.set(ratelimit_stats.get('whitelisted_ips', 0))
+
+            # Connection status metrics
+            conn_by_status = stats.get('connections_by_status', {})
+            for status, count in conn_by_status.items():
+                self.connections_by_status.labels(status=status).set(count)
 
         # Статус сервера
         status = self.get_server_status()
