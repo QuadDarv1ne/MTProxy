@@ -82,6 +82,7 @@ run_test "Cache No-Copy Tests" "./test-cache-no-copy"
 run_test "Admin CLI Tests" "./test-admin-cli"
 run_test "Admin CLI Integration" "./test-admin-cli-integration"
 run_test "IO_URING Tests" "./test-io-uring"
+run_test "REST API Tests" "./test-rest-api"
 
 # Бенчмарки
 run_test "Memory Allocator Benchmark" "./benchmark-memory-allocator"
