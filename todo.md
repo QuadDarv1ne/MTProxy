@@ -1,7 +1,7 @@
 # MTProxy Project TODO
 
 > **Актуально на:** 29 марта 2026 г.
-> **Коммит:** b131a24 (dev/master)
+> **Коммит:** ca4bc92 (dev/master)
 > **Версия:** v1.0.28-dev (в разработке)
 > **Ветки:** dev = origin/dev ✅ | master = origin/master ✅
 > **Тег:** v1.0.27 ✅
@@ -12,21 +12,18 @@
 
 ### ✅ Выполнено
 - [x] CHANGELOG.md обновлён
-- [x] RELEASE_NOTES_v1.0.27.md создан
 - [x] Тег v1.0.27 создан и запушен
 - [x] Ветки синхронизированы
-- [x] TESTING.md создан
-- [x] PROJECT_INDEX.md создан
+- [x] Документация очищена
 
 ---
 
 ## 📋 Активные задачи (v1.0.28)
 
 ### 🔴 В работе
-- [x] PROJECT_INDEX.md — ✅ ВЫПОЛНЕНО
+- [x] Очистка документации — ✅ ВЫПОЛНЕНО
 
 ### 🟡 Следующие
-- [ ] README.md обновление (ссылки на новую документацию)
 - [ ] HTTP/3 QUIC полная реализация (nghttp3/ngtcp2)
 - [ ] io_uring для Linux
 - [ ] Web UI базовый мониторинг
@@ -37,38 +34,41 @@
 
 | Метрика | Значение |
 |---------|----------|
-| **Всего коммитов** | 430+ |
+| **Всего коммитов** | 431+ |
 | **C/H файлов** | 399+ |
 | **Workflow** | 6 |
 | **Тестов** | 98 C + 4 Dart |
 | **Бенчмарков** | 5 |
-| **Документов** | **43+** |
+| **Документов** | **25** (основные) |
 | **Релизов** | 1 (v1.0.27) |
 | **Ветки** | dev = master ✅ |
 
 ---
 
-## 📚 Документация
+## 📚 Документация (основная)
 
-### Основная
-- [README.md](README.md) — основная информация
-- [PROJECT_INDEX.md](PROJECT_INDEX.md) — навигация по проекту
-- [TESTING.md](TESTING.md) — тестирование
-- [BENCHMARKS.md](BENCHMARKS.md) — бенчмарки
-- [CHANGELOG.md](CHANGELOG.md) — история изменений
+### Корень проекта
+- README.md — основная информация
+- PROJECT_INDEX.md — навигация
+- TESTING.md — тестирование
+- BENCHMARKS.md — бенчмарки
+- CHANGELOG.md — история изменений
+- SECURITY.md — безопасность
+- CONTRIBUTING.md — вклад
+- DEPLOYMENT.md — развёртывание
+- API_REFERENCE.md — API справочник
 
-### Руководства
-- [DEPLOYMENT.md](DEPLOYMENT.md) — развёртывание
-- [API_REFERENCE.md](API_REFERENCE.md) — API справочник
-- [PERFORMANCE_TUNING.md](docs/PERFORMANCE_TUNING.md) — оптимизация
-- [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) — диагностика
+### docs/
+- PERFORMANCE_TUNING.md — оптимизация
+- TROUBLESHOOTING.md — диагностика
+- DEBUGGING.md — отладка
+- ADMIN_CLI_GUIDE.md — admin-cli
 
 ---
 
 ## 🎯 Roadmap
 
 ### v1.0.28 (Q2 2026)
-- [ ] README.md обновление
 - [ ] HTTP/3 QUIC (nghttp3/ngtcp2)
 - [ ] io_uring для Linux
 - [ ] Web UI базовый
@@ -77,13 +77,11 @@
 - [ ] gRPC интерфейс
 - [ ] WebSocket поддержка
 - [ ] Prometheus экспортёр
-- [ ] Grafana дашборды
 
 ### v1.1.0 (Q4 2026)
 - [ ] Кластеризация
 - [ ] Load balancing
 - [ ] Auto-scaling
-- [ ] Distributed tracing
 
 ---
 
@@ -95,4 +93,4 @@
 
 ---
 
-*Последнее обновление: 29 марта 2026 г. — v1.0.28-dev (в разработке)*
+*Последнее обновление: 29 марта 2026 г. — документация очищена*
