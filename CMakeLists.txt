@@ -1266,6 +1266,21 @@ set_target_properties(test-utils-security PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# Error handler test executable
+add_executable(test-error-handler
+    testing/test_error_handler.c
+)
+
+target_link_libraries(test-error-handler
+    kdb_common
+    kdb_crypto
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-error-handler PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # Cache memory pool test executable
 add_executable(test-cache-pool
     testing/test_cache_memory_pool.c
@@ -1825,6 +1840,7 @@ enable_testing()
 
 # Register tests with CTest
 add_test(NAME test-utils-security COMMAND test-utils-security)
+add_test(NAME test-error-handler COMMAND test-error-handler)
 add_test(NAME test-cache-pool COMMAND test-cache-pool)
 if(NOT WIN32)
 add_test(NAME test-cache-no-copy COMMAND test-cache-no-copy)
