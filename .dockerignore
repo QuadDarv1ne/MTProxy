@@ -19,6 +19,8 @@ cmake-build-*/
 docs/
 ROADMAP.md
 CHANGELOG.md
+RELEASE_NOTES_*.md
+todo.md
 
 # Тесты
 testing/
@@ -49,3 +51,15 @@ Thumbs.db
 # Конфигурация разработчика
 config.local.json
 *.local
+
+# Mobile app (не нужно для сервера)
+mobile_app/
+
+# Web UI development files
+webui/node_modules/
+webui/package*.json
+
+# Environment files
+.env
+.env.local
+.env.*.local
