@@ -1,6 +1,14 @@
 # MTProxy Docker Image
 # Официальный образ для MTProxy
 # Поддержка multi-arch: linux/amd64, linux/arm64, linux/arm/v7
+#
+# Сборка multi-arch образа:
+#   docker buildx create --use --name mtproxy-builder
+#   docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 \
+#     -t mtproxy:latest --push .
+#
+# Локальная сборка для текущей архитектуры:
+#   docker build -t mtproxy:latest .
 
 ARG ALPINE_VERSION=3.19
 ARG OPENSSL_VERSION=3
@@ -13,6 +21,11 @@ FROM alpine:${ALPINE_VERSION} AS builder
 ARG BUILD_TYPE=Release
 ARG ENABLE_LTO=ON
 ARG ENABLE_PGO=OFF
+ARG ENABLE_IOURING=OFF
+
+# Определение архитектуры для оптимизаций
+ARG TARGETARCH
+ARG TARGETVARIANT
 
 # Установка зависимостей для сборки
 RUN apk add --no-cache \
@@ -31,22 +44,35 @@ WORKDIR /build
 # Копирование исходников
 COPY . .
 
-# Оптимизация сборки
+# Оптимизация сборки в зависимости от архитектуры
 RUN set -eux; \
-    export CFLAGS="-O3 -march=native -mtune=native"; \
+    case "${TARGETARCH:-amd64}" in \
+        amd64) \
+            CFLAGS_ARCH="-O3 -march=x86-64 -mtune=generic" \
+            ;; \
+        arm64) \
+            CFLAGS_ARCH="-O3 -march=armv8-a -mtune=cortex-a72" \
+            ;; \
+        arm) \
+            CFLAGS_ARCH="-O3 -march=armv7-a -mtune=cortex-a7" \
+            ;; \
+        *) \
+            CFLAGS_ARCH="-O2" \
+            ;; \
+    esac; \
+    export CFLAGS="$CFLAGS_ARCH"; \
     export LDFLAGS="-Wl,--as-needed -Wl,--strip-all"; \
     cmake -B build \
         -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
         -DCMAKE_INSTALL_PREFIX=/install \
         -DENABLE_LTO=${ENABLE_LTO} \
         -DENABLE_PGO=${ENABLE_PGO} \
+        -DENABLE_IOURING=${ENABLE_IOURING} \
         -DBUILD_SHARED_LIB=ON \
         -DSTATIC_LINKING=OFF; \
     cmake --build build -j$(nproc); \
     cmake --install build --prefix /install; \
-    # Strip бинарников для уменьшения размера \
-    strip /install/bin/mtproto-proxy 2>/dev/null || true; \
-    strip /install/bin/mtproxy-admin 2>/dev/null || true
+    strip /install/bin/mtproto-proxy 2>/dev/null || true
 
 # =============================================================================
 # Stage 2: Runtime (Minimal)
