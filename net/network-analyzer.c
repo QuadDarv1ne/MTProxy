@@ -33,6 +33,9 @@
 // Глобальная статистика
 struct performance_analyzer_stats analyzer_stats = {0};
 
+// Forward declaration
+static int performance_analyzer_use_cached_analysis(const struct performance_metrics *cached);
+
 // Analysis configuration
 static struct analyzer_config global_analyzer_config = {
     .enable_auto_optimization = 1,

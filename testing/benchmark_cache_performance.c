@@ -496,7 +496,7 @@ static void benchmark_500k_cache_stress(void) {
         } else {
             // DELETE (каждая 3-я операция)
             if (i > 1000) {  // Не удалять сразу
-                cache_manager_delete(&cache, key);
+                cache_delete(&cache, key);
             }
         }
         stats.total_operations++;
