@@ -1125,6 +1125,19 @@ set_target_properties(test-admin-cli PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# Admin CLI integration test executable
+add_executable(test-admin-cli-integration
+    testing/test_admin_cli_integration.c
+)
+
+target_link_libraries(test-admin-cli-integration
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-admin-cli-integration PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # io_uring test executable
 add_executable(test-io-uring
     testing/test_io_uring.c
