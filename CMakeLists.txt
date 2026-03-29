@@ -1080,6 +1080,23 @@ set_target_properties(benchmark-highload PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# Cache performance benchmark executable (100K+ operations)
+add_executable(benchmark-cache-performance
+    testing/benchmark_cache_performance.c
+    common/cache-manager.c
+    common/crc32.c
+    common/utils.c
+)
+
+target_link_libraries(benchmark-cache-performance
+    ${PLATFORM_LIBS}
+    pthread
+)
+
+set_target_properties(benchmark-cache-performance PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # Utils security test executable
 add_executable(test-utils-security
     testing/test_utils_security.c
@@ -1332,6 +1349,7 @@ add_test(NAME test-io-uring COMMAND test-io-uring)
 add_test(NAME benchmark-memory-allocator COMMAND benchmark-memory-allocator)
 add_test(NAME benchmark-io-uring COMMAND benchmark-io-uring)
 add_test(NAME benchmark-highload COMMAND benchmark-highload)
+add_test(NAME benchmark-cache-performance COMMAND benchmark-cache-performance)
 add_test(NAME integration-tests-simple COMMAND integration-tests-simple)
 
 # Python integration tests
@@ -1345,11 +1363,11 @@ endif()
 
 # Installation rules - Windows excludes some targets
 if(WIN32)
-    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils test-admin-cli cache-performance-test-simple rate-limiter-highload-test-simple integration-tests-simple benchmark-highload
+    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils test-admin-cli cache-performance-test-simple rate-limiter-highload-test-simple integration-tests-simple benchmark-highload benchmark-cache-performance
         RUNTIME DESTINATION bin
     )
 else()
-    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils test-ffi-api test-performance test-admin-cli-integration cache-performance-test rate-limiter-highload-test integration-tests benchmark-highload
+    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils test-ffi-api test-performance test-admin-cli-integration cache-performance-test rate-limiter-highload-test integration-tests benchmark-highload benchmark-cache-performance
         RUNTIME DESTINATION bin
     )
 endif()

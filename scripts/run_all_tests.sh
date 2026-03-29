@@ -87,6 +87,7 @@ run_test "IO_URING Tests" "./test-io-uring"
 run_test "Memory Allocator Benchmark" "./benchmark-memory-allocator"
 run_test "IO_URING Benchmark" "./benchmark-io-uring"
 run_test "Highload Benchmark (100K+)" "./benchmark-highload"
+run_test "Cache Performance Benchmark" "./benchmark-cache-performance"
 
 # Интеграционные тесты
 run_test "Integration Tests Simple" "./integration-tests-simple"
