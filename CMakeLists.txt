@@ -61,6 +61,36 @@ find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(Threads REQUIRED)
 
+# Memory allocator optimization
+if(ENABLE_JEMALLOC)
+    find_package(Jemalloc QUIET)
+    if(JEMALLOC_FOUND)
+        add_definitions(-DUSE_JEMALLOC)
+        list(APPEND PLATFORM_LIBS ${JEMALLOC_LIBRARIES})
+        include_directories(${JEMALLOC_INCLUDE_DIRS})
+        message(STATUS "jemalloc enabled: ${JEMALLOC_LIBRARIES}")
+    else()
+        message(WARNING "jemalloc requested but not found. Install jemalloc or disable with -DENABLE_JEMALLOC=OFF")
+    endif()
+endif()
+
+if(ENABLE_TCMALLOC)
+    find_package(Tcmalloc QUIET)
+    if(TCMALLOC_FOUND)
+        add_definitions(-DUSE_TCMALLOC)
+        list(APPEND PLATFORM_LIBS ${TCMALLOC_LIBRARIES})
+        include_directories(${TCMALLOC_INCLUDE_DIRS})
+        message(STATUS "tcmalloc enabled: ${TCMALLOC_LIBRARIES}")
+    else()
+        message(WARNING "tcmalloc requested but not found. Install tcmalloc or disable with -DENABLE_TCMALLOC=OFF")
+    endif()
+endif()
+
+# Prefer jemalloc over tcmalloc if both enabled
+if(ENABLE_JEMALLOC AND ENABLE_TCMALLOC)
+    message(WARNING "Both jemalloc and tcmalloc enabled. jemalloc will take precedence.")
+endif()
+
 # ============================================
 # Memory Optimization Options
 # ============================================
@@ -69,6 +99,10 @@ option(EXCLUDE_HEAVY_MODULES "Exclude heavy modules for Windows/low-memory syste
 
 # ARM64 оптимизации
 option(ENABLE_ARM64_CRYPTO "Enable ARM64 cryptographic optimizations (NEON instructions)" OFF)
+
+# Memory allocator optimization
+option(ENABLE_JEMALLOC "Enable jemalloc for better memory performance" OFF)
+option(ENABLE_TCMALLOC "Enable tcmalloc for better memory performance" OFF)
 
 # Memory limit definitions
 if(ENABLE_LOW_MEMORY)
@@ -958,6 +992,19 @@ target_link_libraries(test-utils-encoding
 )
 
 set_target_properties(test-utils-encoding PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# Memory allocator test executable
+add_executable(test-memory-allocator
+    testing/test_memory_allocator.c
+)
+
+target_link_libraries(test-memory-allocator
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-memory-allocator PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 

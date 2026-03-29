@@ -1,8 +1,8 @@
 # MTProxy Project TODO
 
 > **Актуально на:** 29 марта 2026 г.
-> **Коммит:** ef0729c (dev/master)
-> **Версия:** v1.0.21-utils-tests
+> **Коммит:** b82c949 (dev/master)
+> **Версия:** v1.0.22-jemalloc-support
 > **Ветки:** dev = origin/dev ✅ | master = origin/master ✅
 
 ---
@@ -10,12 +10,12 @@
 ## 📋 Активные задачи
 
 ### 🔴 В работе
-- [x] Тесты для utils_base64/hex — ✅ ВЫПОЛНЕНО
+- [x] jemalloc/tcmalloc интеграция — ✅ ВЫПОЛНЕНО
 
 ### 🟡 Следующие
-- [ ] Проверка сборки test-utils-encoding
-- [ ] HTTP/3 QUIC полная реализация (nghttp3/ngtcp2)
-- [ ] io_uring для Linux
+- [ ] Проверка сборки с jemalloc
+- [ ] Бенчмарки производительности (malloc vs jemalloc)
+- [ ] HTTP/3 QUIC полная реализация
 
 ---
 
@@ -29,17 +29,18 @@
 - [x] network-analyzer.c — кэширование (~80% CPU)
 
 ### Утилиты кодирования (29 марта)
-- [x] utils_base64_encode/decode — RFC 4648
-- [x] utils_hex_encode/decode — hex кодирование
+- [x] utils_base64/hex encode/decode
 - [x] Тесты: 14 тестов (Base64: 6, Hex: 8)
 
-### Устранение дублирования (28 марта)
-- [x] utils_int_to_string / utils_float_to_string
-- [x] utils_hash_djb2, utils_time_ms
+### Memory Allocator (29 марта)
+- [x] memory-allocator.h — unified API
+- [x] jemalloc/tcmalloc поддержка
+- [x] mt_malloc_aligned (выравнивание)
+- [x] Тесты: 14 тестов для allocator
 
 ### Инфраструктура
+- [x] CMakeLists.txt: ENABLE_JEMALLOC/ENABLE_TCMALLOC
 - [x] Windows socket API, IPC
-- [x] HTTP/3 QUIC stub (17 TODO)
 - [x] LTO для Unix, ASAN опционально
 
 ---
@@ -48,13 +49,39 @@
 
 | Метрика | Значение |
 |---------|----------|
-| **Всего коммитов** | 422+ |
-| **C/H файлов** | 394+ |
-| **utils.c строк** | 764 (+172) |
-| **Тестов** | 78 C + 4 Dart (100%) |
-| **Оптимизация памяти** | 3 модуля (5x) |
+| **Всего коммитов** | 423+ |
+| **C/H файлов** | 396+ |
+| **Тестов** | 79 C + 4 Dart |
+| **Оптимизация памяти** | 3 модуля (5x) + allocator |
 | **Оптимизация CPU** | 1 модуль (~80%) |
 | **Ветки** | dev = master ✅ |
+
+---
+
+## 🔧 Сборка с jemalloc/tcmalloc
+
+### Linux (jemalloc)
+```bash
+sudo apt-get install libjemalloc-dev
+mkdir build && cd build
+cmake -DENABLE_JEMALLOC=ON ..
+make -j4
+./bin/test-memory-allocator
+```
+
+### Linux (tcmalloc)
+```bash
+sudo apt-get install libtcmalloc-minimal4
+mkdir build && cd build
+cmake -DENABLE_TCMALLOC=ON ..
+make -j4
+```
+
+### Windows (стандартный malloc)
+```bash
+cmake -B build -G "MinGW Makefiles"
+cmake --build build --config Release
+```
 
 ---
 
@@ -66,4 +93,4 @@
 
 ---
 
-*Последнее обновление: 29 марта 2026 г. (тесты encoding добавлены)*
+*Последнее обновление: 29 марта 2026 г. (jemalloc/tcmalloc поддержка)*
