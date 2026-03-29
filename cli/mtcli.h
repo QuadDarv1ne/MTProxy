@@ -121,6 +121,28 @@ typedef struct {
     int secrets_count;
 } mtcli_config_data_t;
 
+// Коды ошибок CLI
+typedef enum {
+    MTCLI_OK = 0,
+    MTCLI_ERR_CONNECTION = 1,
+    MTCLI_ERR_AUTH = 2,
+    MTCLI_ERR_TIMEOUT = 3,
+    MTCLI_ERR_INVALID_RESPONSE = 4,
+    MTCLI_ERR_SERVER = 5,
+    MTCLI_ERR_INVALID_ARGS = 6,
+    MTCLI_ERR_NOT_FOUND = 7,
+    MTCLI_ERR_PERMISSION = 8,
+    MTCLI_ERR_UNKNOWN = 99
+} mtcli_error_code_t;
+
+// Структура ошибки CLI
+typedef struct {
+    mtcli_error_code_t code;
+    char message[256];
+    char details[512];
+    int http_status;
+} mtcli_error_t;
+
 // Секрет
 typedef struct {
     char hash[128];
@@ -148,6 +170,14 @@ typedef struct {
 
 // Инициализация конфигурации по умолчанию
 void mtcli_config_init(mtcli_config_t *config);
+
+// Обработка ошибок
+void mtcli_error_init(mtcli_error_t *error);
+void mtcli_error_set(mtcli_error_t *error, mtcli_error_code_t code, const char *message, const char *details);
+void mtcli_error_set_http(mtcli_error_t *error, int http_status, const char *message);
+const char* mtcli_error_code_to_string(mtcli_error_code_t code);
+void mtcli_error_print(mtcli_error_t *error);
+int mtcli_error_to_exit_code(mtcli_error_code_t code);
 
 // Парсинг аргументов командной строки
 int mtcli_parse_args(int argc, char **argv, mtcli_config_t *config, 

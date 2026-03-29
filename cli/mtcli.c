@@ -28,6 +28,109 @@
 #include "common/utils.h"
 
 // ============================================================================
+// Обработка ошибок
+// ============================================================================
+
+void mtcli_error_init(mtcli_error_t *error) {
+    if (!error) return;
+    memset(error, 0, sizeof(mtcli_error_t));
+    error->code = MTCLI_OK;
+    error->http_status = 0;
+}
+
+void mtcli_error_set(mtcli_error_t *error, mtcli_error_code_t code, const char *message, const char *details) {
+    if (!error) return;
+    error->code = code;
+    if (message) {
+        snprintf(error->message, sizeof(error->message), "%s", message);
+    }
+    if (details) {
+        snprintf(error->details, sizeof(error->details), "%s", details);
+    }
+}
+
+void mtcli_error_set_http(mtcli_error_t *error, int http_status, const char *message) {
+    if (!error) return;
+    error->http_status = http_status;
+    
+    // Маппинг HTTP статусов на коды ошибок CLI
+    if (http_status == 0) {
+        error->code = MTCLI_ERR_CONNECTION;
+        if (!message) snprintf(error->message, sizeof(error->message), "Connection failed");
+    } else if (http_status == 401 || http_status == 403) {
+        error->code = MTCLI_ERR_AUTH;
+        if (!message) snprintf(error->message, sizeof(error->message), "Authentication failed");
+    } else if (http_status == 404) {
+        error->code = MTCLI_ERR_NOT_FOUND;
+        if (!message) snprintf(error->message, sizeof(error->message), "Resource not found");
+    } else if (http_status == 408) {
+        error->code = MTCLI_ERR_TIMEOUT;
+        if (!message) snprintf(error->message, sizeof(error->message), "Request timeout");
+    } else if (http_status >= 500) {
+        error->code = MTCLI_ERR_SERVER;
+        if (!message) snprintf(error->message, sizeof(error->message), "Server error");
+    } else {
+        error->code = MTCLI_ERR_UNKNOWN;
+        if (!message) snprintf(error->message, sizeof(error->message), "Unknown error");
+    }
+    
+    if (message) {
+        snprintf(error->message, sizeof(error->message), "%s (HTTP %d)", message, http_status);
+    }
+}
+
+const char* mtcli_error_code_to_string(mtcli_error_code_t code) {
+    switch (code) {
+        case MTCLI_OK: return "OK";
+        case MTCLI_ERR_CONNECTION: return "Connection Error";
+        case MTCLI_ERR_AUTH: return "Authentication Error";
+        case MTCLI_ERR_TIMEOUT: return "Timeout";
+        case MTCLI_ERR_INVALID_RESPONSE: return "Invalid Response";
+        case MTCLI_ERR_SERVER: return "Server Error";
+        case MTCLI_ERR_INVALID_ARGS: return "Invalid Arguments";
+        case MTCLI_ERR_NOT_FOUND: return "Not Found";
+        case MTCLI_ERR_PERMISSION: return "Permission Denied";
+        case MTCLI_ERR_UNKNOWN: return "Unknown Error";
+        default: return "Unknown";
+    }
+}
+
+void mtcli_error_print(mtcli_error_t *error) {
+    if (!error || error->code == MTCLI_OK) return;
+    
+    fprintf(stderr, "\n❌ Error: %s\n", mtcli_error_code_to_string(error->code));
+    
+    if (error->message[0] != '\0') {
+        fprintf(stderr, "   Message: %s\n", error->message);
+    }
+    
+    if (error->details[0] != '\0') {
+        fprintf(stderr, "   Details: %s\n", error->details);
+    }
+    
+    if (error->http_status > 0) {
+        fprintf(stderr, "   HTTP Status: %d\n", error->http_status);
+    }
+    
+    fprintf(stderr, "\n");
+}
+
+int mtcli_error_to_exit_code(mtcli_error_code_t code) {
+    switch (code) {
+        case MTCLI_OK: return 0;
+        case MTCLI_ERR_INVALID_ARGS: return 1;
+        case MTCLI_ERR_NOT_FOUND: return 2;
+        case MTCLI_ERR_PERMISSION: return 3;
+        case MTCLI_ERR_AUTH: return 4;
+        case MTCLI_ERR_TIMEOUT: return 5;
+        case MTCLI_ERR_CONNECTION: return 6;
+        case MTCLI_ERR_SERVER: return 7;
+        case MTCLI_ERR_INVALID_RESPONSE: return 8;
+        default: return 99;
+    }
+}
+
+// ============================================================================
 // Инициализация конфигурации
 // ============================================================================
 
