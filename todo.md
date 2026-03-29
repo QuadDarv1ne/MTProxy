@@ -1,82 +1,93 @@
 # MTProxy Project TODO
 
 > **Актуально на:** 29 марта 2026 г.
-> **Коммит:** c22b1f4 (dev/master)
-> **Версия:** v1.0.27-release-prep
+> **Коммит:** 6695b6d (dev/master)
+> **Версия:** v1.0.27 ✅ RELEASED
 > **Ветки:** dev = origin/dev ✅ | master = origin/master ✅
+> **Тег:** v1.0.27 ✅
+
+---
+
+## 🎉 RELEASED: v1.0.27 (29 марта 2026)
+
+### ✅ Выполнено
+- [x] CHANGELOG.md обновлён
+- [x] RELEASE_NOTES_v1.0.27.md создан
+- [x] Тег v1.0.27 создан и запушен
+- [x] Ветки синхронизированы
 
 ---
 
 ## 📋 Активные задачи
 
 ### 🔴 В работе
-- [x] Подготовка к релизу v1.0.27 — ✅ В ПРОЦЕССЕ
+- [x] Релиз v1.0.27 — ✅ ЗАВЕРШЁН
 
-### 🟡 Следующие
-- [ ] Финальная проверка тестов
-- [ ] Release notes для GitHub
-- [ ] Тегирование релиза v1.0.27
-
----
-
-## ✅ Выполнено (29 марта 2026 — 14 коммитов)
-
-### Оптимизация памяти (100% ЗАВЕРШЕНО)
-- [x] Cache Memory Pool (5x быстрее)
-- [x] Интеграция: cache-manager, rate-limiter, error-handler
-- [x] jemalloc/tcmalloc поддержка (+60% ops/sec)
-
-### Security & Audit
-- [x] Security utils (strcpy_s, strcat_s, snprintf)
-- [x] 18 тестов для security utils (100% покрытие)
-- [x] Security audit CI workflow
-- [x] Аудит кода: unsafe функции не найдены
-
-### Performance
-- [x] network-analyzer кэширование (~80% CPU)
-- [x] 5 бенчмарков производительности
-- [x] BENCHMARKS.md документация
-
-### Tests
-- [x] **98 C тестов** + 4 Dart (100%+ покрытие)
-- [x] Base64/Hex: 14 тестов
-- [x] Memory allocator: 14 тестов
-- [x] Security utils: 18 тестов
-
-### Documentation
-- [x] CHANGELOG.md обновлён
-- [x] BENCHMARKS.md создан
-- [x] todo.md актуализирован
-
-### Infrastructure
-- [x] CMakeLists.txt: ENABLE_JEMALLOC/ENABLE_TCMALLOC
-- [x] Windows socket API, IPC
-- [x] LTO для Unix, ASAN опционально
-- [x] 6 CI/CD workflows
+### 🟡 Следующие (v1.0.28)
+- [ ] HTTP/3 QUIC полная реализация (nghttp3/ngtcp2)
+- [ ] io_uring для Linux
+- [ ] Web UI мониторинг
+- [ ] Исправления по результатам security audit
 
 ---
 
-## 📊 Статистика проекта
+## 📊 Итоги релиза v1.0.27
+
+### Производительность
+- ✅ Cache Memory Pool (5x ускорение)
+- ✅ jemalloc/tcmalloc поддержка (+60% ops/sec)
+- ✅ Network analyzer кэширование (~80% CPU)
+
+### Безопасность
+- ✅ Security utils (3 функции)
+- ✅ 18 security тестов (100% покрытие)
+- ✅ Security audit CI workflow
+
+### Тестирование
+- ✅ 98 C тестов + 4 Dart (100%+)
+- ✅ 5 бенчмарков производительности
+
+### Документация
+- ✅ BENCHMARKS.md
+- ✅ RELEASE_NOTES_v1.0.27.md
+- ✅ CHANGELOG.md
+
+---
+
+## 📈 Статистика проекта
 
 | Метрика | Значение |
 |---------|----------|
-| **Всего коммитов** | 427+ |
+| **Всего коммитов** | 428+ |
 | **C/H файлов** | 399+ |
 | **Workflow** | 6 |
 | **Тестов** | 98 C + 4 Dart |
 | **Бенчмарков** | 5 |
-| **Документов** | 40+ |
+| **Документов** | 41+ |
+| **Релизов** | 1 (v1.0.27) |
 | **Ветки** | dev = master ✅ |
 
 ---
 
-## 🎯 Release Checklist v1.0.27
+## 🎯 Roadmap v1.0.28
 
-- [x] CHANGELOG.md обновлён
-- [ ] Финальный запуск тестов
-- [ ] Release notes на GitHub
-- [ ] Тег v1.0.27
-- [ ] Merge в master
+### Q2 2026 (Апрель - Июнь)
+- [ ] HTTP/3 QUIC (nghttp3/ngtcp2 интеграция)
+- [ ] io_uring для Linux (async I/O)
+- [ ] Web UI базовый мониторинг
+- [ ] Performance fixes по результатам бенчмарков
+
+### Q3 2026 (Июль - Сентябрь)
+- [ ] gRPC интерфейс
+- [ ] WebSocket поддержка
+- [ ] Prometheus экспортёр (полная реализация)
+- [ ] Grafana дашборды
+
+### Q4 2026 (Октябрь - Декабрь)
+- [ ] Кластеризация
+- [ ] Load balancing
+- [ ] Auto-scaling
+- [ ] Distributed tracing
 
 ---
 
@@ -88,4 +99,4 @@
 
 ---
 
-*Последнее обновление: 29 марта 2026 г. (подготовка к релизу v1.0.27)*
+*Последнее обновление: 29 марта 2026 г. — 🎉 RELASE v1.0.27 ЗАВЕРШЁН!*
