@@ -148,7 +148,7 @@ if(ENABLE_HTTP3)
         pkg_check_modules(NGTCP2 libngtcp2)
         pkg_check_modules(NGTCP2_CRYPTO libngtcp2_crypto_openssl)
     endif()
-    
+
     if(NGHTTP3_FOUND AND NGTCP2_FOUND AND NGTCP2_CRYPTO_FOUND)
         add_definitions(-DHAVE_NGHTTP3 -DHAVE_NGTCP2)
         include_directories(${NGHTTP3_INCLUDE_DIRS} ${NGTCP2_INCLUDE_DIRS})
@@ -156,6 +156,30 @@ if(ENABLE_HTTP3)
     else()
         message(STATUS "HTTP/3 (QUIC) disabled - nghttp3/ngtcp2 not found")
         message(STATUS "  To enable: apt install libnghttp3-dev libngtcp2-dev libngtcp2-crypto-openssl-dev")
+    endif()
+endif()
+
+# io_uring support - Linux only
+option(ENABLE_IOURING "Enable io_uring for high-performance I/O on Linux" OFF)
+if(ENABLE_IOURING)
+    if(UNIX AND NOT APPLE)
+        find_package(PkgConfig QUIET)
+        if(PkgConfig_FOUND)
+            pkg_check_modules(LIBURING liburing)
+        endif()
+
+        if(LIBURING_FOUND)
+            add_definitions(-DHAVE_IO_URING)
+            include_directories(${LIBURING_INCLUDE_DIRS})
+            link_directories(${LIBURING_LIBRARY_DIRS})
+            list(APPEND PLATFORM_LIBS ${LIBURING_LIBRARIES})
+            message(STATUS "io_uring enabled with liburing: ${LIBURING_LIBRARIES}")
+        else()
+            message(STATUS "io_uring disabled - liburing not found")
+            message(STATUS "  To enable: apt install liburing-dev (Linux kernel 5.1+ required)")
+        endif()
+    else()
+        message(STATUS "io_uring disabled - only supported on Linux")
     endif()
 endif()
 
@@ -797,6 +821,8 @@ if(EXCLUDE_HEAVY_MODULES)
 endif()
 
 set(ADVANCED_OPTIMIZATION_SOURCES
+    net/io_uring.c
+    net/io_uring.h
     system/io-uring-interface.c
     system/io-uring-interface.h
     system/dpdk-interface.c
