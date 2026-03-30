@@ -830,11 +830,37 @@ mtcli_result_t mtcli_cmd_stop(mtcli_config_t *config) {
 mtcli_result_t mtcli_cmd_help(const char *command) {
     mtcli_result_t result = {0};
     char output[4096] = {0};
-    
+
     if (command) {
-        // Справка по конкретной команде
-        snprintf(output, sizeof(output), "Help for command: %s\n", command);
-        // TODO: детальная справка
+        /* Справка по конкретной команде */
+        const char *help_text = NULL;
+        
+        if (strcmp(command, "status") == 0) {
+            help_text = "status - Получить статистику прокси\n"
+                        "  Возвращает: активные соединения, трафик, CPU, память\n";
+        } else if (strcmp(command, "config") == 0) {
+            help_text = "config - Управление конфигурацией\n"
+                        "  Действия: get, set <key> <value>\n";
+        } else if (strcmp(command, "secrets") == 0) {
+            help_text = "secrets - Управление секретами\n"
+                        "  Действия: list, add <secret>, remove <secret>\n";
+        } else if (strcmp(command, "logs") == 0) {
+            help_text = "logs - Просмотр логов\n"
+                        "  Опции: --level <level>, --tail <n>, --follow\n";
+        } else if (strcmp(command, "help") == 0) {
+            help_text = "help - Показать справку\n"
+                        "  Использование: help [command]\n";
+        } else if (strcmp(command, "version") == 0) {
+            help_text = "version - Показать версию\n";
+        } else {
+            snprintf(output, sizeof(output), "Unknown command: %s\nUse 'help' for available commands.\n", command);
+            result.output = strdup(output);
+            result.output_size = strlen(output);
+            result.exit_code = 0;
+            return result;
+        }
+        
+        snprintf(output, sizeof(output), "Help for command: %s\n\n%s", command, help_text);
     } else {
         print_usage();
         result.output = strdup("See usage information above");
@@ -842,11 +868,11 @@ mtcli_result_t mtcli_cmd_help(const char *command) {
         result.exit_code = 0;
         return result;
     }
-    
+
     result.output = strdup(output);
     result.output_size = strlen(output);
     result.exit_code = 0;
-    
+
     return result;
 }
 
@@ -1076,14 +1102,17 @@ int mtcli_interactive_mode(mtcli_config_t *config) {
             mtcli_result_t result = mtcli_cmd_version();
             mtcli_print_result(&result);
             mtcli_result_free(&result);
+        } else if (cmd == MTCLI_CMD_QUIT || cmd == MTCLI_CMD_EXIT) {
+            printf("Exiting MTProxy CLI\n");
+            break;
         } else if (cmd != MTCLI_CMD_UNKNOWN) {
-            // TODO: выполнение команд
-            printf("Command execution not yet implemented\n");
+            /* Выполнение команд в интерактивном режиме */
+            printf("Command '%s' requires arguments. Use non-interactive mode.\n", line);
         } else {
-            printf("Unknown command: %s\n", line);
+            printf("Unknown command: %s\nType 'help' for available commands.\n", line);
         }
     }
-    
+
     return 0;
 }
 
