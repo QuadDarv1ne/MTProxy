@@ -455,33 +455,41 @@ mtcli_result_t mtcli_cmd_status(mtcli_config_t *config) {
     result.output = strdup(response);
     result.output_size = strlen(response);
     result.exit_code = 0;
-    
+
     if (!config->json_output) {
-        // Парсим и красиво выводим
-        // TODO: полноценный парсинг JSON
-        result.output = strdup(response);
+        /* Форматируем JSON для удобного чтения */
+        mtcli_print_json(response);
+        free(result.output);
+        result.output = NULL;
     }
-    
+
     return result;
 }
 
 mtcli_result_t mtcli_cmd_stats(mtcli_config_t *config) {
     mtcli_result_t result = {0};
     char response[MTCLI_MAX_RESPONSE] = {0};
-    
+
     int ret = mtcli_rest_call(config, "GET", "/api/v1/statistics", NULL,
                               response, sizeof(response));
-    
+
     if (ret < 0) {
         result.exit_code = 1;
         snprintf(result.error, sizeof(result.error), "Request failed");
         return result;
     }
-    
+
     result.output = strdup(response);
     result.output_size = strlen(response);
     result.exit_code = 0;
-    
+
+    if (!config->json_output) {
+        /* Форматируем JSON для удобного чтения */
+        mtcli_print_json(response);
+        free(result.output);
+        result.output = NULL;
+    }
+
     return result;
 }
 
@@ -516,11 +524,18 @@ mtcli_result_t mtcli_cmd_config(mtcli_config_t *config, const char *action,
         snprintf(result.error, sizeof(result.error), "Invalid config action: %s", action);
         return result;
     }
-    
+
     result.output = strdup(response);
     result.output_size = strlen(response);
     result.exit_code = 0;
-    
+
+    if (!config->json_output) {
+        /* Форматируем JSON для удобного чтения */
+        mtcli_print_json(response);
+        free(result.output);
+        result.output = NULL;
+    }
+
     return result;
 }
 
@@ -572,15 +587,22 @@ mtcli_result_t mtcli_cmd_secrets(mtcli_config_t *config, const char *action,
                  action ? action : "null");
         return result;
     }
-    
+
     result.output = strdup(response);
     result.output_size = strlen(response);
     result.exit_code = 0;
-    
+
+    if (!config->json_output) {
+        /* Форматируем JSON для удобного чтения */
+        mtcli_print_json(response);
+        free(result.output);
+        result.output = NULL;
+    }
+
     return result;
 }
 
-mtcli_result_t mtcli_cmd_logs(mtcli_config_t *config, const char *level, 
+mtcli_result_t mtcli_cmd_logs(mtcli_config_t *config, const char *level,
                                int tail, bool follow) {
     mtcli_result_t result = {0};
     char response[MTCLI_MAX_RESPONSE] = {0};
@@ -908,8 +930,56 @@ char* mtcli_format_uptime(uint64_t ms, char *buffer, size_t buffer_size) {
 
 void mtcli_print_json(const char *json) {
     if (!json) return;
-    // TODO: красивое форматирование JSON
-    printf("%s\n", json);
+    
+    /* Простое форматирование JSON: добавляем отступы для { } [ ] */
+    int indent = 0;
+    const char *p = json;
+    
+    while (*p) {
+        /* Пропускаем пробелы в начале строки */
+        while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n') {
+            p++;
+        }
+        
+        if (*p == '\0') break;
+        
+        /* Добавляем отступ */
+        for (int i = 0; i < indent; i++) {
+            putchar(' ');
+        }
+        
+        /* Выводим символы до конца элемента */
+        while (*p && *p != ',' && *p != '}' && *p != ']') {
+            putchar(*p);
+            if (*p == '{' || *p == '[') {
+                indent += 2;
+                putchar('\n');
+                break;
+            }
+            p++;
+        }
+        
+        /* Закрывающие скобки */
+        if (*p == '}' || *p == ']') {
+            indent -= 2;
+            if (indent < 0) indent = 0;
+            putchar('\n');
+            for (int i = 0; i < indent; i++) {
+                putchar(' ');
+            }
+            putchar(*p);
+            p++;
+        }
+        
+        /* Запятая и новая строка */
+        if (*p == ',') {
+            putchar(',');
+            p++;
+        }
+        
+        putchar('\n');
+    }
+    putchar('\n');
 }
 
 void mtcli_print_table(const char **headers, int num_headers, 
