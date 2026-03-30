@@ -18,6 +18,7 @@
 - [x] **ML Systems** — Predictive Analytics (6 алгоритмов, 1600+ строк) ✅
 - [x] **Тесты ML** — +87 C тестов (45 + 42) ✅
 - [x] **CMakeLists.txt** — ML тесты добавлены ✅
+- [x] **Benchmark ML** — benchmark-ml-systems.c добавлен ✅
 
 ---
 
@@ -49,7 +50,7 @@
 - [ ] Проверить утечки памяти через ASan
 - [ ] Оптимизировать размер бинарника (сейчас 85MB)
 - [ ] Benchmark для Windows сборки
-- [ ] Benchmark для ML систем (Anomaly Detection, Predictive Analytics)
+- [x] Benchmark для ML систем — benchmark-ml-systems.c ✅
 
 ---
 
@@ -76,8 +77,10 @@
 | MD файлов | 6 (было 26) | -77% |
 | Строк кода | ~3400 (ML) | +3400 (Q2 2027) |
 | Тестов C | 27 | +2 (ML тесты) |
-| Коммитов | 540 | +87 (Q2 2027) |
+| Бенчмарков | 5 | +1 (ML benchmark) |
+| Коммитов | 541 | +87 (Q2 2027) |
 | ML алгоритмов | 11 (5 Anomaly + 6 Predictive) | +11 (Q2 2027) |
+| ML модулей | 3 (system/ml/) | +3 (Q2 2027) |
 
 ---
 
