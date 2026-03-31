@@ -21,6 +21,7 @@
 - [x] **Benchmark ML** — benchmark-ml-systems.c добавлен ✅
 - [x] **Документация** — docs/ML_SYSTEMS.md (500+ строк) ✅
 - [x] **ML Integration** — исправлены баги (zscore_threshold, cleanup, remove_monitor) ✅
+- [x] **Версия** — v1.0.32 стабильная ✅
 
 ---
 
@@ -89,7 +90,7 @@
 | Строк кода | ~3400 (ML) | +3400 (Q2 2027) |
 | Тестов C | 388 | +87 (ML тесты) |
 | Бенчмарков | 5 | +1 (ML benchmark) |
-| Коммитов | 556 (dev) / 583 (master) | +32 (Q2 2027) |
+| Коммитов | 557 (dev) / 585 (master) | +33 (Q2 2027) |
 | ML алгоритмов | 11 (5 Anomaly + 6 Predictive) | +11 (Q2 2027) |
 | ML модулей | 3 (system/ml/) | +3 (Q2 2027) |
 
@@ -120,6 +121,11 @@
 - [x] **ML remove_monitor** — очистка детекторов при удалении ✅
 - [x] **ML divide-by-zero** — защита в compute_zscore_anomaly ✅
 - [x] **ML empty samples** — защита в compute_isolation_forest_score ✅
+
+### Статус релиза
+- [x] **v1.0.32** — ML integration bugs fixed ✅
+- [x] **dev → master** — синхронизация выполнена ✅
+- [ ] **v1.0.33** — подготовка следующего релиза
 
 ---
 
