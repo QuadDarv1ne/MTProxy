@@ -37,7 +37,7 @@
 - [x] **test-production-integration** — исправлен health_check вызов ✅
 - [x] **test-anomaly-detection** — 45 тестов ✅
 - [x] **test-predictive-analytics** — 42 теста ✅
-- [ ] **test-ml-integration** — интеграционные тесты ML
+- [x] **test-ml-integration** — исправлены баги (zscore_threshold, cleanup, remove_monitor) ✅
 
 ---
 
@@ -48,7 +48,7 @@
 - [x] `load-balancer.c` — исправлен kprintf ✅
 - [x] `rest-api.c` — исправлена Windows совместимость ✅
 - [x] `benchmark_cache_performance.c` — обновлён API cache_manager ✅
-- [ ] Проверить Windows совместимость всех ML модулей
+- [x] **ML modules** — исправлены баги Windows совместимости ✅
 
 ### Производительность
 - [ ] Проверить утечки памяти через ASan
@@ -73,7 +73,7 @@
 - [x] **ML интеграция** — Anomaly Detection + Predictive Analytics ✅
 - [x] **Улучшен CLI** — JSON форматирование + справка ✅
 - [x] **Удалены TODO** — реализована справка и quit/exit команды ✅
-- [ ] **ML интеграция в production** — тестирование на реальных данных
+- [x] **ML интеграция в production** — тестирование на реальных данных ✅
 
 ---
 
