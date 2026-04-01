@@ -66,6 +66,14 @@
 - [x] **ML edge case тесты** — добавлены для anomaly detection и predictive analytics ✅
 - [x] **test-performance-monitor** — добавлены тесты мониторинга производительности ✅
 
+### ✅ Полная перепроверка функционала (1 апреля 2026)
+- [x] **ML модули** — anomaly-detection.h, predictive-analytics.h, ml-integration.h ✅
+- [x] **Fragmentation/Padding** — fragmentation.h, padding.h ✅
+- [x] **Performance Monitor** — performance-monitor.h, performance-monitor.c ✅
+- [x] **CLI интеграция** — mtcli.h, mtcli.c (ML команды) ✅
+- [x] **CMakeLists.txt** — все target'ы зарегистрированы ✅
+- [x] **Заголовочные файлы** — 48 в net/, 3 в system/ml/ ✅
+
 ### Известные проблемы (KNOWN ISSUES)
 - [x] **padding.c** — test_padding_fixed_add_remove: data corruption при добавлении length prefix ✅
   - *Исправление:* `padding_add_fixed()` теперь сдвигает данные через `memmove()` перед добавлением length prefix
