@@ -689,6 +689,159 @@ static void test_anomaly_json_export(void) {
 }
 
 /* ============================================
+ * Edge Cases Tests
+ * ============================================ */
+
+/**
+ * @brief Тест: обработка граничных случаев
+ */
+static void test_anomaly_edge_cases(void) {
+    printf("\n--- Edge Cases Tests ---\n");
+    
+    struct anomaly_detector detector;
+    double single_sample[4] = {1.0, 2.0, 3.0, 4.0};
+    double empty_data[1] = {0.0};
+    double huge_value[4] = {1e10, -1e10, 1e10, -1e10};
+    double nan_value[4] = {NAN, 1.0, 2.0, 3.0};
+    double inf_value[4] = {INFINITY, 1.0, 2.0, 3.0};
+    float anomaly_score;
+    int ret;
+    
+    /* Инициализация */
+    ret = anomaly_detector_init(&detector, ANOMALY_ALGO_ZSCORE, 4, 100, 0.6f);
+    TEST_ASSERT(ret == 0, "Edge cases: detector init");
+    
+    /* Тест 1: Один образец для обучения */
+    ret = anomaly_detector_train(&detector, single_sample, 1);
+    TEST_ASSERT(ret == 0, "Edge cases: train with single sample");
+    
+    /* Предсказание на одном образце должно работать */
+    ret = anomaly_detector_predict(&detector, single_sample, &anomaly_score);
+    TEST_ASSERT(ret == 0, "Edge cases: predict after single sample training");
+    
+    anomaly_detector_cleanup(&detector);
+    
+    /* Тест 2: Обучение с NULL данными */
+    ret = anomaly_detector_init(&detector, ANOMALY_ALGO_ZSCORE, 4, 100, 0.6f);
+    TEST_ASSERT(ret == 0, "Edge cases: detector init for NULL test");
+    
+    ret = anomaly_detector_train(&detector, NULL, 0);
+    TEST_ASSERT(ret == -1, "Edge cases: train with NULL data returns -1");
+    
+    anomaly_detector_cleanup(&detector);
+    
+    /* Тест 3: Огромные значения (stress test) */
+    ret = anomaly_detector_init(&detector, ANOMALY_ALGO_ZSCORE, 4, 100, 0.6f);
+    TEST_ASSERT(ret == 0, "Edge cases: detector init for huge values");
+    
+    ret = anomaly_detector_train(&detector, huge_value, 10);
+    TEST_ASSERT(ret == 0, "Edge cases: train with huge values");
+    
+    ret = anomaly_detector_predict(&detector, huge_value, &anomaly_score);
+    TEST_ASSERT(ret == 0, "Edge cases: predict with huge values");
+    
+    anomaly_detector_cleanup(&detector);
+    
+    /* Тест 4: NaN значения */
+    ret = anomaly_detector_init(&detector, ANOMALY_ALGO_ZSCORE, 4, 100, 0.6f);
+    TEST_ASSERT(ret == 0, "Edge cases: detector init for NaN test");
+    
+    ret = anomaly_detector_train(&detector, nan_value, 10);
+    /* Обучение с NaN может вернуть ошибку или обработать */
+    TEST_ASSERT(ret == 0 || ret == -1, "Edge cases: train with NaN values handled");
+    
+    anomaly_detector_cleanup(&detector);
+    
+    /* Тест 5: Бесконечные значения */
+    ret = anomaly_detector_init(&detector, ANOMALY_ALGO_ZSCORE, 4, 100, 0.6f);
+    TEST_ASSERT(ret == 0, "Edge cases: detector init for Inf test");
+    
+    ret = anomaly_detector_train(&detector, inf_value, 10);
+    /* Обучение с Inf может вернуть ошибку или обработать */
+    TEST_ASSERT(ret == 0 || ret == -1, "Edge cases: train with Inf values handled");
+    
+    anomaly_detector_cleanup(&detector);
+    
+    /* Тест 6: Предсказание без обучения */
+    ret = anomaly_detector_init(&detector, ANOMALY_ALGO_ZSCORE, 4, 100, 0.6f);
+    TEST_ASSERT(ret == 0, "Edge cases: detector init for untrained test");
+    
+    ret = anomaly_detector_predict(&detector, single_sample, &anomaly_score);
+    TEST_ASSERT(ret == -1, "Edge cases: predict without training returns -1");
+    
+    anomaly_detector_cleanup(&detector);
+    
+    /* Тест 7: Нулевой контекст */
+    ret = anomaly_detector_train(NULL, single_sample, 10);
+    TEST_ASSERT(ret == -1, "Edge cases: train with NULL context returns -1");
+    
+    ret = anomaly_detector_predict(NULL, single_sample, &anomaly_score);
+    TEST_ASSERT(ret == -1, "Edge cases: predict with NULL context returns -1");
+    
+    ret = anomaly_detector_add_sample(NULL, single_sample);
+    TEST_ASSERT(ret == -1, "Edge cases: add_sample with NULL context returns -1");
+    
+    anomaly_detector_cleanup(NULL);  /* Должно быть no-op */
+    TEST_ASSERT(1, "Edge cases: cleanup with NULL context is safe");
+}
+
+/**
+ * @brief Тест: стабильность при множественных операциях
+ */
+static void test_anomaly_stress(void) {
+    printf("\n--- Stress Tests ---\n");
+    
+    struct anomaly_detector detector;
+    const size_t n_features = 8;
+    const size_t n_samples = 500;
+    double *data = malloc(n_features * n_samples * sizeof(double));
+    float score;
+    int ret;
+    
+    TEST_ASSERT(data != NULL, "Stress: allocate data");
+    if (!data) return;
+    
+    /* Генерация случайных данных */
+    srand(12345);
+    for (size_t i = 0; i < n_samples; i++) {
+        for (size_t f = 0; f < n_features; f++) {
+            data[i * n_features + f] = (double)rand() / RAND_MAX * 100.0;
+        }
+    }
+    
+    /* Инициализация */
+    ret = anomaly_detector_init(&detector, ANOMALY_ALGO_ISOLATION_FOREST, 
+                                 n_features, n_samples, 0.6f);
+    TEST_ASSERT(ret == 0, "Stress: detector init");
+    
+    /* Множественное обучение */
+    for (int i = 0; i < 5; i++) {
+        ret = anomaly_detector_train(&detector, data, n_samples);
+        TEST_ASSERT(ret == 0, "Stress: repeated training (iteration %d)", i);
+    }
+    
+    /* Множественные предсказания */
+    for (int i = 0; i < 100; i++) {
+        ret = anomaly_detector_predict(&detector, data, &score);
+        TEST_ASSERT(ret == 0, "Stress: repeated prediction (iteration %d)", i);
+    }
+    
+    /* Добавление множества образцов */
+    for (size_t i = 0; i < 50; i++) {
+        ret = anomaly_detector_add_sample(&detector, data + (i * n_features));
+        TEST_ASSERT(ret == 0, "Stress: add sample %d", (int)i);
+    }
+    
+    /* Статистика */
+    struct anomaly_stats stats;
+    ret = anomaly_detector_get_stats(&detector, &stats);
+    TEST_ASSERT(ret == 0, "Stress: get stats after stress operations");
+    
+    free(data);
+    anomaly_detector_cleanup(&detector);
+}
+
+/* ============================================
  * Главная функция тестирования
  * ============================================ */
 
@@ -711,7 +864,9 @@ int main(void) {
     test_anomaly_helper_functions();
     test_anomaly_performance();
     test_anomaly_json_export();
-    
+    test_anomaly_edge_cases();
+    test_anomaly_stress();
+
     /* Итоговый отчет */
     printf("\n============================================\n");
     printf("  Test Summary\n");
