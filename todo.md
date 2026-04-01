@@ -35,6 +35,8 @@
 - [x] **padding.c** — исправлен data corruption (memmove для length prefix) ✅
 - [x] **fragmentation.c** — исправлены тесты с TLS header ✅
 - [x] **CLI** — добавлены ML команды (ml-stats, ml-anomaly, ml-predict) ✅
+- [x] **Benchmark** — fragmentation/padding benchmark добавлен ✅
+- [x] **ML Tests** — edge case и stress тесты добавлены ✅
 
 **⚠️ Проблема:** origin/dev ahead на 552 коммита — нужен merge или rebase
 
@@ -62,6 +64,7 @@
 - [x] **test-ml-integration** — исправлены баги ✅
 - [x] **test-padding** — включён после исправления (test_padding_fixed_add_remove) ✅
 - [x] **test-fragmentation** — исправлены тесты с TLS header ✅
+- [x] **ML edge case тесты** — добавлены для anomaly detection и predictive analytics ✅
 
 ### Известные проблемы (KNOWN ISSUES)
 - [x] **padding.c** — test_padding_fixed_add_remove: data corruption при добавлении length prefix ✅
@@ -187,6 +190,8 @@
   - [x] Исправить test_fragmentation_fixed — проверка с учётом TLS header ✅
   - [x] Исправить fragmentation_calculate_count() — учёт overhead TLS header ✅
   - [x] Включить тесты test_fragmentation_* ✅
+- [x] Добавить **benchmark fragmentation/padding** ✅
+- [x] Добавить **ML edge case тесты** ✅
 
 ### Тесты
 - [ ] Прогнать все тесты на Linux
@@ -201,8 +206,8 @@
 
 ---
 
-*Последнее обновление: 1 апреля 2026 — v1.0.32-dev (CLI улучшен, ML команды добавлены)
+*Последнее обновление: 1 апреля 2026 — v1.0.32-dev (benchmark, ML edge case тесты)
 *Следующая проверка: 8 апреля 2026
-*Статус: 567 коммитов (15 локальных + 552 из origin/dev)
+*Статус: 570 коммитов (18 локальных + 552 из origin/dev)
 *KNOWN ISSUES: ✅ Все исправлены
 *Резервная ветка: backup-dev-before-sync
