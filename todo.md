@@ -1,15 +1,16 @@
 # MTProxy TODO
 
 **Версия:** v1.0.32-dev
-**Ветка:** dev (локальная)
+**Ветка:** dev (синхронизирована с origin/dev ✅)
 **Последнее обновление:** 1 апреля 2026
 **Следующая версия:** v1.0.33
-**Коммитов:** 10 (diverged: 10 локальных, 552 origin/dev)
+**Коммитов:** 12 локальных + 552 из origin/dev = 564 всего
 **Файлов в git:** 592
 **Тестов C:** 30 (включая 87 ML тестов)
 
-**СТАТУС:** ⚠️ origin/dev ahead на 552 коммита — требуется merge/rebase
+**СТАТУС:** ✅ origin/dev merged (552 коммита интегрированы)
 **Remote:** origin (QuadDarv1ne), upstream (TelegramMessenger)
+**Резервная ветка:** backup-dev-before-sync
 
 ---
 
@@ -44,7 +45,7 @@
 - [ ] **Windows сборка** — тестирование производительности
 - [x] **CMakeLists.txt** — проверить наличие всех ML тестов ✅
 - [x] **CHANGELOG.md** — v1.0.32 документирован ✅
-- [ ] **Git синхронизация** — merge origin/dev (552 коммита ahead) ❌
+- [x] **Git синхронизация** — merge origin/dev (552 коммита) ✅
 
 ### Тесты — КРИТИЧНО
 - [ ] **ASan** — проверка утечек памяти (все модули)
@@ -79,7 +80,6 @@
 - [ ] **Оптимизация бинарника** — уменьшить размер (сейчас ~85MB)
 - [ ] **Windows совместимость** — полный аудит модулей
 - [ ] **io_uring** — интеграция для Linux
-- [ ] **Git синхронизация** — merge origin/dev (552 коммита ahead) ❌
 - [x] `cluster-manager.c` — исправлен доступ к структуре ✅
 - [x] `load-balancer.c` — исправлен kprintf ✅
 - [x] `rest-api.c` — исправлена Windows совместимость ✅
@@ -184,7 +184,6 @@
   - [ ] Исправить test_fragmentation_fixed — проверка с учётом TLS header
   - [ ] Исправить fragmentation_calculate_count() — учёт overhead TLS header
   - [ ] Включить тесты test_fragmentation_*
-- [ ] **Git sync** — merge origin/dev (552 коммита ahead)
 
 ### Тесты
 - [ ] Прогнать все тесты на Linux
@@ -199,8 +198,8 @@
 
 ---
 
-*Последнее обновление: 1 апреля 2026 — v1.0.32-dev (10 коммитов локально)
+*Последнее обновление: 1 апреля 2026 — v1.0.32-dev (синхронизировано с origin/dev ✅)
 *Следующая проверка: 8 апреля 2026
-*Статус: origin/dev ahead на 552 коммита — требуется merge
+*Статус: 564 коммита (12 локальных + 552 из origin/dev)
 *KNOWN ISSUE: fragmentation.c (TLS header в тестах) ❌
-*CRITICAL: git pull origin dev (merge 552 коммитов) ❌
+*Резервная ветка: backup-dev-before-sync
