@@ -1216,6 +1216,26 @@ set_target_properties(benchmark-ml-systems PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# Fragmentation & Padding benchmark executable
+add_executable(benchmark-fragmentation-padding
+    testing/benchmark-fragmentation-padding.c
+    net/fragmentation.c
+    net/padding.c
+)
+
+target_link_libraries(benchmark-fragmentation-padding
+    ${PLATFORM_LIBS}
+)
+
+target_include_directories(benchmark-fragmentation-padding PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/net
+)
+
+set_target_properties(benchmark-fragmentation-padding PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # Highload benchmark executable (100K+ operations) - disabled for Windows (missing dependencies)
 if(NOT WIN32)
 add_executable(benchmark-highload
@@ -1866,6 +1886,7 @@ add_test(NAME test-ml-integration COMMAND test-ml-integration)
 add_test(NAME benchmark-memory-allocator COMMAND benchmark-memory-allocator)
 add_test(NAME benchmark-io-uring COMMAND benchmark-io-uring)
 add_test(NAME benchmark-ml-systems COMMAND benchmark-ml-systems)
+add_test(NAME benchmark-fragmentation-padding COMMAND benchmark-fragmentation-padding)
 add_test(NAME benchmark-highload COMMAND benchmark-highload)
 add_test(NAME benchmark-cache-performance COMMAND benchmark-cache-performance)
 add_test(NAME integration-tests-simple COMMAND integration-tests-simple)
@@ -1881,11 +1902,11 @@ endif()
 
 # Installation rules - Windows excludes some targets
 if(WIN32)
-    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils test-admin-cli cache-performance-test-simple rate-limiter-highload-test-simple integration-tests-simple benchmark-ml-systems test-alert-manager test-auto-scaler test-distributed-tracing test-production-integration test-anomaly-detection test-predictive-analytics test-ml-integration
+    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils test-admin-cli cache-performance-test-simple rate-limiter-highload-test-simple integration-tests-simple benchmark-ml-systems benchmark-fragmentation-padding test-alert-manager test-auto-scaler test-distributed-tracing test-production-integration test-anomaly-detection test-predictive-analytics test-ml-integration
         RUNTIME DESTINATION bin
     )
 else()
-    install(TARGETS mtproto-proxy mtproxy-admin mtproxy-cli test-new-modules test-traffic-stats test-utils test-ffi-api test-performance test-admin-cli-integration cache-performance-test rate-limiter-highload-test integration-tests benchmark-highload benchmark-ml-systems benchmark-cache-performance test-rest-api test-health-check test-cluster-manager test-load-balancer test-auto-scaler test-distributed-tracing test-production-integration test-anomaly-detection test-predictive-analytics test-ml-integration
+    install(TARGETS mtproto-proxy mtproxy-admin mtproxy-cli test-new-modules test-traffic-stats test-utils test-ffi-api test-performance test-admin-cli-integration cache-performance-test rate-limiter-highload-test integration-tests benchmark-highload benchmark-ml-systems benchmark-fragmentation-padding benchmark-cache-performance test-rest-api test-health-check test-cluster-manager test-load-balancer test-auto-scaler test-distributed-tracing test-production-integration test-anomaly-detection test-predictive-analytics test-ml-integration
         RUNTIME DESTINATION bin
     )
 endif()
