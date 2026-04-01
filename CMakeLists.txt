@@ -1301,6 +1301,20 @@ set_target_properties(test-error-handler PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# Error codes test executable
+add_executable(test-error-codes
+    testing/test_error_codes.c
+    common/error-codes.c
+)
+
+target_link_libraries(test-error-codes
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-error-codes PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # Cache memory pool test executable
 add_executable(test-cache-pool
     testing/test_cache_memory_pool.c
@@ -1884,6 +1898,7 @@ enable_testing()
 # Register tests with CTest
 add_test(NAME test-utils-security COMMAND test-utils-security)
 add_test(NAME test-error-handler COMMAND test-error-handler)
+add_test(NAME test-error-codes COMMAND test-error-codes)
 add_test(NAME test-cache-pool COMMAND test-cache-pool)
 if(NOT WIN32)
 add_test(NAME test-cache-no-copy COMMAND test-cache-no-copy)
@@ -1926,11 +1941,11 @@ endif()
 
 # Installation rules - Windows excludes some targets
 if(WIN32)
-    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils test-admin-cli cache-performance-test-simple rate-limiter-highload-test-simple integration-tests-simple benchmark-ml-systems benchmark-fragmentation-padding test-alert-manager test-auto-scaler test-distributed-tracing test-production-integration test-anomaly-detection test-predictive-analytics test-ml-integration test-performance-monitor
+    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils test-admin-cli cache-performance-test-simple rate-limiter-highload-test-simple integration-tests-simple benchmark-ml-systems benchmark-fragmentation-padding test-alert-manager test-auto-scaler test-distributed-tracing test-production-integration test-anomaly-detection test-predictive-analytics test-ml-integration test-performance-monitor test-error-codes
         RUNTIME DESTINATION bin
     )
 else()
-    install(TARGETS mtproto-proxy mtproxy-admin mtproxy-cli test-new-modules test-traffic-stats test-utils test-ffi-api test-performance test-admin-cli-integration cache-performance-test rate-limiter-highload-test integration-tests benchmark-highload benchmark-ml-systems benchmark-fragmentation-padding benchmark-cache-performance test-rest-api test-health-check test-cluster-manager test-load-balancer test-auto-scaler test-distributed-tracing test-production-integration test-anomaly-detection test-predictive-analytics test-ml-integration test-performance-monitor
+    install(TARGETS mtproto-proxy mtproxy-admin mtproxy-cli test-new-modules test-traffic-stats test-utils test-ffi-api test-performance test-admin-cli-integration cache-performance-test rate-limiter-highload-test integration-tests benchmark-highload benchmark-ml-systems benchmark-fragmentation-padding benchmark-cache-performance test-rest-api test-health-check test-cluster-manager test-load-balancer test-auto-scaler test-distributed-tracing test-production-integration test-anomaly-detection test-predictive-analytics test-ml-integration test-performance-monitor test-error-codes
         RUNTIME DESTINATION bin
     )
 endif()
