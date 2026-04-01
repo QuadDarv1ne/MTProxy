@@ -10,10 +10,6 @@ deps/
 # Build logs
 build.log
 
-# Test executables
-testing/*.exe
-testing/Makefile
-
 # IDE
 .vscode/
 .idea/

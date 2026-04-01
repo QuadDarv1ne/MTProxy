@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Anomaly Detection**: ML-детекция аномалий (5 алгоритмов, 1800+ строк)
 - **Predictive Analytics**: прогнозирование нагрузки (6 алгоритмов, 1600+ строк)
 - **Тесты**: +87 C тестов (45 Anomaly Detection + 42 Predictive Analytics)
-- **Документация**: +2 файла (docs/ML_SYSTEMS.md, docs/OBFUSCATION.md)
+- **Документация**: +1 файл (docs/ML_SYSTEMS.md)
 - **CMakeLists.txt**: добавлены тесты ML-систем
 - **Всего коммитов**: 596 (+87)
 - **Всего тестов**: 388 (363 C + 8 Python + 4 Dart + 13 Integration)
