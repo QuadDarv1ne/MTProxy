@@ -63,6 +63,9 @@ typedef enum {
     MTCLI_CMD_QUIT,
     MTCLI_CMD_HELP,
     MTCLI_CMD_VERSION,
+    MTCLI_CMD_ML_STATS,       // ML статистика
+    MTCLI_CMD_ML_ANOMALY,     // ML детекция аномалий
+    MTCLI_CMD_ML_PREDICT,     // ML прогнозирование
     MTCLI_CMD_UNKNOWN
 } mtcli_command_t;
 
@@ -160,6 +163,33 @@ typedef struct {
     char source[128];
 } mtcli_log_entry_t;
 
+// ML статистика детектора аномалий
+typedef struct {
+    uint64_t total_checks;
+    uint64_t anomalies_detected;
+    double anomaly_rate;
+    float current_threshold;
+    uint64_t samples_count;
+    char active_algos[128];      // Список активных алгоритмов
+    float isolation_forest_score;
+    float zscore_value;
+    float dbscan_score;
+    int64_t last_check_timestamp;
+} mtcli_ml_anomaly_stats_t;
+
+// ML статистика прогнозирования
+typedef struct {
+    uint64_t total_predictions;
+    double avg_accuracy;
+    char model_type[64];
+    uint64_t training_samples;
+    float next_value_prediction;
+    float confidence_interval_low;
+    float confidence_interval_high;
+    float trend_slope;
+    int64_t last_prediction_timestamp;
+} mtcli_ml_predict_stats_t;
+
 // Результат выполнения команды
 typedef struct {
     int exit_code;
@@ -201,6 +231,10 @@ mtcli_result_t mtcli_cmd_restart(mtcli_config_t *config);
 mtcli_result_t mtcli_cmd_stop(mtcli_config_t *config);
 mtcli_result_t mtcli_cmd_help(const char *command);
 mtcli_result_t mtcli_cmd_version(void);
+// ML команды
+mtcli_result_t mtcli_cmd_ml_stats(mtcli_config_t *config);
+mtcli_result_t mtcli_cmd_ml_anomaly(mtcli_config_t *config, const char *action);
+mtcli_result_t mtcli_cmd_ml_predict(mtcli_config_t *config, const char *metric);
 
 // REST API вызовы
 int mtcli_rest_call(mtcli_config_t *config, const char *method, const char *endpoint,
