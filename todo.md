@@ -33,6 +33,8 @@
 - [x] Исправления Windows compatibility (7 файлов) ✅
 - [x] Исправления cluster-manager (конфликт имён) ✅
 - [x] **padding.c** — исправлен data corruption (memmove для length prefix) ✅
+- [x] **fragmentation.c** — исправлены тесты с TLS header ✅
+- [x] **CLI** — добавлены ML команды (ml-stats, ml-anomaly, ml-predict) ✅
 
 **⚠️ Проблема:** origin/dev ahead на 552 коммита — нужен merge или rebase
 
@@ -199,8 +201,8 @@
 
 ---
 
-*Последнее обновление: 1 апреля 2026 — v1.0.32-dev (все KNOWN ISSUES исправлены ✅)
+*Последнее обновление: 1 апреля 2026 — v1.0.32-dev (CLI улучшен, ML команды добавлены)
 *Следующая проверка: 8 апреля 2026
-*Статус: 564 коммита (12 локальных + 552 из origin/dev)
-*KNOWN ISSUES: ✅ padding.c, fragmentation.c — исправлены
+*Статус: 567 коммитов (15 локальных + 552 из origin/dev)
+*KNOWN ISSUES: ✅ Все исправлены
 *Резервная ветка: backup-dev-before-sync
