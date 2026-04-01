@@ -4,8 +4,11 @@
 **Ветка:** dev (синхронизирована с main)
 **Последнее обновление:** 1 апреля 2026
 **Следующая версия:** v1.0.33
-**Коммитов:** 7
+**Коммитов:** 9 (diverged: 9 локальных, 552 remote)
 **Файлов в git:** 592
+**Тестов C:** 30 (включая 87 ML тестов)
+
+**СТАТУС:** Требуется синхронизация с upstream (diverged с origin/dev)
 
 ---
 
@@ -26,6 +29,9 @@
 - [x] Консолидация руководств (CLI, Debugging, Platform, Monitoring, OBFUSCATION) ✅
 - [x] Исправления Windows compatibility (7 файлов) ✅
 - [x] Исправления cluster-manager (конфликт имён) ✅
+- [x] **padding.c** — исправлен data corruption (memmove для length prefix) ✅
+
+**⚠️ Проблема:** Ветка diverged от origin/dev (9 локальных vs 552 remote коммитов)
 
 ---
 
@@ -37,6 +43,7 @@
 - [ ] **Windows сборка** — тестирование производительности
 - [x] **CMakeLists.txt** — проверить наличие всех ML тестов ✅
 - [x] **CHANGELOG.md** — v1.0.32 документирован ✅
+- [ ] **Git синхронизация** — решить проблему diverged веток (9 vs 552) ❌
 
 ### Тесты — КРИТИЧНО
 - [ ] **ASan** — проверка утечек памяти (все модули)
@@ -48,6 +55,8 @@
 - [x] **test-anomaly-detection** — 45 тестов ✅
 - [x] **test-predictive-analytics** — 42 теста ✅
 - [x] **test-ml-integration** — исправлены баги ✅
+- [ ] **test-padding** — включён после исправления (test_padding_fixed_add_remove) ✅
+- [ ] **test-fragmentation** — отключён (KNOWN ISSUE с TLS header) ❌
 
 ### Известные проблемы (KNOWN ISSUES)
 - [x] **padding.c** — test_padding_fixed_add_remove: data corruption при добавлении length prefix ✅
@@ -69,6 +78,7 @@
 - [ ] **Оптимизация бинарника** — уменьшить размер (сейчас ~85MB)
 - [ ] **Windows совместимость** — полный аудит модулей
 - [ ] **io_uring** — интеграция для Linux
+- [ ] **Git синхронизация** — diverged ветки (9 локальных vs 552 remote) ❌
 - [x] `cluster-manager.c` — исправлен доступ к структуре ✅
 - [x] `load-balancer.c` — исправлен kprintf ✅
 - [x] `rest-api.c` — исправлена Windows совместимость ✅
@@ -173,6 +183,7 @@
   - [ ] Исправить test_fragmentation_fixed — проверка с учётом TLS header
   - [ ] Исправить fragmentation_calculate_count() — учёт overhead TLS header
   - [ ] Включить тесты test_fragmentation_*
+- [ ] **Git sync** — решить проблему diverged веток
 
 ### Тесты
 - [ ] Прогнать все тесты на Linux
@@ -189,4 +200,6 @@
 
 *Последнее обновление: 1 апреля 2026 — v1.0.32-dev (исправлен padding.c, включён тест)
 *Следующая проверка: 8 апреля 2026
-*Статус: 8 коммитов в dev/main, KNOWN ISSUE padding.c исправлен ✅
+*Статус: 9 коммитов в dev, diverged от origin/dev (552 remote коммитов)
+*KNOWN ISSUE: fragmentation.c (TLS header в тестах) ❌
+*CRITICAL: требуется синхронизация с upstream ❌
