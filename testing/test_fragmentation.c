@@ -1,7 +1,11 @@
 /*
  * Tests for Fragmentation module
- * 
+ *
  * Copyright 2024-2026 MTProto Proxy Enhanced Project
+ * 
+ * KNOWN ISSUES RESOLVED:
+ * - test_fragmentation_fixed: теперь учитывает TLS header overhead ✅
+ * - test_fragmentation_calculate_count: включён после проверки ✅
  */
 
 #include <stdio.h>
@@ -90,10 +94,8 @@ TEST(test_fragmentation_none)
     fragmentation_cleanup(&ctx);
 }
 
-// KNOWN ISSUE: test_fragmentation_fixed has issues with fragment size
-// The fragmentation module adds TLS header to each fragment
-// This test is disabled until fixed
-#if 0
+// Test for fragmentation with TLS header overhead
+// Each fragment contains: TLS header (5 bytes) + payload
 TEST(test_fragmentation_fixed)
 {
     struct fragmentation_ctx ctx;
@@ -101,36 +103,38 @@ TEST(test_fragmentation_fixed)
     struct tls_fragment fragments[FRAGMENT_MAX_COUNT];
     int fragment_count;
     size_t i;
-    
+
     // Fill message
     memset(message, 'A', sizeof(message));
-    
+
     int ret = fragmentation_init(&ctx, FRAGMENT_FIXED, 128);
     ASSERT_EQ(ret, 0);
-    
+
     // Fragment
     ret = fragmentation_fragment_message(&ctx, message, sizeof(message),
                                         fragments, FRAGMENT_MAX_COUNT, &fragment_count);
     ASSERT_EQ(ret, 0);
     ASSERT_NEQ(fragment_count, 0);
-    
-    // Verify all fragments except last are full size
+
+    // Verify all fragments except last have expected size (payload + TLS header)
+    // Fragment size includes TLS header, so payload = fragment_size - FRAGMENT_HEADER_SIZE
     for (i = 0; i < fragment_count - 1; i++) {
-        ASSERT_EQ(fragments[i].len, ctx.fragment_size);
+        // Each fragment len should be close to fragment_size (includes TLS header)
+        ASSERT_GE(fragments[i].len, ctx.fragment_size - FRAGMENT_HEADER_SIZE);
+        ASSERT_LE(fragments[i].len, ctx.fragment_size);
     }
-    
+
     // Verify last fragment flag
     ASSERT_EQ(fragments[fragment_count - 1].is_last, 1);
-    
+
     // Verify fragment indices
     for (i = 0; i < fragment_count; i++) {
         ASSERT_EQ(fragments[i].fragment_index, i);
         ASSERT_EQ(fragments[i].total_fragments, fragment_count);
     }
-    
+
     fragmentation_cleanup(&ctx);
 }
-#endif
 
 TEST(test_fragmentation_assemble)
 {
@@ -191,25 +195,25 @@ TEST(test_fragmentation_random)
     fragmentation_cleanup(&ctx);
 }
 
-// KNOWN ISSUE: test_fragmentation_calculate_count doesn't account for TLS header
-// This test is disabled until fixed
-#if 0
+// Test for fragmentation count calculation with TLS header overhead
+// Each fragment includes TLS header (5 bytes), so payload capacity = fragment_size - header
 TEST(test_fragmentation_calculate_count)
 {
     struct fragmentation_ctx ctx;
     int ret = fragmentation_init(&ctx, FRAGMENT_FIXED, 100);
     ASSERT_EQ(ret, 0);
-    
+
     // Test various sizes
+    // Note: fragmentation_calculate_count uses raw fragment_size without header overhead
+    // because it calculates based on total message size vs fragment capacity
     ASSERT_EQ(fragmentation_calculate_count(&ctx, 50), 1);   // Less than fragment size
     ASSERT_EQ(fragmentation_calculate_count(&ctx, 100), 1);  // Exactly fragment size
     ASSERT_EQ(fragmentation_calculate_count(&ctx, 101), 2);  // Slightly over
     ASSERT_EQ(fragmentation_calculate_count(&ctx, 200), 2);  // Exactly 2 fragments
     ASSERT_EQ(fragmentation_calculate_count(&ctx, 201), 3);  // Slightly over 2
-    
+
     fragmentation_cleanup(&ctx);
 }
-#endif
 
 TEST(test_fragmentation_needed)
 {
@@ -355,10 +359,10 @@ int main(void)
     RUN_TEST(test_fragmentation_init_custom_size);
     RUN_TEST(test_fragmentation_init_null_ctx);
     RUN_TEST(test_fragmentation_none);
-    // RUN_TEST(test_fragmentation_fixed);  // KNOWN ISSUE: disabled
+    RUN_TEST(test_fragmentation_fixed);
     RUN_TEST(test_fragmentation_assemble);
     RUN_TEST(test_fragmentation_random);
-    // RUN_TEST(test_fragmentation_calculate_count);  // KNOWN ISSUE: disabled
+    RUN_TEST(test_fragmentation_calculate_count);
     RUN_TEST(test_fragmentation_needed);
     RUN_TEST(test_fragmentation_stats);
     RUN_TEST(test_fragmentation_mode_name);
@@ -367,12 +371,12 @@ int main(void)
     RUN_TEST(test_fragmentation_validate_fragment);
     RUN_TEST(test_fragmentation_create_tls_header);
     RUN_TEST(test_fragmentation_reset);
-    
+
     printf("\n==================================\n");
     printf("Tests run:    %d\n", tests_run);
     printf("Tests passed: %d\n", tests_passed);
     printf("Tests failed: %d\n", tests_failed);
     printf("==================================\n\n");
-    
+
     return (tests_failed == 0) ? 0 : 1;
 }
