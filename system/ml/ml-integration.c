@@ -161,32 +161,27 @@ int ml_integration_init(ml_integration_t* ml, size_t max_monitors) {
 
 void ml_integration_cleanup(ml_integration_t* ml) {
     if (!ml) return;
-
+    
     lock_mutex(ml->mutex);
-
+    
     /* Очистка мониторов */
     for (size_t i = 0; i < ml->n_monitors; i++) {
         anomaly_detector_cleanup(&ml->anomaly_detectors[i]);
         predictive_analytics_cleanup(&ml->predictors[i]);
     }
-
+    
     free(ml->monitors);
     free(ml->monitor_stats);
     free(ml->anomaly_detectors);
     free(ml->predictors);
-
+    
     /* Очистка мьютекса */
     if (ml->mutex) {
         cleanup_mutex(ml->mutex);
-        ml->mutex = NULL;
     }
-
-    ml->n_monitors = 0;
-    ml->max_monitors = 0;
-    ml->monitors = NULL;
-    ml->monitor_stats = NULL;
-    ml->anomaly_detectors = NULL;
-    ml->predictors = NULL;
+    
+    memset(ml, 0, sizeof(ml_integration_t));
+    unlock_mutex(ml->mutex);
 }
 
 int ml_integration_add_monitor(ml_integration_t* ml,
@@ -218,8 +213,7 @@ int ml_integration_add_monitor(ml_integration_t* ml,
         aconfig.n_features = 1;
         aconfig.max_samples = 1000;
         aconfig.threshold = config->anomaly_threshold;
-        aconfig.zscore_threshold = 3.0f; /* Default Z-Score threshold */
-
+        
         anomaly_detector_init(&ml->anomaly_detectors[idx], &aconfig);
     } else if (config->type == ML_MONITOR_FORECAST) {
         predict_config_t pconfig = {0};
@@ -267,12 +261,10 @@ int ml_integration_remove_monitor(ml_integration_t* ml, int monitor_id) {
     }
     
     ml->n_monitors--;
-
+    
     memset(&ml->monitors[ml->n_monitors], 0, sizeof(ml_monitor_config_t));
     memset(&ml->monitor_stats[ml->n_monitors], 0, sizeof(ml_monitor_stats_t));
-    memset(&ml->anomaly_detectors[ml->n_monitors], 0, sizeof(anomaly_detector_t));
-    memset(&ml->predictors[ml->n_monitors], 0, sizeof(predictive_analytics_t));
-
+    
     unlock_mutex(ml->mutex);
     return 0;
 }

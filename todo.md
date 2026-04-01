@@ -1,11 +1,16 @@
 # MTProxy TODO
 
 **Версия:** v1.0.32-dev
-**Ветка:** dev (синхронизирована с main)
+**Ветка:** dev (синхронизирована с origin/dev ✅)
 **Последнее обновление:** 1 апреля 2026
 **Следующая версия:** v1.0.33
-**Коммитов:** 7
+**Коммитов:** 12 локальных + 552 из origin/dev = 564 всего
 **Файлов в git:** 592
+**Тестов C:** 30 (включая 87 ML тестов)
+
+**СТАТУС:** ✅ origin/dev merged (552 коммита интегрированы)
+**Remote:** origin (QuadDarv1ne), upstream (TelegramMessenger)
+**Резервная ветка:** backup-dev-before-sync
 
 ---
 
@@ -26,6 +31,9 @@
 - [x] Консолидация руководств (CLI, Debugging, Platform, Monitoring, OBFUSCATION) ✅
 - [x] Исправления Windows compatibility (7 файлов) ✅
 - [x] Исправления cluster-manager (конфликт имён) ✅
+- [x] **padding.c** — исправлен data corruption (memmove для length prefix) ✅
+
+**⚠️ Проблема:** origin/dev ahead на 552 коммита — нужен merge или rebase
 
 ---
 
@@ -37,6 +45,7 @@
 - [ ] **Windows сборка** — тестирование производительности
 - [x] **CMakeLists.txt** — проверить наличие всех ML тестов ✅
 - [x] **CHANGELOG.md** — v1.0.32 документирован ✅
+- [x] **Git синхронизация** — merge origin/dev (552 коммита) ✅
 
 ### Тесты — КРИТИЧНО
 - [ ] **ASan** — проверка утечек памяти (все модули)
@@ -48,6 +57,8 @@
 - [x] **test-anomaly-detection** — 45 тестов ✅
 - [x] **test-predictive-analytics** — 42 теста ✅
 - [x] **test-ml-integration** — исправлены баги ✅
+- [ ] **test-padding** — включён после исправления (test_padding_fixed_add_remove) ✅
+- [ ] **test-fragmentation** — отключён (KNOWN ISSUE с TLS header) ❌
 
 ### Известные проблемы (KNOWN ISSUES)
 - [x] **padding.c** — test_padding_fixed_add_remove: data corruption при добавлении length prefix ✅
@@ -187,6 +198,8 @@
 
 ---
 
-*Последнее обновление: 1 апреля 2026 — v1.0.32-dev (исправлен padding.c, включён тест)
+*Последнее обновление: 1 апреля 2026 — v1.0.32-dev (синхронизировано с origin/dev ✅)
 *Следующая проверка: 8 апреля 2026
-*Статус: 8 коммитов в dev/main, KNOWN ISSUE padding.c исправлен ✅
+*Статус: 564 коммита (12 локальных + 552 из origin/dev)
+*KNOWN ISSUE: fragmentation.c (TLS header в тестах) ❌
+*Резервная ветка: backup-dev-before-sync

@@ -397,13 +397,10 @@ static int build_isolation_forest(anomaly_detector_t* detector, const double* da
 /**
  * @brief Вычисление оценки аномалии через Isolation Forest
  */
-static float compute_isolation_forest_score(anomaly_detector_t* detector,
+static float compute_isolation_forest_score(anomaly_detector_t* detector, 
                                            const double* point) {
     if (!detector || !detector->trees || detector->n_trees == 0) return 0.5f;
     
-    /* Если нет образцов, возвращаем нейтральную оценку */
-    if (detector->n_samples == 0) return 0.5f;
-
     double avg_path_length = 0.0;
     
     for (size_t t = 0; t < detector->n_trees; t++) {
@@ -774,9 +771,9 @@ int anomaly_detector_train(anomaly_detector_t* detector, const double* data,
  */
 static float compute_zscore_anomaly(anomaly_detector_t* detector, const double* values) {
     float max_zscore = 0.0f;
-
+    
     for (size_t f = 0; f < detector->n_features; f++) {
-        double zscore = anomaly_compute_zscore(values[f],
+        double zscore = anomaly_compute_zscore(values[f], 
                                                detector->feature_stats[f].mean,
                                                detector->feature_stats[f].std_dev);
         float abs_zscore = (float)fabs(zscore);
@@ -784,13 +781,11 @@ static float compute_zscore_anomaly(anomaly_detector_t* detector, const double* 
             max_zscore = abs_zscore;
         }
     }
-
+    
     /* Нормализация к диапазону 0-1 */
     float threshold = detector->config.zscore_threshold;
-    /* Защита от деления на ноль */
-    if (threshold <= 0.0f) threshold = 3.0f;
     float score = (max_zscore >= threshold) ? 1.0f : (max_zscore / threshold);
-
+    
     return score;
 }
 
