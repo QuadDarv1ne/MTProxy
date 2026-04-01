@@ -50,9 +50,9 @@
 - [x] **test-ml-integration** — исправлены баги ✅
 
 ### Известные проблемы (KNOWN ISSUES)
-- [ ] **padding.c** — test_padding_fixed_add_remove: data corruption при добавлении length prefix ❌
-  - *Проблема:* `padding_add_fixed()` добавляет length prefix (4 байта), затем сдвигает данные, но `padding_remove_fixed()` некорректно восстанавливает
-  - *Статус:* тест отключён (`#if 0`), требуется исправление логики
+- [x] **padding.c** — test_padding_fixed_add_remove: data corruption при добавлении length prefix ✅
+  - *Исправление:* `padding_add_fixed()` теперь сдвигает данные через `memmove()` перед добавлением length prefix
+  - *Статус:* тест включён ✅
 - [ ] **fragmentation.c** — test_fragmentation_fixed: проблемы с размером фрагментов (TLS header) ❌
   - *Проблема:* тест ожидает `fragments[i].len == ctx.fragment_size`, но фрагменты содержат payload + TLS header
   - *Статус:* тест отключён (`#if 0`), требуется исправление теста или логики
@@ -164,10 +164,11 @@
 - [ ] Проверить сборку на Linux (io_uring, jemalloc)
 - [ ] Запустить ASan для ML модулей
 - [ ] Оптимизировать размер бинарника
-- [ ] Исправить **padding.c** — data corruption в test_padding_fixed_add_remove
-  - [ ] Исправить `padding_add_fixed()` — корректно добавлять length prefix
-  - [ ] Исправить `padding_remove_fixed()` — корректно удалять length prefix
-  - [ ] Включить тест test_padding_fixed_add_remove
+- [x] Исправить **padding.c** — data corruption в test_padding_fixed_add_remove ✅
+  - [x] Исправить `padding_add_fixed()` — корректно добавлять length prefix ✅
+  - [x] Исправить `padding_add_random()` — корректно добавлять length prefix ✅
+  - [x] Исправить `padding_add_tls_like()` — корректно добавлять length prefix ✅
+  - [x] Включить тест test_padding_fixed_add_remove ✅
 - [ ] Исправить **fragmentation.c** — учёт TLS header в тестах
   - [ ] Исправить test_fragmentation_fixed — проверка с учётом TLS header
   - [ ] Исправить fragmentation_calculate_count() — учёт overhead TLS header
@@ -186,6 +187,6 @@
 
 ---
 
-*Последнее обновление: 1 апреля 2026 — v1.0.32-dev (обновлено: коммиты)
+*Последнее обновление: 1 апреля 2026 — v1.0.32-dev (исправлен padding.c, включён тест)
 *Следующая проверка: 8 апреля 2026
-*Статус: 7 коммитов в dev/main, синхронизированы (592 файла в git)
+*Статус: 8 коммитов в dev/main, KNOWN ISSUE padding.c исправлен ✅

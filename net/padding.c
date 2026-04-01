@@ -343,36 +343,39 @@ static int padding_add_fixed(struct padding_ctx *ctx,
                              size_t max_len)
 {
     size_t original_len = *packet_len;
-    
+
     // Calculate padded size
     size_t padded_len = padding_fixed_calc(original_len, ctx->block_size,
                                           ctx->use_length_prefix ? PADDING_LENGTH_PREFIX_SIZE : 0);
-    
+
     // Check buffer size
     if (padded_len > max_len) {
         return -1; // Buffer too small
     }
-    
-    // Add length prefix if enabled
+
+    // Add length prefix if enabled - shift data first
     size_t offset = 0;
     if (ctx->use_length_prefix) {
-        // Store original length in big-endian format
+        // Shift original data to make room for length prefix
+        memmove(packet + PADDING_LENGTH_PREFIX_SIZE, packet, original_len);
+        
+        // Store original length in big-endian format at the beginning
         packet[0] = (original_len >> 24) & 0xFF;
         packet[1] = (original_len >> 16) & 0xFF;
         packet[2] = (original_len >> 8) & 0xFF;
         packet[3] = original_len & 0xFF;
         offset = PADDING_LENGTH_PREFIX_SIZE;
     }
-    
-    // Generate pattern padding
+
+    // Generate pattern padding after original data
     size_t padding_len = padded_len - original_len - offset;
     if (padding_len > 0) {
         padding_generate_pattern(packet + offset + original_len, padding_len, 0x01);
     }
-    
+
     *packet_len = padded_len;
     ctx->bytes_added += (padded_len - original_len);
-    
+
     return 0;
 }
 
@@ -382,38 +385,42 @@ static int padding_add_random(struct padding_ctx *ctx,
                               size_t max_len)
 {
     size_t original_len = *packet_len;
-    
+
     // Generate random padding size
     size_t padding_size = rand() % (ctx->max_padding + 1);
     size_t total_len = original_len + padding_size;
-    
+
     if (ctx->use_length_prefix) {
         total_len += PADDING_LENGTH_PREFIX_SIZE;
     }
-    
+
     // Check buffer size
     if (total_len > max_len) {
         return -1; // Buffer too small
     }
-    
-    // Add length prefix if enabled
+
+    // Add length prefix if enabled - shift data first
     size_t offset = 0;
     if (ctx->use_length_prefix) {
+        // Shift original data to make room for length prefix
+        memmove(packet + PADDING_LENGTH_PREFIX_SIZE, packet, original_len);
+        
+        // Store original length in big-endian format
         packet[0] = (original_len >> 24) & 0xFF;
         packet[1] = (original_len >> 16) & 0xFF;
         packet[2] = (original_len >> 8) & 0xFF;
         packet[3] = original_len & 0xFF;
         offset = PADDING_LENGTH_PREFIX_SIZE;
     }
-    
-    // Generate random padding
+
+    // Generate random padding after original data
     if (padding_size > 0) {
         padding_generate_random(packet + offset + original_len, padding_size);
     }
-    
+
     *packet_len = total_len;
     ctx->bytes_added += (total_len - original_len);
-    
+
     return 0;
 }
 
@@ -425,42 +432,46 @@ static int padding_add_tls_like(struct padding_ctx *ctx,
     // TLS-like uses 256-byte blocks
     size_t original_len = *packet_len;
     size_t block_size = 256;
-    
+
     size_t total_len = original_len;
     if (ctx->use_length_prefix) {
         total_len += PADDING_LENGTH_PREFIX_SIZE;
     }
-    
+
     // Round up to next 256-byte block
     size_t remainder = total_len % block_size;
     if (remainder != 0) {
         total_len += (block_size - remainder);
     }
-    
+
     // Check buffer size
     if (total_len > max_len) {
         return -1; // Buffer too small
     }
-    
-    // Add length prefix if enabled
+
+    // Add length prefix if enabled - shift data first
     size_t offset = 0;
     if (ctx->use_length_prefix) {
+        // Shift original data to make room for length prefix
+        memmove(packet + PADDING_LENGTH_PREFIX_SIZE, packet, original_len);
+        
+        // Store original length in big-endian format
         packet[0] = (original_len >> 24) & 0xFF;
         packet[1] = (original_len >> 16) & 0xFF;
         packet[2] = (original_len >> 8) & 0xFF;
         packet[3] = original_len & 0xFF;
         offset = PADDING_LENGTH_PREFIX_SIZE;
     }
-    
-    // Generate TLS-like padding (PKCS#7 style)
+
+    // Generate TLS-like padding (PKCS#7 style) after original data
     size_t padding_len = total_len - original_len - offset;
     if (padding_len > 0) {
         memset(packet + offset + original_len, (unsigned char)padding_len, padding_len);
     }
-    
+
     *packet_len = total_len;
     ctx->bytes_added += (total_len - original_len);
-    
+
     return 0;
 }
 

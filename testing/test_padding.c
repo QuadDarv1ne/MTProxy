@@ -71,10 +71,6 @@ TEST(test_padding_init_null_ctx)
     ASSERT_EQ(ret, -1);
 }
 
-// KNOWN ISSUE: test_padding_fixed_add_remove has issues with data corruption
-// The padding module has a bug where it overwrites data with length prefix
-// This test is disabled until the bug is fixed
-#if 0
 TEST(test_padding_fixed_add_remove)
 {
     struct padding_ctx ctx;
@@ -83,39 +79,38 @@ TEST(test_padding_fixed_add_remove)
     size_t original_len = sizeof(original_data);
     size_t padded_len;
     int i;
-    
+
     // Fill original data
     memset(original_data, 'A', original_len);
     memset(buffer, 0, TEST_BUFFER_SIZE);
-    
+
     // Copy data to buffer
     memcpy(buffer, original_data, original_len);
-    
+
     int ret = padding_init(&ctx, PADDING_FIXED, 64, 0);
     ASSERT_EQ(ret, 0);
-    
+
     // Add padding - function will add length prefix
     padded_len = original_len;
     ret = padding_add(&ctx, buffer, &padded_len, TEST_BUFFER_SIZE);
     ASSERT_EQ(ret, 0);
-    
+
     // Verify padding is multiple of block size
     ASSERT_EQ(padded_len % 64, 0);
-    
+
     // Remove padding
     size_t unpadded_len = padded_len;
     ret = padding_remove(&ctx, buffer, &unpadded_len);
     ASSERT_EQ(ret, 0);
     ASSERT_EQ(unpadded_len, original_len);
-    
+
     // Verify data is preserved
     for (i = 0; i < unpadded_len; i++) {
         ASSERT_EQ(buffer[i], 'A');
     }
-    
+
     padding_cleanup(&ctx);
 }
-#endif
 
 TEST(test_padding_none)
 {
@@ -360,7 +355,7 @@ int main(void)
     RUN_TEST(test_padding_init_default);
     RUN_TEST(test_padding_init_custom_block_size);
     RUN_TEST(test_padding_init_null_ctx);
-    // RUN_TEST(test_padding_fixed_add_remove);  // KNOWN ISSUE: disabled
+    RUN_TEST(test_padding_fixed_add_remove);
     RUN_TEST(test_padding_none);
     RUN_TEST(test_padding_random);
     RUN_TEST(test_padding_tls_like);
