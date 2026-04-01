@@ -1,0 +1,99 @@
+name: Security Audit
+
+on:
+  push:
+    branches: [dev, master]
+  pull_request:
+    branches: [dev, master]
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday
+
+jobs:
+  security-audit:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libssl-dev \
+          zlib1g-dev \
+          libjemalloc-dev \
+          cppcheck
+    
+    - name: Static Analysis (cppcheck)
+      run: |
+        cppcheck --enable=all --inconclusive --error-exitcode=1 \
+          -iexamples/ -itesting/ --std=c11 .
+    
+    - name: Check for unsafe functions
+      run: |
+        echo "=== Checking for unsafe string functions ==="
+        
+        # Check for unsafe strcpy
+        UNSAFE_STRCPY=$(grep -rn '[^_]strcpy(' --include='*.c' --include='*.h' \
+          | grep -v 'utils_strcpy' | grep -v 'examples/' | grep -v 'testing/' || true)
+        
+        if [ -n "$UNSAFE_STRCPY" ]; then
+          echo "❌ Found unsafe strcpy usage:"
+          echo "$UNSAFE_STRCPY"
+          exit 1
+        fi
+        echo "✅ No unsafe strcpy found"
+        
+        # Check for unsafe strcat
+        UNSAFE_STRCAT=$(grep -rn '[^_]strcat(' --include='*.c' --include='*.h' \
+          | grep -v 'utils_strcat' | grep -v 'examples/' | grep -v 'testing/' || true)
+        
+        if [ -n "$UNSAFE_STRCAT" ]; then
+          echo "❌ Found unsafe strcat usage:"
+          echo "$UNSAFE_STRCAT"
+          exit 1
+        fi
+        echo "✅ No unsafe strcat found"
+        
+        # Check for unsafe sprintf
+        UNSAFE_SPRINTF=$(grep -rn '[^_]sprintf(' --include='*.c' --include='*.h' \
+          | grep -v 'utils_snprintf' | grep -v 'examples/' | grep -v 'testing/' || true)
+        
+        if [ -n "$UNSAFE_SPRINTF" ]; then
+          echo "❌ Found unsafe sprintf usage:"
+          echo "$UNSAFE_SPRINTF"
+          exit 1
+        fi
+        echo "✅ No unsafe sprintf found"
+        
+        # Check for gets (always unsafe)
+        UNSAFE_GETS=$(grep -rn 'gets(' --include='*.c' --include='*.h' || true)
+        
+        if [ -n "$UNSAFE_GETS" ]; then
+          echo "❌ Found gets usage (REMOVED IN C11):"
+          echo "$UNSAFE_GETS"
+          exit 1
+        fi
+        echo "✅ No gets found"
+        
+        echo ""
+        echo "=== Security Audit Passed ==="
+    
+    - name: Build with AddressSanitizer
+      run: |
+        mkdir build-asan && cd build-asan
+        cmake -DENABLE_ASAN=ON ..
+        make -j4
+    
+    - name: Run tests
+      run: |
+        cd build-asan
+        ctest --output-on-failure
+    
+    - name: Build with security flags
+      run: |
+        mkdir build-secure && cd build-secure
+        cmake \
+          -DCMAKE_C_FLAGS="-D_FORTIFY_SOURCE=2 -fstack-protector-strong" \
+          ..
+        make -j4

@@ -1,0 +1,26 @@
+# Build directories
+build/
+objs/
+dep/
+build-windows-x64/
+
+# Dependencies (downloaded tools)
+deps/
+
+# Build logs
+build.log
+
+# Test executables
+testing/*.exe
+testing/Makefile
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

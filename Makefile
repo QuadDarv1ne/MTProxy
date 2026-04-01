@@ -1,0 +1,180 @@
+OBJ	=	objs
+DEP	=	dep
+EXE = ${OBJ}/bin
+
+COMMIT := $(shell git log -1 --pretty=format:"%H")
+
+ARCH =
+ifeq ($m, 32)
+ARCH = -m32
+endif
+ifeq ($m, 64)
+ARCH = -m64
+endif
+
+# Оптимизация памяти - уменьшенные лимиты по умолчанию
+MEMORY_LIMIT_FLAGS = -DMAX_CACHE_SIZE_MB=128 -DMAX_POOL_SIZE_MB=64
+
+# Базовые флаги компиляции
+CFLAGS_BASE = $(ARCH) -O3 -std=gnu11 -Wall -Wno-array-bounds -mpclmul -mfpmath=sse -mssse3 -fno-strict-aliasing -fno-strict-overflow -fwrapv -DAES=1 -DCOMMIT=\"${COMMIT}\" -D_GNU_SOURCE=1 -D_FILE_OFFSET_BITS=64
+
+# Флаги для Unix/Linux (с -march=native)
+CFLAGS_UNIX = $(CFLAGS_BASE) -march=native
+
+# Флаги для Windows (без -march=native для совместимости)
+CFLAGS_WIN = $(CFLAGS_BASE) -D_WIN32_WINNT=0x0600
+
+# Определяем платформу
+ifeq ($(OS),Windows_NT)
+    CFLAGS = $(CFLAGS_WIN) $(MEMORY_LIMIT_FLAGS)
+    LDFLAGS = $(ARCH) -ggdb -lm -lssl -lcrypto -lz -lpthread -lws2_32
+    # Отключаем тяжёлые модули для Windows
+    HEAVY_MODULES_EXCLUDED = 1
+else
+    UNAME_S := $(shell uname -s)
+    ifeq ($(UNAME_S),Linux)
+        CFLAGS = $(CFLAGS_UNIX) $(MEMORY_LIMIT_FLAGS)
+        LDFLAGS = $(ARCH) -ggdb -rdynamic -lm -lrt -lssl -lcrypto -lz -lpthread
+    else
+        CFLAGS = $(CFLAGS_UNIX) $(MEMORY_LIMIT_FLAGS)
+        LDFLAGS = $(ARCH) -ggdb -rdynamic -lm -lssl -lcrypto -lz -lpthread
+    endif
+endif
+
+# Флаги оптимизации памяти (можно переопределить: make MEMORY_OPT=1)
+ifdef MEMORY_OPT
+    CFLAGS += -fomit-frame-pointer -ffunction-sections -fdata-sections
+    LDFLAGS += -Wl,--gc-sections
+endif
+
+LIB = ${OBJ}/lib
+CINCLUDE = -iquote common -iquote .
+
+LIBLIST = ${LIB}/libkdb.a
+
+PROJECTS = common jobs mtproto net crypto engine system testing
+
+OBJDIRS := ${OBJ} $(addprefix ${OBJ}/,${PROJECTS}) ${EXE} ${LIB}
+DEPDIRS := ${DEP} $(addprefix ${DEP}/,${PROJECTS})
+ALLDIRS := ${DEPDIRS} ${OBJDIRS}
+
+
+.PHONY:	all clean 
+
+EXELIST	:= ${EXE}/mtproto-proxy
+
+
+OBJECTS	=	\
+  ${OBJ}/mtproto/mtproto-proxy.o ${OBJ}/mtproto/mtproto-config.o ${OBJ}/net/net-tcp-rpc-ext-server.o
+
+DEPENDENCE_CXX		:=	$(subst ${OBJ}/,${DEP}/,$(patsubst %.o,%.d,${OBJECTS_CXX}))
+DEPENDENCE_STRANGE	:=	$(subst ${OBJ}/,${DEP}/,$(patsubst %.o,%.d,${OBJECTS_STRANGE}))
+DEPENDENCE_NORM	:=	$(subst ${OBJ}/,${DEP}/,$(patsubst %.o,%.d,${OBJECTS}))
+
+LIB_OBJS_NORMAL := \
+	${OBJ}/common/crc32c.o \
+	${OBJ}/common/pid.o \
+	${OBJ}/common/sha1.o \
+	${OBJ}/common/sha256.o \
+	${OBJ}/common/md5.o \
+	${OBJ}/common/resolver.o \
+	${OBJ}/common/parse-config.o \
+	${OBJ}/crypto/aesni256.o \
+		${OBJ}/crypto/aes-optimized.o \
+		${OBJ}/crypto/dh-optimized.o \
+		${OBJ}/crypto/crypto-optimizer.o \
+		${OBJ}/crypto/vectorized-crypto.o \
+		${OBJ}/net/shadowsocks-advanced.o \
+		${OBJ}/net/pluggable-transports.o \
+		${OBJ}/net/network-profiler.o \
+		${OBJ}/net/network-analyzer.o \
+	${OBJ}/jobs/jobs.o ${OBJ}/common/mp-queue.o \
+	${OBJ}/net/net-events.o ${OBJ}/net/net-msg.o ${OBJ}/net/net-msg-buffers.o \
+	${OBJ}/net/net-config.o ${OBJ}/net/net-crypto-aes.o ${OBJ}/net/net-crypto-dh.o ${OBJ}/net/net-timers.o \
+	${OBJ}/net/net-connections.o \
+	${OBJ}/net/net-rpc-targets.o \
+	${OBJ}/net/net-tcp-connections.o ${OBJ}/net/net-tcp-rpc-common.o ${OBJ}/net/net-tcp-rpc-client.o ${OBJ}/net/net-tcp-rpc-server.o \
+	${OBJ}/net/net-http-server.o \
+	${OBJ}/common/tl-parse.o ${OBJ}/common/common-stats.o \
+	${OBJ}/common/config-manager.o \
+	${OBJ}/common/cache-manager.o \
+	${OBJ}/common/rate-limiter.o \
+	${OBJ}/common/error-handler.o \
+	${OBJ}/common/memory-limits.o \
+	${OBJ}/common/runtime-tuner.o \
+	${OBJ}/common/structured-logger.o \
+	${OBJ}/common/log-aggregator.o \
+	${OBJ}/common/advanced-logger.o \
+	${OBJ}/common/vlog.o \
+	${OBJ}/engine/engine.o ${OBJ}/engine/engine-signals.o \
+	${OBJ}/engine/engine-net.o \
+	${OBJ}/engine/engine-rpc.o \
+	${OBJ}/engine/engine-rpc-common.o \
+	${OBJ}/net/net-thread.o ${OBJ}/net/net-stats.o ${OBJ}/common/proc-stat.o \
+	${OBJ}/common/kprintf.o \
+	${OBJ}/common/precise-time.o ${OBJ}/common/cpuid.o \
+	${OBJ}/common/server-functions.o ${OBJ}/common/crc32.o \
+	${OBJ}/system/performance-optimizer.o ${OBJ}/system/optimizer-integration.o ${OBJ}/system/simple-performance-optimizer.o \
+	${OBJ}/system/memory-optimization.o ${OBJ}/system/connection-optimizer.o ${OBJ}/system/advanced-cache.o ${OBJ}/system/memory-manager.o \
+	${OBJ}/security/security-manager.o ${OBJ}/security/ddos-protection.o ${OBJ}/security/cert-pinning.o ${OBJ}/security/security-utils.o \
+	${OBJ}/ml/anomaly-detector.o ${OBJ}/net/tls-emulator.o ${OBJ}/shadowsocks/shadowsocks-obfuscator.o \
+	${OBJ}/vv/vv-tree.o \
+	${OBJ}/admin/admin-rest-api.o \
+
+# Исключаем тяжёлые модули для Windows (память и совместимость)
+ifdef HEAVY_MODULES_EXCLUDED
+LIB_OBJS_NORMAL := $(filter-out ${OBJ}/system/numa-allocator.o,${LIB_OBJS_NORMAL})
+LIB_OBJS_NORMAL := $(filter-out ${OBJ}/system/io-uring-interface.o,${LIB_OBJS_NORMAL})
+LIB_OBJS_NORMAL := $(filter-out ${OBJ}/system/dpdk-interface.o,${LIB_OBJS_NORMAL})
+LIB_OBJS_NORMAL := $(filter-out ${OBJ}/system/advanced-optimizer.o,${LIB_OBJS_NORMAL})
+endif
+
+LIB_OBJS := ${LIB_OBJS_NORMAL}
+
+DEPENDENCE_LIB	:=	$(subst ${OBJ}/,${DEP}/,$(patsubst %.o,%.d,${LIB_OBJS}))
+
+DEPENDENCE_ALL		:=	${DEPENDENCE_NORM} ${DEPENDENCE_STRANGE} ${DEPENDENCE_LIB}
+
+OBJECTS_ALL		:=	${OBJECTS} ${LIB_OBJS} ${OBJ}/admin/admin-rest-api.o
+
+all:	${ALLDIRS} ${EXELIST} 
+dirs: ${ALLDIRS}
+create_dirs_and_headers: ${ALLDIRS} 
+
+${ALLDIRS}:	
+	@test -d $@ || mkdir -p $@
+
+-include ${DEPENDENCE_ALL}
+
+${OBJECTS}: ${OBJ}/%.o: %.c | create_dirs_and_headers
+	${CC} ${CFLAGS} ${CINCLUDE} -c -MP -MD -MF ${DEP}/$*.d -MQ ${OBJ}/$*.o -o $@ $<
+
+${OBJ}/testing/test_new_modules.o: testing/test_new_modules.c | create_dirs_and_headers
+	${CC} ${CFLAGS} ${CINCLUDE} -c -MP -MD -MF ${DEP}/testing/test_new_modules.d -MQ ${OBJ}/testing/test_new_modules.o -o $@ $<
+
+${LIB_OBJS_NORMAL}: ${OBJ}/%.o: %.c | create_dirs_and_headers
+	${CC} ${CFLAGS} -fpic ${CINCLUDE} -c -MP -MD -MF ${DEP}/$*.d -MQ ${OBJ}/$*.o -o $@ $<
+
+${EXELIST}: ${LIBLIST}
+
+${EXE}/mtproto-proxy:	${OBJ}/mtproto/mtproto-proxy.o ${OBJ}/mtproto/mtproto-config.o ${OBJ}/net/net-tcp-rpc-ext-server.o
+	${CC} -o $@ $^ ${LIB}/libkdb.a ${LDFLAGS}
+
+${EXE}/test-new-modules: ${OBJ}/testing/test_new_modules.o ${LIB}/libkdb.a
+	${CC} -o $@ $^ ${LIB}/libkdb.a ${LDFLAGS}
+
+${EXE}/test-traffic-stats: ${OBJ}/testing/test_traffic_stats.o ${OBJ}/net/traffic-stats.o
+	${CC} -o $@ $^ ${LDFLAGS}
+
+${LIB}/libkdb.a: ${LIB_OBJS}
+	rm -f $@ && ar rcs $@ $^
+
+test: ${EXE}/test-new-modules ${EXE}/test-traffic-stats
+	${EXE}/test-new-modules
+	${EXE}/test-traffic-stats
+
+clean:
+	rm -rf ${OBJ} ${DEP} ${EXE} || true
+
+force-clean: clean
+

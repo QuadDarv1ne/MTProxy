@@ -1,0 +1,234 @@
+# Docker Compose для MTProxy
+# Production-ready конфигурация с поддержкой мониторинга
+
+version: '3.8'
+
+# Глобальные переменные
+x-common-env: &common-env
+  TZ: "UTC"
+  MT_PROXY_LOG_LEVEL: "info"
+  MT_PROXY_METRICS_ENABLED: "true"
+
+# Сервисы
+services:
+  # ===========================================================================
+  # Основной прокси сервер
+  # ===========================================================================
+  mtproxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+      args:
+        BUILD_TYPE: Release
+        ENABLE_LTO: "ON"
+        ENABLE_JEMALLOC: "${ENABLE_JEMALLOC:-ON}"
+        ENABLE_IOURING: "${ENABLE_IOURING:-OFF}"
+    image: mtproxy:latest
+    container_name: mtproxy
+    restart: unless-stopped
+    stop_grace_period: 30s
+    ports:
+      # Порт для клиентов Telegram
+      - "${MT_PROXY_PORT:-8080}:8080/tcp"
+      # HTTPS порт (опционально)
+      - "${MT_HTTPS_PORT:-443}:443/tcp"
+      # Статистика (только localhost)
+      - "127.0.0.1:8888:8888/tcp"
+    volumes:
+      # Конфигурация
+      - ./config:/etc/mtproxy:ro
+      # Секретные ключи
+      - ./secrets:/etc/mtproxy/secrets:ro
+      # Данные прокси
+      - mtproxy_data:/var/lib/mtproxy
+      # Логи
+      - mtproxy_logs:/var/log/mtproxy
+    environment:
+      <<: *common-env
+      MT_PROXY_PORT: "${MT_PROXY_PORT:-8080}"
+      MT_PROXY_SECRET: "${MT_PROXY_SECRET:-}"
+      MT_PROXY_WORKERS: "${MT_PROXY_WORKERS:-4}"
+      MT_PROXY_MAX_CONNECTIONS: "${MT_PROXY_MAX_CONNECTIONS:-65535}"
+      MT_PROXY_RATE_LIMIT: "${MT_PROXY_RATE_LIMIT:-1000}"
+    networks:
+      - mtproxy_net
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:size=64M
+      - /var/cache:size=128M
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8888/stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "${CPU_LIMIT:-2.0}"
+          memory: "${MEMORY_LIMIT:-512M}"
+        reservations:
+          cpus: "${CPU_RESERVE:-0.5}"
+          memory: "${MEMORY_RESERVE:-128M}"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ===========================================================================
+  # Prometheus экспортёр метрик
+  # ===========================================================================
+  metrics-exporter:
+    image: prom/statsd-exporter:latest
+    container_name: mtproxy-metrics
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9102:9102/tcp"
+    volumes:
+      - ./config/metrics-mapping.yml:/etc/statsd/mapping-config.yml:ro
+    networks:
+      - mtproxy_net
+    depends_on:
+      - mtproxy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9102/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ===========================================================================
+  # Grafana (визуализация)
+  # ===========================================================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: mtproxy-grafana
+    restart: unless-stopped
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000/tcp"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    environment:
+      GF_SECURITY_ADMIN_USER: "${GRAFANA_ADMIN_USER:-admin}"
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:-admin}"
+      GF_INSTALL_PLUGINS: "grafana-clock-panel,grafana-simple-json-datasource"
+    networks:
+      - mtproxy_net
+    depends_on:
+      - prometheus
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ===========================================================================
+  # Prometheus (сбор метрик)
+  # ===========================================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: mtproxy-prometheus
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9090:9090/tcp"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    networks:
+      - mtproxy_net
+    depends_on:
+      - metrics-exporter
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ===========================================================================
+  # Alertmanager (уведомления)
+  # ===========================================================================
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: mtproxy-alertmanager
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9093:9093/tcp"
+    volumes:
+      - ./prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.external-url=http://localhost:9093'
+    networks:
+      - mtproxy_net
+    depends_on:
+      - prometheus
+
+  # ===========================================================================
+  # Admin CLI (опционально, для управления)
+  # ===========================================================================
+  mtproxy-admin:
+    image: mtproxy-admin:latest
+    container_name: mtproxy-admin
+    restart: unless-stopped
+    profiles:
+      - admin
+    ports:
+      - "${ADMIN_PORT:-8081}:8080/tcp"
+    volumes:
+      - ./config:/etc/mtproxy:ro
+      - ./secrets:/etc/mtproxy/secrets:ro
+    environment:
+      <<: *common-env
+      MT_ADMIN_BIND_ADDRESS: "0.0.0.0"
+      MT_ADMIN_AUTH_ENABLED: "true"
+      MT_ADMIN_AUTH_TOKEN: "${ADMIN_AUTH_TOKEN:-changeme}"
+    networks:
+      - mtproxy_net
+    depends_on:
+      - mtproxy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+# ===========================================================================
+# Сети
+# ===========================================================================
+networks:
+  mtproxy_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+# ===========================================================================
+# Тома
+# ===========================================================================
+volumes:
+  mtproxy_data:
+    driver: local
+  mtproxy_logs:
+    driver: local
+  grafana_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  alertmanager_data:
+    driver: local

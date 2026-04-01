@@ -1,0 +1,367 @@
+name: Auto Build All Platforms
+
+on:
+  push:
+    branches: [ main, master, dev ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master, dev ]
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: true
+        default: 'Release'
+        type: choice
+        options:
+          - Release
+          - Debug
+      create_release:
+        description: 'Create GitHub Release'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  BUILD_TYPE: ${{ github.event.inputs.build_type || 'Release' }}
+  PROJECT_NAME: mtproto-proxy
+
+jobs:
+  # ============================================================================
+  # Linux Build
+  # ============================================================================
+  build-linux:
+    name: 🐧 Linux Build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential libssl-dev zlib1g-dev cmake ninja-build
+
+    - name: Configure CMake
+      run: |
+        mkdir -p build
+        cd build
+        cmake -G Ninja \
+              -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+              -DBUILD_SHARED_LIB=ON \
+              -DENABLE_CCACHE=ON \
+              ..
+
+    - name: Build
+      run: |
+        cd build
+        cmake --build . --parallel $(nproc)
+
+    - name: Run tests
+      run: |
+        cd build
+        ctest --output-on-failure || true
+
+    - name: Check binaries
+      run: |
+        echo "=== Binary Files ==="
+        ls -lh build/bin/
+        file build/bin/mtproto-proxy
+        build/bin/mtproto-proxy --version || true
+
+    - name: Upload Linux binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: mtproto-proxy-linux-x64
+        path: |
+          build/bin/mtproto-proxy
+          build/bin/mtproxy-admin
+          build/lib/libmtproxy.so
+        retention-days: 30
+
+  # ============================================================================
+  # Windows Build
+  # ============================================================================
+  build-windows:
+    name: 🪟 Windows Build
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: UCRT64
+        update: true
+        install: >-
+          mingw-w64-ucrt-x86_64-gcc
+          mingw-w64-ucrt-x86_64-cmake
+          mingw-w64-ucrt-x86_64-ninja
+          mingw-w64-ucrt-x86_64-openssl
+          mingw-w64-ucrt-x86_64-zlib
+
+    - name: Configure CMake
+      shell: msys2 {0}
+      run: |
+        mkdir -p build
+        cd build
+        cmake -G Ninja \
+              -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+              -DBUILD_SHARED_LIB=ON \
+              -DENABLE_CCACHE=ON \
+              ..
+
+    - name: Build
+      shell: msys2 {0}
+      run: |
+        cd build
+        cmake --build . --parallel $NUMBER_OF_PROCESSORS
+
+    - name: Check binaries
+      shell: msys2 {0}
+      run: |
+        echo "=== Binary Files ==="
+        ls -lh build/bin/
+        build/bin/mtproto-proxy.exe --version || true
+
+    - name: Upload Windows binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: mtproto-proxy-windows-x64
+        path: |
+          build/bin/mtproto-proxy.exe
+          build/bin/mtproxy-admin.exe
+          build/bin/mtproxy.dll
+        retention-days: 30
+
+  # ============================================================================
+  # macOS Build
+  # ============================================================================
+  build-macos:
+    name: 🍎 macOS Build
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install dependencies
+      run: |
+        brew install cmake ninja openssl zlib
+
+    - name: Configure CMake
+      run: |
+        mkdir -p build
+        cd build
+        cmake -G Ninja \
+              -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+              -DBUILD_SHARED_LIB=ON \
+              -DENABLE_CCACHE=ON \
+              -DOPENSSL_ROOT_DIR=$(brew --prefix openssl) \
+              ..
+
+    - name: Build
+      run: |
+        cd build
+        cmake --build . --parallel $(sysctl -n hw.ncpu)
+
+    - name: Check binaries
+      run: |
+        echo "=== Binary Files ==="
+        ls -lh build/bin/
+        file build/bin/mtproto-proxy
+        build/bin/mtproto-proxy --version || true
+
+    - name: Upload macOS binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: mtproto-proxy-macos-universal
+        path: |
+          build/bin/mtproto-proxy
+          build/bin/mtproxy-admin
+          build/lib/libmtproxy.dylib
+        retention-days: 30
+
+  # ============================================================================
+  # Android Build
+  # ============================================================================
+  build-android:
+    name: 🤖 Android Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        abi: [armeabi-v7a, arm64-v8a, x86_64]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Setup Android NDK
+      uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r25c
+        add-to-path: true
+
+    - name: Configure CMake
+      run: |
+        mkdir -p build-android-${{ matrix.abi }}
+        cd build-android-${{ matrix.abi }}
+        cmake -G Ninja \
+              -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK/build/cmake/android.toolchain.cmake \
+              -DANDROID_ABI=${{ matrix.abi }} \
+              -DANDROID_PLATFORM=android-21 \
+              -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+              -DBUILD_SHARED_LIB=ON \
+              ..
+
+    - name: Build
+      run: |
+        cd build-android-${{ matrix.abi }}
+        cmake --build . --parallel $(nproc)
+
+    - name: Upload Android library
+      uses: actions/upload-artifact@v4
+      with:
+        name: mtproxy-android-${{ matrix.abi }}
+        path: build-android-${{ matrix.abi }}/lib/libmtproxy.so
+        retention-days: 30
+
+  # ============================================================================
+  # iOS Build
+  # ============================================================================
+  build-ios:
+    name: 📱 iOS Build
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        sdk: [iphoneos, iphonesimulator]
+        arch: [arm64, x86_64]
+        exclude:
+          - sdk: iphoneos
+            arch: x86_64
+          - sdk: iphonesimulator
+            arch: arm64
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install dependencies
+      run: |
+        brew install cmake ninja
+
+    - name: Configure CMake
+      run: |
+        mkdir -p build-ios-${{ matrix.sdk }}
+        cd build-ios-${{ matrix.sdk }}
+        cmake -G Ninja \
+              -DCMAKE_SYSTEM_NAME=iOS \
+              -DCMAKE_OSX_SYSROOT=${{ matrix.sdk }} \
+              -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
+              -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 \
+              -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+              -DBUILD_SHARED_LIB=OFF \
+              ..
+
+    - name: Build
+      run: |
+        cd build-ios-${{ matrix.sdk }}
+        cmake --build . --parallel $(sysctl -n hw.ncpu)
+
+    - name: Upload iOS library
+      uses: actions/upload-artifact@v4
+      with:
+        name: mtproxy-ios-${{ matrix.sdk }}
+        path: build-ios-${{ matrix.sdk }}/lib/libmtproxy.a
+        retention-days: 30
+
+  # ============================================================================
+  # Create Release
+  # ============================================================================
+  create-release:
+    name: 📦 Create Release
+    runs-on: ubuntu-latest
+    needs: [build-linux, build-windows, build-macos, build-android, build-ios]
+    if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true')
+
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: Create release archives
+      run: |
+        cd artifacts
+        # Linux
+        zip -r mtproto-proxy-linux-x64.zip mtproto-proxy-linux-x64/
+        # Windows
+        zip -r mtproto-proxy-windows-x64.zip mtproto-proxy-windows-x64/
+        # macOS
+        zip -r mtproto-proxy-macos-universal.zip mtproto-proxy-macos-universal/
+        # Android
+        zip -r mtproxy-android-all.zip mtproxy-android-*/
+        # iOS
+        zip -r mtproxy-ios-all.zip mtproxy-ios-*/
+
+    - name: Generate changelog
+      run: |
+        echo "## Changes" > changelog.md
+        git log --oneline --decorate=no $(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || git rev-list --max-parents=0 HEAD)..HEAD >> changelog.md || true
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          artifacts/mtproto-proxy-linux-x64.zip
+          artifacts/mtproto-proxy-windows-x64.zip
+          artifacts/mtproto-proxy-macos-universal.zip
+          artifacts/mtproxy-android-all.zip
+          artifacts/mtproxy-ios-all.zip
+          changelog.md
+        generate_release_notes: true
+        draft: false
+        prerelease: ${{ !startsWith(github.ref, 'refs/tags/v') || contains(github.ref, '-beta') || contains(github.ref, '-alpha') }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ============================================================================
+  # Notify
+  # ============================================================================
+  notify-success:
+    name: ✅ Notify Success
+    runs-on: ubuntu-latest
+    needs: [build-linux, build-windows, build-macos, build-android, build-ios]
+    if: always() && needs.build-linux.result == 'success' && needs.build-windows.result == 'success' && needs.build-macos.result == 'success'
+
+    steps:
+    - name: Build summary
+      run: |
+        echo "## ✅ Build Successful"
+        echo ""
+        echo "| Platform | Status |"
+        echo "|----------|--------|"
+        echo "| Linux    | ${{ needs.build-linux.result }} |"
+        echo "| Windows  | ${{ needs.build-windows.result }} |"
+        echo "| macOS    | ${{ needs.build-macos.result }} |"
+        echo "| Android  | ${{ needs.build-android.result }} |"
+        echo "| iOS      | ${{ needs.build-ios.result }} |"

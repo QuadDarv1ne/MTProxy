@@ -1,0 +1,25 @@
+# FFI генерация bindings для MTProxy Core
+# Запуск: flutter pub run ffigen --config ffigen.yaml
+
+ffigen:
+  name: MtProxyLib
+  description: FFI bindings для MTProxy C библиотеки
+  output: 'lib/mtproxy_bindings.dart'
+  headers:
+    entry-points:
+      - '../src/mtproxy.h'
+      - '../src/config.h'
+      - '../src/statistics.h'
+  functions:
+    include:
+      - 'mtproxy_.*'
+      - 'config_.*'
+      - 'stats_.*'
+  structs:
+    include:
+      - 'mtproxy_config'
+      - 'mtproxy_stats'
+      - 'connection_info'
+  compiler-opts:
+    - '-I../src'
+    - '-DFFI_BUILD'

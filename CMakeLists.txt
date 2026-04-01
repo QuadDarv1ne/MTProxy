@@ -1,0 +1,1957 @@
+cmake_minimum_required(VERSION 3.20)
+
+# Read version from VERSION file
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION")
+    file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" VERSION_CONTENT)
+    string(STRIP "${VERSION_CONTENT}" PROJECT_VERSION)
+else()
+    set(PROJECT_VERSION "1.0.0")
+endif()
+
+project(MTProxy VERSION ${PROJECT_VERSION} LANGUAGES C)
+
+# Set C standard
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+
+# CMake cache optimization
+set(CMAKE_CACHE_MAX_SIZE 50 CACHE STRING "Maximum size of the CMake cache")
+set(CMAKE_SUPPRESS_REGENERATION ON CACHE BOOL "Suppress automatic regeneration of build system")
+
+# Build cache optimization for faster rebuilds
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdiagnostics-color=always")
+if(CMAKE_GENERATOR STREQUAL "Ninja")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdiagnostics-color=always")
+endif()
+
+# Platform detection
+if(WIN32)
+    message(STATUS "Detected Windows platform")
+    add_definitions(-D_WIN32)
+    set(PLATFORM_LIBS ws2_32 pthread)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_WIN32_WINNT=0x0600")
+
+    # Check for inet_pton/inet_ntop availability in MSYS2
+    include(CheckSymbolExists)
+    set(CMAKE_REQUIRED_LIBRARIES ws2_32)
+    check_symbol_exists(inet_pton "ws2tcpip.h" HAVE_INET_PTON)
+    check_symbol_exists(inet_ntop "ws2tcpip.h" HAVE_INET_NTOP)
+    if(HAVE_INET_PTON)
+        add_definitions(-DHAVE_INET_PTON)
+    endif()
+    if(HAVE_INET_NTOP)
+        add_definitions(-DHAVE_INET_NTOP)
+    endif()
+
+    # Auto-detect MSYS2/UCRT64 paths
+    if(EXISTS "C:/msys64/ucrt64")
+        set(CMAKE_PREFIX_PATH "C:/msys64/ucrt64" ${CMAKE_PREFIX_PATH})
+        set(OPENSSL_ROOT_DIR "C:/msys64/ucrt64" CACHE PATH "OpenSSL install path" FORCE)
+        set(ZLIB_ROOT_DIR "C:/msys64/ucrt64" CACHE PATH "ZLIB install path" FORCE)
+        message(STATUS "MSYS2/UCRT64 detected: C:/msys64/ucrt64")
+    endif()
+elseif(UNIX)
+    message(STATUS "Detected Unix/Linux platform")
+    set(PLATFORM_LIBS m rt pthread)
+endif()
+
+# Find required packages
+find_package(Git QUIET)
+find_package(OpenSSL REQUIRED)
+find_package(ZLIB REQUIRED)
+find_package(Threads REQUIRED)
+
+# Memory allocator optimization
+if(ENABLE_JEMALLOC)
+    find_package(Jemalloc QUIET)
+    if(JEMALLOC_FOUND)
+        add_definitions(-DUSE_JEMALLOC)
+        list(APPEND PLATFORM_LIBS ${JEMALLOC_LIBRARIES})
+        include_directories(${JEMALLOC_INCLUDE_DIRS})
+        message(STATUS "jemalloc enabled: ${JEMALLOC_LIBRARIES}")
+    else()
+        message(WARNING "jemalloc requested but not found. Install jemalloc or disable with -DENABLE_JEMALLOC=OFF")
+    endif()
+endif()
+
+if(ENABLE_TCMALLOC)
+    find_package(Tcmalloc QUIET)
+    if(TCMALLOC_FOUND)
+        add_definitions(-DUSE_TCMALLOC)
+        list(APPEND PLATFORM_LIBS ${TCMALLOC_LIBRARIES})
+        include_directories(${TCMALLOC_INCLUDE_DIRS})
+        message(STATUS "tcmalloc enabled: ${TCMALLOC_LIBRARIES}")
+    else()
+        message(WARNING "tcmalloc requested but not found. Install tcmalloc or disable with -DENABLE_TCMALLOC=OFF")
+    endif()
+endif()
+
+# Prefer jemalloc over tcmalloc if both enabled
+if(ENABLE_JEMALLOC AND ENABLE_TCMALLOC)
+    message(WARNING "Both jemalloc and tcmalloc enabled. jemalloc will take precedence.")
+endif()
+
+# ============================================
+# Memory Optimization Options
+# ============================================
+option(ENABLE_LOW_MEMORY "Enable low memory mode (reduces RAM usage)" OFF)
+option(EXCLUDE_HEAVY_MODULES "Exclude heavy modules for Windows/low-memory systems" OFF)
+
+# ARM64 оптимизации
+option(ENABLE_ARM64_CRYPTO "Enable ARM64 cryptographic optimizations (NEON instructions)" OFF)
+
+# Memory allocator optimization
+option(ENABLE_JEMALLOC "Enable jemalloc for better memory performance" OFF)
+option(ENABLE_TCMALLOC "Enable tcmalloc for better memory performance" OFF)
+
+# Memory limit definitions
+if(ENABLE_LOW_MEMORY)
+    add_definitions(-DMAX_CACHE_SIZE_MB=64 -DMAX_POOL_SIZE_MB=32)
+    message(STATUS "Low memory mode enabled: reduced cache and pool sizes")
+else()
+    add_definitions(-DMAX_CACHE_SIZE_MB=128 -DMAX_POOL_SIZE_MB=64)
+    message(STATUS "Default memory limits: cache=128MB, pool=64MB")
+endif()
+
+# Auto-enable heavy module exclusion for Windows
+if(WIN32)
+    set(EXCLUDE_HEAVY_MODULES ON CACHE BOOL "Exclude heavy modules" FORCE)
+    message(STATUS "Heavy modules excluded for Windows platform")
+endif()
+
+# ARM64 platform detection and optimizations
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64|ARM64)")
+    message(STATUS "Detected ARM64 platform: ${CMAKE_SYSTEM_PROCESSOR}")
+    add_definitions(-D__ARM64__)
+    
+    # Enable ARM64 NEON optimizations if requested
+    if(ENABLE_ARM64_CRYPTO)
+        add_definitions(-D__ARM_NEON__)
+        if(NOT WIN32)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=armv8-a+crypto+neon")
+            message(STATUS "ARM64 NEON crypto optimizations enabled")
+        endif()
+    else()
+        message(STATUS "ARM64 detected, but NEON crypto optimizations disabled (use -DENABLE_ARM64_CRYPTO=ON)")
+    endif()
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm|ARM)")
+    message(STATUS "Detected ARM platform: ${CMAKE_SYSTEM_PROCESSOR}")
+    add_definitions(-D__ARM__)
+endif()
+
+# HTTP/3 (QUIC) support - optional
+option(ENABLE_HTTP3 "Enable HTTP/3 (QUIC) support with nghttp3/ngtcp2" OFF)
+if(ENABLE_HTTP3)
+    find_package(PkgConfig QUIET)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(NGHTTP3 libnghttp3)
+        pkg_check_modules(NGTCP2 libngtcp2)
+        pkg_check_modules(NGTCP2_CRYPTO libngtcp2_crypto_openssl)
+    endif()
+
+    if(NGHTTP3_FOUND AND NGTCP2_FOUND AND NGTCP2_CRYPTO_FOUND)
+        add_definitions(-DHAVE_NGHTTP3 -DHAVE_NGTCP2)
+        include_directories(${NGHTTP3_INCLUDE_DIRS} ${NGTCP2_INCLUDE_DIRS})
+        message(STATUS "HTTP/3 (QUIC) enabled with nghttp3/ngtcp2")
+    else()
+        message(STATUS "HTTP/3 (QUIC) disabled - nghttp3/ngtcp2 not found")
+        message(STATUS "  To enable: apt install libnghttp3-dev libngtcp2-dev libngtcp2-crypto-openssl-dev")
+    endif()
+endif()
+
+# io_uring support - Linux only
+option(ENABLE_IOURING "Enable io_uring for high-performance I/O on Linux" OFF)
+if(ENABLE_IOURING)
+    if(UNIX AND NOT APPLE)
+        find_package(PkgConfig QUIET)
+        if(PkgConfig_FOUND)
+            pkg_check_modules(LIBURING liburing)
+        endif()
+
+        if(LIBURING_FOUND)
+            add_definitions(-DHAVE_IO_URING)
+            include_directories(${LIBURING_INCLUDE_DIRS})
+            link_directories(${LIBURING_LIBRARY_DIRS})
+            list(APPEND PLATFORM_LIBS ${LIBURING_LIBRARIES})
+            message(STATUS "io_uring enabled with liburing: ${LIBURING_LIBRARIES}")
+        else()
+            message(STATUS "io_uring disabled - liburing not found")
+            message(STATUS "  To enable: apt install liburing-dev (Linux kernel 5.1+ required)")
+        endif()
+    else()
+        message(STATUS "io_uring disabled - only supported on Linux")
+    endif()
+endif()
+
+# ============================================================================
+# gRPC API Support
+# ============================================================================
+option(ENABLE_GRPC "Enable gRPC API for remote management" OFF)
+if(ENABLE_GRPC)
+    find_package(PkgConfig QUIET)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(PROTOBUF protobuf)
+        pkg_check_modules(GRPC grpc)
+    endif()
+
+    # Поиск protoc и grpc_cpp_plugin
+    find_program(PROTOC_EXECUTABLE protoc)
+    find_program(GRPC_CPP_PLUGIN grpc_cpp_plugin)
+
+    if(PROTOBUF_FOUND AND GRPC_FOUND AND PROTOC_EXECUTABLE AND GRPC_CPP_PLUGIN)
+        set(GRPC_ENABLED TRUE)
+        add_definitions(-DHAVE_GRPC)
+
+        include_directories(${PROTOBUF_INCLUDE_DIRS} ${GRPC_INCLUDE_DIRS})
+        link_directories(${PROTOBUF_LIBRARY_DIRS} ${GRPC_LIBRARY_DIRS})
+
+        # Генерация кода из .proto файла
+        set(PROTO_FILE "${CMAKE_CURRENT_SOURCE_DIR}/api/protobuf/mtproxy.proto")
+        set(PROTO_GEN_DIR "${CMAKE_CURRENT_BINARY_DIR}/grpc_gen")
+        file(MAKE_DIRECTORY ${PROTO_GEN_DIR})
+
+        set(PROTO_SRCS "${PROTO_GEN_DIR}/mtproxy.pb.c")
+        set(PROTO_HDRS "${PROTO_GEN_DIR}/mtproxy.pb.h")
+        set(GRPC_SRCS "${PROTO_GEN_DIR}/mtproxy.grpc.pb.c")
+        set(GRPC_HDRS "${PROTO_GEN_DIR}/mtproxy.grpc.pb.h")
+
+        # Команды генерации
+        add_custom_command(
+            OUTPUT ${PROTO_SRCS} ${PROTO_HDRS}
+            COMMAND ${PROTOC_EXECUTABLE}
+            ARGS -I${CMAKE_CURRENT_SOURCE_DIR}/api/protobuf
+                 --c_out=${PROTO_GEN_DIR}
+                 ${PROTO_FILE}
+            DEPENDS ${PROTO_FILE}
+            COMMENT "Generating C code from protobuf"
+        )
+
+        add_custom_command(
+            OUTPUT ${GRPC_SRCS} ${GRPC_HDRS}
+            COMMAND ${PROTOC_EXECUTABLE}
+            ARGS -I${CMAKE_CURRENT_SOURCE_DIR}/api/protobuf
+                 --grpc_out=${PROTO_GEN_DIR}
+                 --plugin=protoc-gen-grpc=${GRPC_CPP_PLUGIN}
+                 ${PROTO_FILE}
+            DEPENDS ${PROTO_FILE}
+            COMMENT "Generating gRPC code from protobuf"
+        )
+
+        # Добавляем gRPC источники
+        list(APPEND API_SOURCES
+            ${PROTO_SRCS}
+            ${PROTO_HDRS}
+            ${GRPC_SRCS}
+            ${GRPC_HDRS}
+            api/grpc-server.c
+            api/grpc-server.h
+        )
+
+        list(APPEND PLATFORM_LIBS ${PROTOBUF_LIBRARIES} ${GRPC_LIBRARIES})
+
+        message(STATUS "gRPC API enabled")
+        message(STATUS "  protoc: ${PROTOC_EXECUTABLE}")
+        message(STATUS "  grpc_cpp_plugin: ${GRPC_CPP_PLUGIN}")
+    else()
+        set(GRPC_ENABLED FALSE)
+        message(STATUS "gRPC API disabled - protobuf/grpc not found")
+        message(STATUS "  To enable: apt install libprotobuf-dev protobuf-compiler grpc-tools")
+        # Добавляем только grpc-server без сгенерированного кода
+        list(APPEND API_SOURCES
+            api/grpc-server.c
+            api/grpc-server.h
+        )
+    endif()
+else()
+    # gRPC отключён, но добавляем заглушку для совместимости
+    list(APPEND API_SOURCES
+        api/grpc-server.c
+        api/grpc-server.h
+    )
+endif()
+
+# ============================================================================
+# Web UI Support
+# ============================================================================
+option(ENABLE_WEBUI "Enable Web UI for monitoring and management" ON)
+if(ENABLE_WEBUI)
+    # Копирование Web UI файлов в build директорию
+    set(WEBUI_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/webui")
+    set(WEBUI_DEST_DIR "${CMAKE_BINARY_DIR}/webui")
+    
+    file(COPY ${WEBUI_SOURCE_DIR}/ DESTINATION ${WEBUI_DEST_DIR}
+         PATTERN "*.md" EXCLUDE
+         PATTERN "*.gitignore" EXCLUDE)
+    
+    message(STATUS "Web UI enabled")
+    message(STATUS "  Source: ${WEBUI_SOURCE_DIR}")
+    message(STATUS "  Destination: ${WEBUI_DEST_DIR}")
+    message(STATUS "  Access: http://localhost:8080/ (requires REST API)")
+else()
+    message(STATUS "Web UI disabled")
+endif()
+
+# Cache compiler checks to speed up reconfiguration
+set(CMAKE_C_COMPILER_LAUNCHER "" CACHE STRING "C compiler launcher")
+if(CMAKE_GENERATOR STREQUAL "Ninja")
+    find_program(CCACHE_FOUND ccache)
+    if(CCACHE_FOUND)
+        set(CMAKE_C_COMPILER_LAUNCHER ccache CACHE STRING "C compiler launcher" FORCE)
+        message(STATUS "Using ccache for faster compilation: ${CCACHE_FOUND}")
+    endif()
+endif()
+
+# Compiler-specific options
+if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
+    # Base optimization flags (single definition)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -Wall -Wno-array-bounds -fno-strict-aliasing -fno-strict-overflow -fwrapv -DAES=1 -D_GNU_SOURCE=1 -D_FILE_OFFSET_BITS=64")
+
+    # Architecture-specific optimizations (single definition)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mpclmul -mfpmath=sse -mssse3")
+
+    # Advanced optimization flags
+    # LTO enabled for Unix platforms (Linux/macOS), disabled for Windows
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -funroll-loops -ftree-vectorize")
+    
+    # Link-time optimization (LTO) for Unix platforms
+    # Disabled for Windows due to cross-platform compatibility issues
+    if(NOT WIN32)
+        CHECK_C_COMPILER_FLAG("-flto=auto" HAS_LTO)
+        if(HAS_LTO)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto=auto")
+            set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto=auto")
+            message(STATUS "LTO enabled for Unix builds (performance optimization)")
+        endif()
+    else()
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-lto")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fno-lto")
+    endif()
+
+    # AddressSanitizer for Debug builds (optional)
+    option(ENABLE_ASAN "Enable AddressSanitizer for Debug builds" OFF)
+    if(ENABLE_ASAN AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+        CHECK_C_COMPILER_FLAG("-fsanitize=address" HAS_ASAN)
+        if(HAS_ASAN)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer")
+            set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+            message(STATUS "AddressSanitizer enabled for Debug builds")
+        endif()
+    endif()
+
+    # Profile-guided optimization support
+    option(ENABLE_PGO "Enable Profile-Guided Optimization" OFF)
+    option(USE_PGO_PROFILE "Use existing PGO profile for optimization" OFF)
+    
+    # Build optimization level
+    set(BUILD_OPTIMIZATION_LEVEL "O3" CACHE STRING "Optimization level: O0, O1, O2, O3, Os, Oz")
+    set_property(CACHE BUILD_OPTIMIZATION_LEVEL PROPERTY STRINGS O0 O1 O2 O3 Os Oz)
+
+    if(ENABLE_PGO AND NOT USE_PGO_PROFILE)
+        # First pass: generate profiling data
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-generate=${CMAKE_BINARY_DIR}/pgo-data")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-generate=${CMAKE_BINARY_DIR}/pgo-data")
+        message(STATUS "PGO enabled (generate phase) - building with profiling instrumentation")
+        message(STATUS "After building, run the binary with typical workload, then rebuild with USE_PGO_PROFILE=ON")
+    elseif(USE_PGO_PROFILE)
+        # Second pass: use profiling data
+        if(EXISTS "${CMAKE_BINARY_DIR}/pgo-data")
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-use=${CMAKE_BINARY_DIR}/pgo-data")
+            set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-use=${CMAKE_BINARY_DIR}/pgo-data")
+            message(STATUS "PGO enabled (use phase) - optimizing with profiling data")
+        else()
+            message(WARNING "USE_PGO_PROFILE=ON but no profile data found at ${CMAKE_BINARY_DIR}/pgo-data")
+            message(WARNING "First build with ENABLE_PGO=ON, run the binary, then rebuild with USE_PGO_PROFILE=ON")
+        endif()
+    endif()
+
+    # Security-specific flags
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fstack-protector-strong -D_FORTIFY_SOURCE=2")
+
+    # Debug flags for development
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0 -DDEBUG=1")
+    elseif(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -DNDEBUG")
+    elseif(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Os -DNDEBUG")
+    else()
+        # Release build - maximum optimization (single definition)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -DNDEBUG")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native -mtune=native")
+    endif()
+
+    # Additional optimization flags for specific architectures (single definition)
+    include(CheckCCompilerFlag)
+
+    # On Windows, use conservative SIMD flags for compatibility
+    if(WIN32)
+        CHECK_C_COMPILER_FLAG("-msse4.2" HAS_SSE42)
+        if(HAS_SSE42)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse4.2")
+        endif()
+    else()
+        CHECK_C_COMPILER_FLAG("-mavx2" HAS_AVX2)
+        if(HAS_AVX2)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx2")
+        endif()
+
+        CHECK_C_COMPILER_FLAG("-mavx512f" HAS_AVX512)
+        if(HAS_AVX512)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx512f")
+        endif()
+    endif()
+
+    # Enable link-time garbage collection
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffunction-sections -fdata-sections")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--gc-sections")
+
+    # CMake caching for faster reconfiguration
+    option(ENABLE_CCACHE "Enable ccache for faster rebuilds" ON)
+    if(ENABLE_CCACHE)
+        find_program(CCACHE_PROGRAM ccache)
+        if(CCACHE_PROGRAM)
+            set(CMAKE_C_COMPILER_LAUNCHER "${CCACHE_PROGRAM}" CACHE STRING "Ccache executable")
+            message(STATUS "Ccache enabled: ${CCACHE_PROGRAM}")
+        endif()
+    endif()
+    
+    # Static linking options
+    option(STATIC_LINKING "Enable static linking" OFF)
+    if(STATIC_LINKING)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
+    endif()
+
+# Shared library for FFI (Flutter, mobile apps)
+option(BUILD_SHARED_LIB "Build shared library for FFI integration" OFF)
+if(BUILD_SHARED_LIB)
+    add_definitions(-DMTPROXY_EXPORTS -DBUILD_SHARED_LIB)
+endif()
+    
+    # Memory optimization flags
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fomit-frame-pointer")
+    
+    # Vectorization hints
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ftree-vectorize")
+    
+    # Cache optimization
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -freorder-blocks-algorithm=stc")
+    
+    # Branch prediction optimization
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-correction")
+    
+elseif(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Wall /D_WIN32_WINNT=0x0600")
+    
+    # MSVC optimization flags
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /O2 /GL /Gy /Gw")
+    
+    # Security-specific flags for MSVC
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /GS /guard:cf")
+    
+    # Whole program optimization
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LTCG")
+    
+    # Debug flags
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Zi /Od /DDEBUG=1")
+    else()
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /O2 /DNDEBUG")
+    endif()
+endif()
+
+# Define COMMIT hash (similar to Makefile)
+find_package(Git QUIET)
+if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+    execute_process(COMMAND ${GIT_EXECUTABLE} log -1 --pretty=format:%H
+                    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+                    OUTPUT_VARIABLE GIT_COMMIT_HASH
+                    OUTPUT_STRIP_TRAILING_WHITESPACE
+                    ERROR_QUIET)
+    if(NOT GIT_COMMIT_HASH)
+        set(GIT_COMMIT_HASH "unknown")
+    endif()
+else()
+    set(GIT_COMMIT_HASH "unknown")
+endif()
+
+add_definitions(-DCOMMIT="${GIT_COMMIT_HASH}")
+
+# Precompiled headers for faster builds
+option(ENABLE_PCH "Enable precompiled headers" ON)
+if(ENABLE_PCH AND CMAKE_C_COMPILER_ID STREQUAL "GNU")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Winvalid-pch")
+endif()
+
+# Include directories
+include_directories(${PROJECT_SOURCE_DIR})
+include_directories(${PROJECT_SOURCE_DIR}/common)
+include_directories(${PROJECT_SOURCE_DIR}/security)
+
+# Define source files
+set(COMMON_SOURCES
+    common/crc32.c
+    common/crc32.h
+    common/cpuid.c
+    common/cpuid.h
+    common/kprintf.c
+    common/kprintf.h
+    common/md5.c
+    common/md5.h
+    common/mp-queue.c
+    common/mp-queue.h
+    common/parse-config.c
+    common/parse-config.h
+    common/pid.c
+    common/pid.h
+    common/precise-time.c
+    common/precise-time.h
+    common/proc-stat.c
+    common/proc-stat.h
+    common/resolver.c
+    # Audit logging system (NEW)
+    common/audit-log.c
+    common/audit-log.h
+    common/resolver.h
+    # Профили конфигурации
+    common/config-profiles.c
+    common/config-profiles.h
+    common/rpc-const.h
+    common/server-functions.c
+    common/server-functions.h
+    common/sha1.c
+    common/sha1.h
+    common/sha256.c
+    common/sha256.h
+    common/tl-parse.c
+    common/tl-parse.h
+    common/config-manager.c
+    common/config-manager.h
+    common/runtime-tuner.c
+    common/runtime-tuner.h
+    common/structured-logger.c
+    common/structured-logger.h
+    common/log-aggregator.c
+    common/log-aggregator.h
+    common/advanced-logger.c
+    common/advanced-logger.h
+    # Cache memory pool (optimization)
+    common/cache-memory-pool.c
+    common/cache-memory-pool.h
+    common/common-stats.c
+    common/common-stats.h
+    common/platform_network.c
+    common/platform_network.h
+    common/platform_compat.h
+    common/vlog.c
+    common/windows-stubs.c
+    common/windows-epoll.c
+    common/windows-epoll.h
+    common/vlog.h
+    common/cache-manager.c
+    common/cache-manager.h
+    common/rate-limiter.c
+    common/rate-limiter.h
+    common/error-handler.c
+    common/error-handler.h
+    # Windows IPC (Named Pipes)
+    common/windows-ipc.c
+    common/windows-ipc.h
+    # Common utilities (refactored)
+    common/utils.c
+    common/utils.h
+    # Memory limits (OOM protection)
+    common/memory-limits.c
+    common/memory-limits.h
+)
+
+set(JOBS_SOURCES
+    jobs/jobs.c
+    jobs/jobs.h
+)
+
+set(CRYPTO_SOURCES
+    crypto/aesni256.c
+    crypto/aesni256.h
+    crypto/aes-optimized.c
+    crypto/aes-optimized.h
+    crypto/advanced-crypto-opt.c
+    crypto/advanced-crypto-opt.h
+    crypto/crypto-optimizer.c
+    crypto/crypto-optimizer.h
+    crypto/dh-optimized.c
+    crypto/dh-optimized.h
+    crypto/enhanced-crypto-optimizer.c
+    crypto/enhanced-crypto-optimizer.h
+    crypto/vectorized-crypto.c
+    crypto/vectorized-crypto.h
+)
+
+# NET_SOURCES - все сетевые модули (объединено)
+set(NET_SOURCES
+    # HTTP/3 (QUIC)
+    net/http3-quic.c
+    net/http3-quic.h
+    # Расширенные функции
+    net/shadowsocks-advanced.c
+    net/shadowsocks-advanced.h
+    net/pluggable-transports.c
+    net/pluggable-transports.h
+    net/network-profiler.c
+    net/network-profiler.h
+    net/network-analyzer.c
+    net/network-analyzer.h
+    # Дополнительные сетевые модули
+    net/adaptive-protocol-manager.c
+    net/adaptive-protocol-manager.h
+    net/advanced-connection-pool.c
+    # net/advanced-connection-pool.h - отсутствует
+    # net/advanced-network.c - requires epoll
+    net/advanced-network.h
+    # net/async-network-optimizer.c - requires epoll
+    net/async-network-optimizer.h
+    net/enhanced-tls-obfuscation.c
+    net/enhanced-tls-obfuscation.h
+    net/multiproto-manager.c
+    net/multiproto-manager.h
+    net/net-buffer-manager.c
+    # net/net-buffer-manager.h - отсутствует
+    net/net-connections-pool.c
+    net/net-connections-pool.h
+    # net/net-enhanced-networking.c - requires epoll
+    # net/net-event-handler.c - requires epoll
+    # net/net-performance-manager.c
+    net/net-performance-manager.h
+    net/net-quic-connections.c
+    net/net-quic-connections.h
+    # net/network-connection-optimizer.c
+    net/network-connection-optimizer.h
+    # net/protocol-reliability.c
+    net/protocol-reliability.h
+    # net/routing-optimizer.c
+    net/routing-optimizer.h
+    # net/shadowsocks-adapter.c
+    net/shadowsocks-adapter.h
+    # net/simple-advanced-network.c
+    net/simple-advanced-network.h
+    net/tls-emulator.c
+    net/tls-emulator.h
+    # REST API (NEW) - отключено для Windows из-за проблем совместимости
+    # net/rest-api.c
+    # net/rest-api.h
+    net/websocket-support.c
+    net/websocket-support.h
+    # net/zero-copy-optimizer.c
+    net/zero-copy-optimizer.h
+    # Статистика трафика
+    net/traffic-stats.c
+    net/traffic-stats.h
+    # DNS кэш - ОТКЛЮЧЕН (проблемы с запуском)
+    # net/dns-cache.c
+    # net/dns-cache.h
+    # SOCKS5 - ОТКЛЮЧЕН (проблемы с запуском)
+    # net/socks5.c
+    # net/socks5.h
+    # WebSocket туннель - ОТКЛЮЧЕН (Telegram функционал, проблемы с запуском)
+    # net/ws-tunnel.c
+    # net/ws-tunnel.h
+    # Основные сетевые модули
+    net/net-config.c
+    net/net-config.h
+    net/net-crypto-aes.c
+    net/net-crypto-aes.h
+    net/net-crypto-dh.c
+    net/net-crypto-dh.h
+    # net/net-events.c - Windows compatibility issues
+    net/net-events.h
+    net/net-http-server.c
+    net/net-http-server.h
+    net/net-msg-buffers.c
+    net/net-msg-buffers.h
+    net/net-msg.c
+    net/net-msg.h
+    net/net-rpc-targets.c
+    net/net-rpc-targets.h
+    net/net-stats.c
+    net/net-tcp-connections.c
+    net/net-tcp-connections.h
+    net/net-tcp-rpc-client.c
+    net/net-tcp-rpc-client.h
+    net/net-tcp-rpc-common.c
+    net/net-tcp-rpc-common.h
+    # net/net-tcp-rpc-ext-server.c - Requires net-events.c and net-connections.c (epoll Windows compatibility)
+    # net/net-tcp-rpc-ext-server.h
+    net/net-tcp-rpc-server.c
+    net/net-tcp-rpc-server.h
+    net/net-thread.c
+    net/net-thread.h
+    net/net-timers.c
+    net/net-timers.h
+)
+
+# Windows-specific: Exclude files requiring epoll/select emulation
+if(WIN32)
+    # net-events.c and net-connections.c require epoll implementation for Windows
+    # These are excluded until proper Windows compatibility is added
+    list(REMOVE_ITEM NET_SOURCES
+        "net/net-events.c"
+        "net/net-connections.c"
+        "net/net-tcp-rpc-ext-server.c"
+        # Files with missing headers or Windows incompatibilities
+        "net/net-buffer-manager.c"
+        "net/net-connections-pool.c"
+        "net/advanced-connection-pool.c"
+        "net/net-quic-connections.c"
+        "net/net-quic-connections.h"
+        # Additional Windows exclusions
+        "net/net-thread.c"
+        "net/net-thread.h"
+        "net/multiproto-manager.c"
+        "net/multiproto-manager.h"
+        "net/adaptive-protocol-manager.c"
+        "net/adaptive-protocol-manager.h"
+        "net/enhanced-tls-obfuscation.c"
+        "net/enhanced-tls-obfuscation.h"
+    )
+    list(REMOVE_ITEM NET_SOURCES
+        "net/net-events.h"
+        "net/net-connections.h"
+        "net/net-tcp-rpc-ext-server.h"
+        "net/net-buffer-manager.h"
+        "net/net-thread.h"
+        "net/multiproto-manager.h"
+        "net/adaptive-protocol-manager.h"
+        "net/enhanced-tls-obfuscation.h"
+    )
+
+    # Exclude log-aggregator.c due to POSIX regex dependency
+    list(REMOVE_ITEM COMMON_SOURCES
+        "common/log-aggregator.c"
+        "common/log-aggregator.h"
+    )
+endif()
+
+# SECURITY_SOURCES - все модули безопасности (объединено)
+set(SECURITY_SOURCES
+    security/modular-security.c
+    security/modular-security.h
+    security/simple-security.c
+    security/simple-security.h
+    security/security-manager.c
+    security/security-manager.h
+    security/ddos-protection.c
+    security/ddos-protection.h
+    security/ddos-protection-enhanced.c
+    security/ddos-protection-enhanced.h
+    security/cert-pinning.c
+    security/cert-pinning.h
+    security/security-utils.c
+    security/security-utils.h
+    security/behavioral-anomaly-detection.c
+    security/behavioral-anomaly-detection.h
+    security/security-enhancements.c
+    security/security-enhancements.h
+    security/threat-intelligence-system.c
+    security/threat-intelligence-system.h
+    security_enhanced/security-enhanced.c
+    security_enhanced/security-enhanced.h
+    common/mtproxy-fixes-simple.h
+)
+
+# Windows-specific: Exclude mtproxy-fixes-simple.h due to type conflicts
+if(WIN32)
+    list(REMOVE_ITEM SECURITY_SOURCES "common/mtproxy-fixes-simple.h")
+endif()
+
+set(ENGINE_SOURCES
+    engine/engine.c
+    engine/engine.h
+    engine/engine-net.c
+    engine/engine-net.h
+    engine/engine-rpc.c
+    engine/engine-rpc.h
+    engine/engine-rpc-common.c
+    engine/engine-rpc-common.h
+    engine/engine-signals.c
+    engine/engine-signals.h
+)
+
+set(SYSTEM_SOURCES
+    system/performance-optimizer.c
+    system/performance-optimizer.h
+    system/optimizer-integration.c
+    system/optimizer-integration.h
+    system/simple-performance-optimizer.c
+    system/simple-performance-optimizer.h
+    system/memory-optimization.c
+    system/memory-optimization.h
+    system/connection-optimizer.c
+    system/connection-optimizer.h
+    system/advanced-cache.c
+    system/advanced-cache.h
+    system/memory-manager.c
+    system/memory-manager.h
+    system/distributed-monitor.c
+    system/distributed-monitor.h
+    system/threat-detector.c
+    system/threat-detector.h
+    system/auto-scaler.c
+    system/auto-scaler.h
+    system/adaptive-tuning.c
+    system/adaptive-tuning.h
+    system/advanced-memory-management.c
+    system/advanced-memory-management.h
+    system/advanced-optimizer.c
+    system/advanced-optimizer.h
+    system/advanced-predictive-analytics.c
+    system/advanced-predictive-analytics.h
+    system/component-integration.c
+    system/component-integration.h
+    system/compression-optimizer.c
+    system/compression-optimizer.h
+    system/dynamic-resource-allocator.c
+    system/dynamic-resource-allocator.h
+    system/enhanced-memory-optimizer.c
+    system/enhanced-memory-optimizer.h
+    system/failure-predictor.c
+    system/failure-predictor.h
+    system/intelligent-auto-tuning.c
+    system/intelligent-auto-tuning.h
+    system/intelligent-optimization-integrator.c
+    system/intelligent-optimization-integrator.h
+    system/intelligent-workload-distributor.c
+    system/intelligent-workload-distributor.h
+    system/memory-optimizer.c
+    system/memory-optimizer.h
+    system/memory-pool-optimizer.c
+    system/memory-pool-optimizer.h
+    system/memory-pool.c
+    system/memory-pool.h
+    system/ml-performance-predictor.c
+    system/ml-performance-predictor.h
+    system/modular-architecture.c
+    system/modular-architecture.h
+    system/numa-allocator.c
+    system/numa-allocator.h
+    system/numa-aware-allocator.c
+    system/numa-aware-allocator.h
+    system/performance-forecasting-engine.c
+    system/performance-forecasting-engine.h
+    system/plugin-interface.c
+    system/plugin-interface.h
+    system/predictive-optimizer.c
+    system/predictive-optimizer.h
+    system/proactive-allocator.c
+    system/proactive-allocator.h
+    system/self-healing.c
+    system/self-healing.h
+    system/unified-api.c
+    system/unified-api.h
+    system/config/advanced-systems-defaults.c
+    system/config/advanced-systems-defaults.h
+    system/config/unified-config-manager.c
+    system/config/unified-config-manager.h
+    system/diagnostic/advanced-diagnostic-system.c
+    system/diagnostic/advanced-diagnostic-system.h
+    system/integration/mtproxy-integration-layer.c
+    system/integration/mtproxy-integration-layer.h
+    system/integration/system-integration-coordinator.c
+    system/integration/system-integration-coordinator.h
+    system/monitoring/real-time-monitoring-dashboard.c
+    system/monitoring/real-time-monitoring-dashboard.h
+    system/monitoring/system-health-monitor.c
+    system/monitoring/system-health-monitor.h
+    system/optimization/performance-correlation-engine.c
+    system/optimization/performance-correlation-engine.h
+    system/optimization/resource-optimization-manager.c
+    system/optimization/resource-optimization-manager.h
+)
+
+# Exclude heavy modules for Windows/low-memory systems
+if(EXCLUDE_HEAVY_MODULES)
+    list(REMOVE_ITEM SYSTEM_SOURCES
+        "system/numa-allocator.c"
+        "system/numa-allocator.h"
+        "system/numa-aware-allocator.c"
+        "system/numa-aware-allocator.h"
+        "system/advanced-optimizer.c"
+        "system/advanced-optimizer.h"
+        "system/advanced-predictive-analytics.c"
+        "system/advanced-predictive-analytics.h"
+        "system/ml-performance-predictor.c"
+        "system/ml-performance-predictor.h"
+        "system/proactive-allocator.c"
+        "system/proactive-allocator.h"
+        "system/advanced-memory-management.c"
+        "system/advanced-memory-management.h"
+        "system/memory-pool-optimizer.c"
+        "system/memory-pool-optimizer.h"
+        "system/enhanced-memory-optimizer.c"
+        "system/enhanced-memory-optimizer.h"
+        "system/memory-optimizer.c"
+        "system/memory-optimizer.h"
+        "system/distributed-monitor.c"
+        "system/distributed-monitor.h"
+        "system/auto-scaler.c"
+        "system/auto-scaler.h"
+        "system/failure-predictor.c"
+        "system/failure-predictor.h"
+        "system/intelligent-auto-tuning.c"
+        "system/intelligent-auto-tuning.h"
+        "system/intelligent-optimization-integrator.c"
+        "system/intelligent-optimization-integrator.h"
+        "system/intelligent-workload-distributor.c"
+        "system/intelligent-workload-distributor.h"
+        "system/modular-architecture.c"
+        "system/modular-architecture.h"
+        "system/performance-forecasting-engine.c"
+        "system/performance-forecasting-engine.h"
+        "system/predictive-optimizer.c"
+        "system/predictive-optimizer.h"
+        "system/self-healing.c"
+        "system/self-healing.h"
+    )
+    
+    # Exclude perf_monitor heavy modules
+    list(REMOVE_ITEM PERF_MONITOR_SOURCES
+        "perf_monitor/distributed-tracing.c"
+        "perf_monitor/distributed-tracing.h"
+        "perf_monitor/distributed-tracing-system.c"
+        "perf_monitor/distributed-tracing-system.h"
+        "perf_monitor/enhanced-observability.c"
+        "perf_monitor/enhanced-observability.h"
+        "perf_monitor/enhanced-performance-monitor.c"
+        "perf_monitor/enhanced-performance-monitor.h"
+        "perf_monitor/advanced-metrics.c"
+        "perf_monitor/advanced-metrics.h"
+    )
+    
+    message(STATUS "Heavy system modules excluded for memory optimization")
+endif()
+
+# io_uring and DPDK are Linux-only
+if(NOT WIN32)
+set(ADVANCED_OPTIMIZATION_SOURCES
+    net/io_uring.c
+    net/io_uring.h
+    system/io-uring-interface.c
+    system/io-uring-interface.h
+    system/dpdk-interface.c
+    system/dpdk-interface.h
+    system/debugging/intelligent-debugging-framework.c
+    system/debugging/intelligent-debugging-framework.h
+)
+endif()
+
+set(PERF_MONITOR_SOURCES
+    perf_monitor/advanced-metrics.c
+    perf_monitor/advanced-metrics.h
+    perf_monitor/advanced-monitoring.c
+    perf_monitor/advanced-monitoring.h
+    perf_monitor/simple-monitoring.c
+    perf_monitor/simple-monitoring.h
+    perf_monitor/extended-monitoring.c
+    perf_monitor/extended-monitoring.h
+    perf_monitor/perf-monitor.c
+    perf_monitor/perf-monitor.h
+    perf_monitor/distributed-tracing.c
+    perf_monitor/distributed-tracing.h
+    perf_monitor/distributed-tracing-system.c
+    perf_monitor/distributed-tracing-system.h
+    perf_monitor/enhanced-observability.c
+    perf_monitor/enhanced-observability.h
+    perf_monitor/enhanced-performance-monitor.c
+    perf_monitor/enhanced-performance-monitor.h
+)
+
+set(OBFUSCATION_SOURCES
+    ml/anomaly-detector.c
+    ml/anomaly-detector.h
+    ml/traffic-optimizer.c
+    ml/traffic-optimizer.h
+    net/tls-emulator.c
+    net/tls-emulator.h
+    shadowsocks/shadowsocks-obfuscator.c
+    shadowsocks/shadowsocks-obfuscator.h
+)
+
+set(VV_SOURCES
+    vv/vv-tree.c
+    vv/vv-tree.h
+    vv/vv-io.h
+)
+
+set(CONN_POOL_SOURCES
+    conn_pool/adaptive-connection-pool.c
+    conn_pool/adaptive-connection-pool.h
+    conn_pool/advanced-connection-optimizer.c
+    conn_pool/advanced-connection-optimizer.h
+    conn_pool/conn-pool.c
+    conn_pool/conn-pool.h
+    conn_pool/simple-advanced-connection-optimizer.c
+)
+
+set(GENERAL_SOURCES
+)
+
+set(INFRASTRUCTURE_SOURCES
+    infrastructure/load-balancer.c
+    infrastructure/load-balancer.h
+)
+
+set(THREAD_SYSTEM_SOURCES
+    thread_system/thread-system.c
+    thread_system/thread-system.h
+)
+
+set(MTPROTO_SOURCES
+    mtproto/mtproto-common.h
+    mtproto/mtproto-config.c
+    mtproto/mtproto-config.h
+    mtproto/mtproto-proxy.c
+    mtproto/mtproto-v3-adapter.c
+    mtproto/mtproto-v3-adapter.h
+    mtproto/mtproto-version-manager.c
+    mtproto/mtproto-version-manager.h
+)
+
+# API sources (gRPC, REST)
+# API_SOURCES is already defined in gRPC section above
+
+# Create a static library for crypto modules (compiled without -ffast-math for security)
+add_library(kdb_crypto STATIC ${CRYPTO_SOURCES})
+target_compile_options(kdb_crypto PRIVATE -fno-fast-math)
+target_include_directories(kdb_crypto PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/common)
+
+# Create a static library for common functionality
+add_library(kdb_common STATIC 
+    ${COMMON_SOURCES} 
+    ${JOBS_SOURCES} 
+    ${VV_SOURCES} 
+    ${CONN_POOL_SOURCES} 
+    ${GENERAL_SOURCES} 
+    ${INFRASTRUCTURE_SOURCES} 
+    ${THREAD_SYSTEM_SOURCES} 
+    ${SYSTEM_SOURCES} 
+    ${SECURITY_SOURCES} 
+    ${ADVANCED_OPTIMIZATION_SOURCES} 
+    ${OBFUSCATION_SOURCES} 
+    ${PERF_MONITOR_SOURCES}
+    ${API_SOURCES}
+)
+target_include_directories(kdb_common PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/common)
+
+# Target for the main mtproto-proxy executable
+add_executable(mtproto-proxy
+    ${MTPROTO_SOURCES}
+    ${ENGINE_SOURCES}
+    ${NET_SOURCES}
+)
+
+# Link libraries
+target_link_libraries(mtproto-proxy
+    kdb_common
+    kdb_crypto
+    ${PLATFORM_LIBS}
+    OpenSSL::SSL
+    OpenSSL::Crypto
+    ZLIB::ZLIB
+    Threads::Threads
+)
+
+# Windows console application flags
+if(WIN32)
+    target_link_options(mtproto-proxy PRIVATE -mconsole)
+endif()
+
+# Parallel link optimization
+include(ProcessorCount)
+ProcessorCount(NPROC)
+if(NPROC GREATER 0)
+    set(CMAKE_BUILD_PARALLEL_LEVEL ${NPROC} CACHE STRING "Build parallel level" FORCE)
+endif()
+
+# Set output directory
+set_target_properties(mtproto-proxy PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# Admin CLI utility
+add_executable(mtproxy-admin
+    admin/main.c
+    admin/admin-cli.c
+    admin/admin-cli.h
+    admin/admin-rest-api.c
+    admin/admin-rest-api.h
+)
+
+target_link_libraries(mtproxy-admin
+    kdb_common
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(mtproxy-admin PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# Test executable for new modules
+add_executable(test-new-modules
+    testing/test_new_modules.c
+)
+
+target_link_libraries(test-new-modules
+    kdb_common
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-new-modules PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# Traffic stats test executable
+add_executable(test-traffic-stats
+    testing/test_traffic_stats.c
+    net/traffic-stats.c
+)
+
+target_link_libraries(test-traffic-stats
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-traffic-stats PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# Utils module test executable
+add_executable(test-utils
+    testing/test_utils.c
+    common/utils.c
+)
+
+target_link_libraries(test-utils
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-utils PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# Utils encoding test executable
+add_executable(test-utils-encoding
+    testing/test_utils_encoding.c
+    common/utils.c
+)
+
+target_link_libraries(test-utils-encoding
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-utils-encoding PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# Memory allocator test executable
+add_executable(test-memory-allocator
+    testing/test_memory_allocator.c
+)
+
+target_link_libraries(test-memory-allocator
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-memory-allocator PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# Memory allocator benchmark executable
+add_executable(benchmark-memory-allocator
+    testing/benchmark_memory_allocator.c
+)
+
+target_link_libraries(benchmark-memory-allocator
+    ${PLATFORM_LIBS}
+    pthread
+)
+
+set_target_properties(benchmark-memory-allocator PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# io_uring benchmark executable (Linux only)
+if(NOT WIN32)
+add_executable(benchmark-io-uring
+    testing/benchmark_io_uring.c
+    net/io_uring.c
+)
+
+target_link_libraries(benchmark-io-uring
+    ${PLATFORM_LIBS}
+)
+
+target_compile_definitions(benchmark-io-uring PRIVATE
+    $<$<BOOL:${LIBURING_FOUND}>:HAVE_IO_URING>
+)
+
+set_target_properties(benchmark-io-uring PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+endif()
+
+# ML Systems benchmark executable
+add_executable(benchmark-ml-systems
+    testing/benchmark-ml-systems.c
+    system/ml/anomaly-detection.c
+    system/ml/predictive-analytics.c
+)
+
+target_link_libraries(benchmark-ml-systems
+    ${PLATFORM_LIBS}
+)
+
+target_include_directories(benchmark-ml-systems PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/system
+)
+
+set_target_properties(benchmark-ml-systems PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# Highload benchmark executable (100K+ operations) - disabled for Windows (missing dependencies)
+if(NOT WIN32)
+add_executable(benchmark-highload
+    testing/benchmark_highload.c
+)
+
+target_link_libraries(benchmark-highload
+    ${PLATFORM_LIBS}
+    pthread
+)
+
+set_target_properties(benchmark-highload PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+endif()
+
+# Cache performance benchmark executable (100K+ operations)
+# Requires API update - disabled for Windows
+if(NOT WIN32)
+add_executable(benchmark-cache-performance
+    testing/benchmark_cache_performance.c
+    common/cache-manager.c
+    common/crc32.c
+    common/utils.c
+)
+
+target_link_libraries(benchmark-cache-performance
+    ${PLATFORM_LIBS}
+    pthread
+)
+
+set_target_properties(benchmark-cache-performance PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+endif()
+
+# Utils security test executable
+add_executable(test-utils-security
+    testing/test_utils_security.c
+    common/utils.c
+)
+
+target_link_libraries(test-utils-security
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-utils-security PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# Error handler test executable
+add_executable(test-error-handler
+    testing/test_error_handler.c
+)
+
+target_link_libraries(test-error-handler
+    kdb_common
+    kdb_crypto
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-error-handler PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# Cache memory pool test executable
+add_executable(test-cache-pool
+    testing/test_cache_memory_pool.c
+    common/cache-memory-pool.c
+)
+
+target_link_libraries(test-cache-pool
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-cache-pool PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# Cache no-copy optimization test executable
+# Requires full kdb_common library - disabled for Windows
+if(NOT WIN32)
+add_executable(test-cache-no-copy
+    testing/test_cache_no_copy.c
+    common/cache-manager.c
+    common/crc32.c
+    common/utils.c
+)
+
+target_link_libraries(test-cache-no-copy
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-cache-no-copy PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+endif()
+
+# Admin CLI test executable
+add_executable(test-admin-cli
+    testing/test_admin_cli.c
+    admin/admin-cli.c
+)
+
+target_link_libraries(test-admin-cli
+    kdb_common
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-admin-cli PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# Admin CLI integration test executable - disabled for Windows (compatibility issues)
+if(NOT WIN32)
+add_executable(test-admin-cli-integration
+    testing/test_admin_cli_integration.c
+)
+
+target_link_libraries(test-admin-cli-integration
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-admin-cli-integration PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+endif()
+
+# io_uring test executable (Linux only)
+if(NOT WIN32)
+add_executable(test-io-uring
+    testing/test_io_uring.c
+    net/io_uring.c
+)
+
+target_link_libraries(test-io-uring
+    ${PLATFORM_LIBS}
+)
+
+target_compile_definitions(test-io-uring PRIVATE
+    $<$<BOOL:${LIBURING_FOUND}>:HAVE_IO_URING>
+)
+
+set_target_properties(test-io-uring PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+endif()
+
+# REST API test executable - disabled for Windows (compatibility issues)
+if(NOT WIN32)
+add_executable(test-rest-api
+    testing/test_rest_api.c
+    net/rest-api.c
+    net/net-http-server.c
+    common/utils.c
+    common/crc32.c
+)
+
+target_link_libraries(test-rest-api
+    ${PLATFORM_LIBS}
+    pthread
+)
+
+target_compile_definitions(test-rest-api PRIVATE
+    -DTEST_MODE
+)
+
+set_target_properties(test-rest-api PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+endif()
+
+# gRPC Server test executable - disabled for Windows (compatibility issues)
+if(NOT WIN32)
+add_executable(test-grpc-server
+    testing/test_grpc_server.c
+    api/grpc-server.c
+)
+
+target_link_libraries(test-grpc-server
+    ${PLATFORM_LIBS}
+    pthread
+)
+
+target_compile_definitions(test-grpc-server PRIVATE
+    -DTEST_MODE
+)
+
+target_include_directories(test-grpc-server PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+set_target_properties(test-grpc-server PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+endif()
+
+# ============================================================================
+# MTProxy CLI Utility (Q4 2026) - disabled for Windows (compatibility issues)
+if(NOT WIN32)
+add_executable(mtproxy-cli
+    cli/mtcli.c
+    cli/mtcli.h
+)
+
+target_link_libraries(mtproxy-cli
+    ${PLATFORM_LIBS}
+)
+
+target_include_directories(mtproxy-cli PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+)
+
+set_target_properties(mtproxy-cli PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+endif()
+
+# ============================================================================
+# Alert Manager (Q4 2026)
+# ============================================================================
+
+# Alert Manager test executable
+add_executable(test-alert-manager
+    testing/test_alert_manager.c
+    system/monitoring/alert-manager.c
+)
+
+target_link_libraries(test-alert-manager
+    ${PLATFORM_LIBS}
+)
+
+target_include_directories(test-alert-manager PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/testing
+    ${CMAKE_CURRENT_SOURCE_DIR}/system
+)
+
+set_target_properties(test-alert-manager PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# ============================================================================
+# Health Check System (Q4 2026)
+# ============================================================================
+
+# Health Check test executable - disabled for Windows (compatibility issues)
+if(NOT WIN32)
+add_executable(test-health-check
+    testing/test_health_check.c
+    system/monitoring/health-check.c
+)
+
+target_link_libraries(test-health-check
+    ${PLATFORM_LIBS}
+)
+
+target_include_directories(test-health-check PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/testing
+    ${CMAKE_CURRENT_SOURCE_DIR}/system
+)
+
+set_target_properties(test-health-check PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+endif()
+
+# ============================================================================
+# Cluster Manager (Q4 2026)
+# ============================================================================
+
+# Cluster Manager test executable - disabled for Windows (compatibility issues)
+if(NOT WIN32)
+add_executable(test-cluster-manager
+    testing/test_cluster_manager.c
+    system/cluster/cluster-manager.c
+)
+
+target_link_libraries(test-cluster-manager
+    ${PLATFORM_LIBS}
+)
+
+target_include_directories(test-cluster-manager PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/testing
+    ${CMAKE_CURRENT_SOURCE_DIR}/system
+)
+
+set_target_properties(test-cluster-manager PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+endif()
+
+# ============================================================================
+# Load Balancer (Q4 2026)
+# ============================================================================
+
+# Load Balancer test executable - disabled for Windows (compatibility issues)
+if(NOT WIN32)
+add_executable(test-load-balancer
+    testing/test_load_balancer.c
+    system/cluster/load-balancer.c
+)
+
+target_link_libraries(test-load-balancer
+    ${PLATFORM_LIBS}
+)
+
+target_include_directories(test-load-balancer PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/testing
+    ${CMAKE_CURRENT_SOURCE_DIR}/system
+)
+
+set_target_properties(test-load-balancer PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+endif()
+
+# ============================================================================
+# Auto-Scaler (Q1 2027)
+# ============================================================================
+
+# Auto-Scaler test executable
+add_executable(test-auto-scaler
+    testing/test_auto_scaler.c
+    system/cluster/auto-scaler.c
+)
+
+target_link_libraries(test-auto-scaler
+    ${PLATFORM_LIBS}
+)
+
+target_include_directories(test-auto-scaler PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/testing
+    ${CMAKE_CURRENT_SOURCE_DIR}/system
+)
+
+set_target_properties(test-auto-scaler PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# ============================================================================
+# Distributed Tracing (Q1 2027)
+# ============================================================================
+
+# Distributed Tracing test executable
+add_executable(test-distributed-tracing
+    testing/test_distributed_tracing.c
+    system/monitoring/distributed-tracing.c
+)
+
+target_link_libraries(test-distributed-tracing
+    ${PLATFORM_LIBS}
+)
+
+target_include_directories(test-distributed-tracing PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/testing
+    ${CMAKE_CURRENT_SOURCE_DIR}/system
+)
+
+set_target_properties(test-distributed-tracing PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# ============================================================================
+# Production Integration Tests (Q1 2027)
+# ============================================================================
+
+# Production Integration Test executable
+add_executable(test-production-integration
+    testing/test_production_integration.c
+)
+
+target_link_libraries(test-production-integration
+    mtproxy-cluster
+    mtproxy-monitoring
+    ${PLATFORM_LIBS}
+)
+
+target_include_directories(test-production-integration PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/testing
+    ${CMAKE_CURRENT_SOURCE_DIR}/system
+)
+
+set_target_properties(test-production-integration PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# ============================================================================
+# ML Systems Tests (Q2 2027 - Anomaly Detection & Predictive Analytics)
+# ============================================================================
+
+# Anomaly Detection Test executable
+add_executable(test-anomaly-detection
+    testing/test_anomaly_detection.c
+    system/ml/anomaly-detection.c
+)
+
+target_link_libraries(test-anomaly-detection
+    ${PLATFORM_LIBS}
+)
+
+target_include_directories(test-anomaly-detection PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/testing
+    ${CMAKE_CURRENT_SOURCE_DIR}/system
+)
+
+set_target_properties(test-anomaly-detection PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# Predictive Analytics Test executable
+add_executable(test-predictive-analytics
+    testing/test_predictive_analytics.c
+    system/ml/predictive-analytics.c
+)
+
+target_link_libraries(test-predictive-analytics
+    ${PLATFORM_LIBS}
+)
+
+target_include_directories(test-predictive-analytics PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/testing
+    ${CMAKE_CURRENT_SOURCE_DIR}/system
+)
+
+set_target_properties(test-predictive-analytics PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# ML Integration Test executable
+add_executable(test-ml-integration
+    testing/test_ml_integration.c
+    system/ml/anomaly-detection.c
+    system/ml/predictive-analytics.c
+    system/ml/ml-integration.c
+)
+
+target_link_libraries(test-ml-integration
+    ${PLATFORM_LIBS}
+)
+
+target_include_directories(test-ml-integration PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/testing
+    ${CMAKE_CURRENT_SOURCE_DIR}/system
+)
+
+set_target_properties(test-ml-integration PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# WS Tunnel test executable - ОТКЛЮЧЕН (tg-ws-proxy integration)
+# add_executable(test-ws-tunnel
+#     testing/test_ws_tunnel.c
+#     net/ws-tunnel.c
+# )
+#
+# target_link_libraries(test-ws-tunnel
+#     kdb_common
+#     ${PLATFORM_LIBS}
+#     OpenSSL::SSL
+#     OpenSSL::Crypto
+# )
+#
+# set_target_properties(test-ws-tunnel PROPERTIES
+#     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+# )
+
+# FFI API test executable - not available on Windows (requires full FFI implementation)
+if(NOT WIN32)
+add_executable(test-ffi-api
+    testing/test_ffi_api.c
+)
+
+target_link_libraries(test-ffi-api
+    kdb_common
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-ffi-api PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+endif()
+
+# Performance test executable - not available on Windows
+if(NOT WIN32)
+add_executable(test-performance
+    testing/test_performance.c
+)
+
+target_link_libraries(test-performance
+    kdb_common
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-performance PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+endif()
+
+# Admin CLI integration test executable - not available on Windows (requires config-manager API)
+if(NOT WIN32)
+add_executable(test-admin-cli-integration
+    testing/test_admin_cli_integration.c
+)
+
+target_link_libraries(test-admin-cli-integration
+    kdb_common
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-admin-cli-integration PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+endif()
+
+# Cache performance test executable (Q2 2026) - ОТКЛЮЧЕН (проблемы с API)
+# add_executable(cache-performance-test
+#     testing/cache_performance_test.c
+# )
+#
+# target_link_libraries(cache-performance-test
+#     kdb_common
+#     ${PLATFORM_LIBS}
+# )
+#
+# set_target_properties(cache-performance-test PROPERTIES
+#     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+# )
+
+# Cache performance test simple (Windows compatible)
+add_executable(cache-performance-test-simple
+    testing/cache_performance_test_simple.c
+)
+
+target_link_libraries(cache-performance-test-simple
+    kdb_common
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(cache-performance-test-simple PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# Rate limiter high-load test executable (Q2 2026) - ОТКЛЮЧЕН (проблемы с API)
+# add_executable(rate-limiter-highload-test
+#     testing/rate_limiter_highload_test.c
+# )
+#
+# target_link_libraries(rate-limiter-highload-test
+#     kdb_common
+#     ${PLATFORM_LIBS}
+# )
+#
+# set_target_properties(rate-limiter-highload-test PROPERTIES
+#     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+# )
+
+# Rate limiter high-load test simple (Windows compatible)
+add_executable(rate-limiter-highload-test-simple
+    testing/rate_limiter_highload_test_simple.c
+)
+
+target_link_libraries(rate-limiter-highload-test-simple
+    kdb_common
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(rate-limiter-highload-test-simple PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# Integration tests executable (Q2 2026) - ОТКЛЮЧЕН (проблемы с API)
+# add_executable(integration-tests
+#     testing/integration_tests.c
+# )
+#
+# target_link_libraries(integration-tests
+#     kdb_common
+#     ${PLATFORM_LIBS}
+# )
+#
+# set_target_properties(integration-tests PROPERTIES
+#     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+# )
+
+# Integration tests simple (Windows compatible)
+add_executable(integration-tests-simple
+    testing/integration_tests_simple.c
+)
+
+target_link_libraries(integration-tests-simple
+    kdb_common
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(integration-tests-simple PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# Enable CTest for test discovery
+enable_testing()
+
+# Register tests with CTest
+add_test(NAME test-utils-security COMMAND test-utils-security)
+add_test(NAME test-error-handler COMMAND test-error-handler)
+add_test(NAME test-cache-pool COMMAND test-cache-pool)
+if(NOT WIN32)
+add_test(NAME test-cache-no-copy COMMAND test-cache-no-copy)
+endif()
+add_test(NAME test-admin-cli COMMAND test-admin-cli)
+add_test(NAME test-admin-cli-integration COMMAND test-admin-cli-integration)
+if(NOT WIN32)
+add_test(NAME test-io-uring COMMAND test-io-uring)
+endif()
+add_test(NAME test-rest-api COMMAND test-rest-api)
+add_test(NAME test-grpc-server COMMAND test-grpc-server)
+add_test(NAME test-cli COMMAND test-cli)
+add_test(NAME test-alert-manager COMMAND test-alert-manager)
+add_test(NAME test-health-check COMMAND test-health-check)
+add_test(NAME test-cluster-manager COMMAND test-cluster-manager)
+add_test(NAME test-load-balancer COMMAND test-load-balancer)
+add_test(NAME test-auto-scaler COMMAND test-auto-scaler)
+add_test(NAME test-distributed-tracing COMMAND test-distributed-tracing)
+add_test(NAME test-production-integration COMMAND test-production-integration)
+add_test(NAME test-anomaly-detection COMMAND test-anomaly-detection)
+add_test(NAME test-predictive-analytics COMMAND test-predictive-analytics)
+add_test(NAME test-ml-integration COMMAND test-ml-integration)
+add_test(NAME benchmark-memory-allocator COMMAND benchmark-memory-allocator)
+add_test(NAME benchmark-io-uring COMMAND benchmark-io-uring)
+add_test(NAME benchmark-ml-systems COMMAND benchmark-ml-systems)
+add_test(NAME benchmark-highload COMMAND benchmark-highload)
+add_test(NAME benchmark-cache-performance COMMAND benchmark-cache-performance)
+add_test(NAME integration-tests-simple COMMAND integration-tests-simple)
+
+# Python integration tests
+find_package(Python3 COMPONENTS Interpreter)
+if(Python3_Interpreter_FOUND)
+    add_test(NAME test-metrics-docker-integration
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/testing/test_metrics_docker_integration.py
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/testing
+    )
+endif()
+
+# Installation rules - Windows excludes some targets
+if(WIN32)
+    install(TARGETS mtproto-proxy mtproxy-admin test-new-modules test-traffic-stats test-utils test-admin-cli cache-performance-test-simple rate-limiter-highload-test-simple integration-tests-simple benchmark-ml-systems test-alert-manager test-auto-scaler test-distributed-tracing test-production-integration test-anomaly-detection test-predictive-analytics test-ml-integration
+        RUNTIME DESTINATION bin
+    )
+else()
+    install(TARGETS mtproto-proxy mtproxy-admin mtproxy-cli test-new-modules test-traffic-stats test-utils test-ffi-api test-performance test-admin-cli-integration cache-performance-test rate-limiter-highload-test integration-tests benchmark-highload benchmark-ml-systems benchmark-cache-performance test-rest-api test-health-check test-cluster-manager test-load-balancer test-auto-scaler test-distributed-tracing test-production-integration test-anomaly-detection test-predictive-analytics test-ml-integration
+        RUNTIME DESTINATION bin
+    )
+endif()
+
+# ============================================================================
+# Shared Library for FFI Integration (Flutter, Mobile Apps)
+# ============================================================================
+
+if(BUILD_SHARED_LIB)
+    # Источники для библиотеки
+    set(MTPROXY_LIB_SOURCES
+        src/mtproxy.c
+        include/mtproxy.h
+    )
+    
+    # Добавляем основные источники проекта
+    list(APPEND MTPROXY_LIB_SOURCES
+        ${COMMON_SOURCES}
+        ${CRYPTO_SOURCES}
+        ${NET_SOURCES}
+        ${ENGINE_SOURCES}
+    )
+    
+    # Создание shared библиотеки
+    add_library(mtproxy SHARED ${MTPROXY_LIB_SOURCES})
+    
+    # Настройки библиотеки
+    set_target_properties(mtproxy PROPERTIES
+        VERSION ${PROJECT_VERSION}
+        SOVERSION 1
+        PUBLIC_HEADER include/mtproxy.h
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+    )
+    
+    # Include directories
+    target_include_directories(mtproxy PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/common>
+        $<INSTALL_INTERFACE:include>
+    )
+    
+    # Link libraries
+    target_link_libraries(mtproxy
+        ${PLATFORM_LIBS}
+        OpenSSL::SSL
+        OpenSSL::Crypto
+        ZLIB::ZLIB
+        Threads::Threads
+    )
+    
+    # Installation
+    install(TARGETS mtproxy
+        EXPORT MTProxyTargets
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+        PUBLIC_HEADER DESTINATION include
+    )
+    
+    message(STATUS "MTProxy shared library will be built")
+endif()
+
+# Print build info
+message(STATUS "Building MTProxy version ${PROJECT_VERSION}")
+message(STATUS "Git commit: ${GIT_COMMIT_HASH}")
+message(STATUS "Compiler: ${CMAKE_C_COMPILER_ID}")
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")

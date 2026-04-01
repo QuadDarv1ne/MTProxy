@@ -1,0 +1,75 @@
+# CodeQL Security Analysis for MTProxy
+# Автоматический анализ безопасности кода
+
+name: "CodeQL Analysis"
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+  schedule:
+    # Еженедельный запуск по воскресеньям в 00:00 UTC
+    - cron: '0 0 * * 0'
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'c-cpp', 'python' ]
+        # c-cpp: Основной код прокси
+        # python: Скрипты мониторинга и утилиты
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential libssl-dev zlib1g-dev cmake
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        # Использование расширенных запросов для лучшего покрытия
+        queries: security-extended,safety-and-security
+        # Пользовательские запросы для C/C++
+        packs: codeql/c-queries,codeql/cpp-queries
+
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v3
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{matrix.language}}"
+        # Формат SARIF для интеграции с GitHub Security
+        format: sarif
+        output: codeql-results-${{ matrix.language }}.sarif
+
+    - name: Upload SARIF results
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: codeql-results-${{ matrix.language }}.sarif
+        category: ${{ matrix.language }}
+
+    - name: Upload SARIF as artifact
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: codeql-sarif-${{ matrix.language }}
+        path: codeql-results-${{ matrix.language }}.sarif
+        retention-days: 30

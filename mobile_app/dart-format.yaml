@@ -1,0 +1,14 @@
+# Dart/Flutter format configuration
+line_length: 80
+
+# Formatting rules
+format:
+  - fixes
+  - style
+
+# Exclude generated files
+exclude:
+  - "**/*.g.dart"
+  - "**/*.freezed.dart"
+  - "**/generated/**"
+  - "**/l10n/**"

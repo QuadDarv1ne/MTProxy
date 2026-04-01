@@ -1,0 +1,86 @@
+name: Version Bump
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Type of version bump (major, minor, patch)'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.0'
+          channel: 'stable'
+          
+      - name: Get current version
+        id: current_version
+        run: |
+          cd mobile_app
+          version=$(grep '^version:' pubspec.yaml | cut -d' ' -f2 | cut -d'+' -f1)
+          build=$(grep '^version:' pubspec.yaml | cut -d' ' -f2 | cut -d'+' -f2)
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "build=$build" >> $GITHUB_OUTPUT
+          
+      - name: Bump version
+        id: bump_version
+        run: |
+          cd mobile_app
+          current_version="${{ steps.current_version.outputs.version }}"
+          current_build="${{ steps.current_version.outputs.build }}"
+          
+          IFS='.' read -r major minor patch <<< "$current_version"
+          
+          case "${{ github.event.inputs.version_type }}" in
+            major)
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+            minor)
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            patch)
+              patch=$((patch + 1))
+              ;;
+          esac
+          
+          new_version="$major.$minor.$patch"
+          new_build=$((current_build + 1))
+          
+          echo "new_version=$new_version" >> $GITHUB_OUTPUT
+          echo "new_build=$new_build" >> $GITHUB_OUTPUT
+          
+          # Update pubspec.yaml
+          sed -i "s/^version: .*/version: $new_version+$new_build/" pubspec.yaml
+          
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: "chore: bump version to ${{ steps.bump_version.outputs.new_version }}+${{ steps.bump_version.outputs.new_build }}"
+          branch: version-bump/${{ steps.bump_version.outputs.new_version }}
+          title: "chore: bump version to ${{ steps.bump_version.outputs.new_version }}+${{ steps.bump_version.outputs.new_build }}"
+          body: |
+            Automated version bump
+            
+            **Changes:**
+            - Version: ${{ steps.current_version.outputs.version }} → ${{ steps.bump_version.outputs.new_version }}
+            - Build: ${{ steps.current_version.outputs.build }} → ${{ steps.bump_version.outputs.new_build }}
+          labels: version-bump

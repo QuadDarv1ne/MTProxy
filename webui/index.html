@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MTProxy Web UI</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                        <path d="M2 17l10 5 10-5"/>
+                        <path d="M2 12l10 5 10-5"/>
+                    </svg>
+                    <h1>MTProxy</h1>
+                </div>
+                <nav class="nav">
+                    <a href="#dashboard" class="nav-link active" data-page="dashboard">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="#config" class="nav-link" data-page="config">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+                        </svg>
+                        <span>Конфигурация</span>
+                    </a>
+                    <a href="#secrets" class="nav-link" data-page="secrets">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0110 0v4"/>
+                        </svg>
+                        <span>Секреты</span>
+                    </a>
+                    <a href="#logs" class="nav-link" data-page="logs">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                            <polyline points="10 9 9 9 8 9"/>
+                        </svg>
+                        <span>Логи</span>
+                    </a>
+                </nav>
+                <div class="header-actions">
+                    <div class="server-status" id="serverStatus">
+                        <span class="status-indicator"></span>
+                        <span class="status-text">Connecting...</span>
+                    </div>
+                    <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+                        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"/>
+                            <line x1="12" y1="1" x2="12" y2="3"/>
+                            <line x1="12" y1="21" x2="12" y2="23"/>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                            <line x1="1" y1="12" x2="3" y2="12"/>
+                            <line x1="21" y1="12" x2="23" y2="12"/>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                        </svg>
+                        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Dashboard Page -->
+            <div id="dashboard-page" class="page active">
+                <div class="page-header">
+                    <h2>Dashboard</h2>
+                    <button class="btn btn-primary" id="refreshStats">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 4 23 10 17 10"/>
+                            <polyline points="1 20 1 14 7 14"/>
+                            <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                        </svg>
+                        Обновить
+                    </button>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-title">Статус сервера</span>
+                            <span class="stat-icon">🖥️</span>
+                        </div>
+                        <div class="stat-value" id="statStatus">-</div>
+                        <div class="stat-change" id="statUptime">Uptime: -</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-title">Подключения</span>
+                            <span class="stat-icon">👥</span>
+                        </div>
+                        <div class="stat-value" id="statConnections">-</div>
+                        <div class="stat-change" id="statConnPerSec">+0/сек</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-title">Трафик</span>
+                            <span class="stat-icon">📡</span>
+                        </div>
+                        <div class="stat-value" id="statTraffic">-</div>
+                        <div class="stat-change" id="statTrafficSec">0 МБ/сек</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-title">CPU</span>
+                            <span class="stat-icon">⚡</span>
+                        </div>
+                        <div class="stat-value" id="statCpu">-%</div>
+                        <div class="stat-change" id="statMemory">Память: -</div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h3>Подключения</h3>
+                        <div class="chart" id="connectionsChart"></div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Трафик</h3>
+                        <div class="chart" id="trafficChart"></div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="activity-card">
+                    <h3>Последние события</h3>
+                    <div class="activity-list" id="activityList">
+                        <div class="activity-item">Загрузка...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Config Page -->
+            <div id="config-page" class="page">
+                <div class="page-header">
+                    <h2>Конфигурация</h2>
+                    <div class="page-actions">
+                        <button class="btn btn-secondary" id="reloadConfig">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"/>
+                                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                            </svg>
+                            Перезагрузить
+                        </button>
+                        <button class="btn btn-primary" id="saveConfig">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+                                <polyline points="17 21 17 13 7 13 7 21"/>
+                                <polyline points="7 3 7 8 15 8"/>
+                            </svg>
+                            Сохранить
+                        </button>
+                    </div>
+                </div>
+
+                <form id="configForm" class="config-form">
+                    <div class="form-section">
+                        <h3>Сеть</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="configPort">Порт</label>
+                                <input type="number" id="configPort" name="port" min="1" max="65535" value="8888">
+                            </div>
+                            <div class="form-group">
+                                <label for="configMaxConn">Макс. подключений</label>
+                                <input type="number" id="configMaxConn" name="max_connections" min="1" value="10000">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="configIpv6" name="ipv6_enabled">
+                                <span>Включить IPv6</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Логи</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="configLogLevel">Уровень</label>
+                                <select id="configLogLevel" name="log_level">
+                                    <option value="DEBUG">DEBUG</option>
+                                    <option value="INFO">INFO</option>
+                                    <option value="WARNING">WARNING</option>
+                                    <option value="ERROR">ERROR</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="configLogFile">Файл логов</label>
+                                <input type="text" id="configLogFile" name="log_file" value="/var/log/mtproxy.log">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Производительность</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="configWorkers">Workers</label>
+                                <input type="number" id="configWorkers" name="workers" min="1" max="64" value="1">
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="configAesNi" name="use_aes_ni" checked>
+                                    <span>AES-NI</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Secrets Page -->
+            <div id="secrets-page" class="page">
+                <div class="page-header">
+                    <h2>Секреты</h2>
+                    <button class="btn btn-primary" id="addSecret">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Добавить секрет
+                    </button>
+                </div>
+
+                <div class="secrets-list" id="secretsList">
+                    <div class="loading">Загрузка...</div>
+                </div>
+            </div>
+
+            <!-- Logs Page -->
+            <div id="logs-page" class="page">
+                <div class="page-header">
+                    <h2>Логи</h2>
+                    <div class="page-actions">
+                        <select id="logLevelFilter" class="form-select">
+                            <option value="">Все уровни</option>
+                            <option value="ERROR">ERROR</option>
+                            <option value="WARNING">WARNING</option>
+                            <option value="INFO">INFO</option>
+                            <option value="DEBUG">DEBUG</option>
+                        </select>
+                        <button class="btn btn-secondary" id="refreshLogs">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"/>
+                                <polyline points="1 20 1 14 7 14"/>
+                                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                            </svg>
+                            Обновить
+                        </button>
+                    </div>
+                </div>
+
+                <div class="logs-container" id="logsContainer">
+                    <div class="loading">Загрузка логов...</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modals -->
+    <div class="modal" id="addSecretModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Добавить секрет</h3>
+                <button class="modal-close" data-modal="addSecretModal">&times;</button>
+            </div>
+            <form id="addSecretForm">
+                <div class="form-group">
+                    <label for="secretValue">Секрет (hex)</label>
+                    <input type="text" id="secretValue" name="secret" required pattern="[0-9a-fA-F]{64}" 
+                           placeholder="0123456789abcdef... (64 символа)">
+                </div>
+                <div class="form-group">
+                    <label for="secretDescription">Описание</label>
+                    <input type="text" id="secretDescription" name="description" placeholder="Описание секрета">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-modal="addSecretModal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Добавить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/charts.js"></script>
+</body>
+</html>
