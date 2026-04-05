@@ -40,9 +40,20 @@
 - [x] **obfuscate.c** — заменён `rand()` на `RAND_bytes()` OpenSSL для генерации ключей
 - [x] **padding.c** — заменён `rand()` на `RAND_bytes()` + добавлена `secure_rand_range()` helper
 - [x] **fragmentation.c** — заменён `rand()` на `RAND_bytes()` + добавлена `secure_rand_range()` helper
-- [x] **aes-optimized.c** — добавлен mutex для защиты кэша AES ключей (thread safety)
+- [x] **aes-optimized.c** — добавлен mutex + ATOMIC_INC для thread-safe статистики
 - [x] **crypto-optimizer.c** — добавлен mutex для защиты кэша ключей + исправлена проверка ошибок EVP
 - [x] **vectorized-crypto.c** — добавлены WARNING stubs для всех crypto функций (NOT FOR PRODUCTION)
+- [x] **obfuscate.h** — защита от division by zero в obfuscate_xor_inline
+
+### Stability Fixes — ИСПРАВЛЕНО ✅
+- [x] **C1: unaligned pointer deref** → memcpy в mtproto-v3-adapter.c:42
+- [x] **C2: data race на g_config** → mutex в mtproto-version-manager.c
+- [x] **H1: memory leak config_md5_hex** → free перед realloc в mtproto-config.c
+- [x] **H4: div-by-zero** → guard key_len==0 в obfuscate.h:191
+- [x] **H7: integer overflow** → 0xFFFFF → 0xFFF в parse_text_ipv6
+- [x] **M1: thread-unsafe stats** → ATOMIC_INC в aes-optimized.c
+- [x] **H2: mutex handle leak** → CloseHandle в aes_optimized_cleanup (Windows)
+- [x] **L9: memset optimized away** → volatile write для crypto material
 
 ### Проблемы исправлены:
 | # | Проблема | Файл | Статус |
@@ -54,6 +65,14 @@
 | 5 | Нет mutex для crypto-optimizer кэша | crypto-optimizer.c | ✅ Исправлено |
 | 6 | Vectorized-crypto stubs без предупреждений | vectorized-crypto.c | ✅ Исправлено |
 | 7 | Игнорирование ошибок EVP_EncryptUpdate | crypto-optimizer.c | ✅ Исправлено |
+| 8 | Unaligned pointer dereference | mtproto-v3-adapter.c | ✅ Исправлено |
+| 9 | Data race на g_config | mtproto-version-manager.c | ✅ Исправлено |
+| 10 | Memory leak config_md5_hex | mtproto-config.c | ✅ Исправлено |
+| 11 | Division by zero в xor_inline | obfuscate.h | ✅ Исправлено |
+| 12 | Integer overflow parse_text_ipv6 | mtproto-proxy.c | ✅ Исправлено |
+| 13 | Thread-unsafe stats counters | aes-optimized.c | ✅ Исправлено |
+| 14 | Mutex handle leak (Windows) | aes-optimized.c | ✅ Исправлено |
+| 15 | Memset optimized away | mtproto-v3-adapter.c | ✅ Исправлено |
 
 ---
 

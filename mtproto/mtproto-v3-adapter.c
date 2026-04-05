@@ -39,9 +39,10 @@ version_detect_result_t mtproto_detect_version(const unsigned char *data, int le
 
     // Проверяем формат данных для определения версии
     // В MTProto v3 могут быть специфичные сигнатуры
-    
-    uint32_t version_field = *((uint32_t*)(data + 4)); // Версия обычно находится после 4 байт
-    
+
+    uint32_t version_field;
+    memcpy(&version_field, data + 4, sizeof(uint32_t)); // Безопасное чтение (unaligned-safe)
+
     switch(version_field) {
         case MTPROTO_VERSION_3_0:
             *detected_version = MTPROTO_VERSION_3_0;
@@ -266,12 +267,21 @@ int mtproto_update_connection_info(mtproto_connection_info_t *conn, const void *
 /* Освобождение ресурсов соединения */
 void mtproto_free_connection(mtproto_connection_info_t *conn) {
     if (conn) {
-        // Обнуляем чувствительные данные
-        memset(conn->auth_key, 0, sizeof(conn->auth_key));
-        memset(conn->tmp_aes_key, 0, sizeof(conn->tmp_aes_key));
-        memset(conn->server_nonce, 0, sizeof(conn->server_nonce));
-        memset(conn->client_nonce, 0, sizeof(conn->client_nonce));
+        // Безопасно обнуляем чувствительные данные (compiler barrier)
+        volatile unsigned char *p;
         
+        p = (volatile unsigned char *)conn->auth_key;
+        for (size_t i = 0; i < sizeof(conn->auth_key); i++) p[i] = 0;
+        
+        p = (volatile unsigned char *)conn->tmp_aes_key;
+        for (size_t i = 0; i < sizeof(conn->tmp_aes_key); i++) p[i] = 0;
+        
+        p = (volatile unsigned char *)conn->server_nonce;
+        for (size_t i = 0; i < sizeof(conn->server_nonce); i++) p[i] = 0;
+        
+        p = (volatile unsigned char *)conn->client_nonce;
+        for (size_t i = 0; i < sizeof(conn->client_nonce); i++) p[i] = 0;
+
         // Сбрасываем остальные поля
         memset(conn, 0, sizeof(mtproto_connection_info_t));
     }

@@ -37,8 +37,17 @@
 #include "common/common-stats.h"
 #include "common/memory-limits.h"
 
-// Глобальная статистика AES
+// Глобальная статистика AES (thread-safe с atomic operations)
 struct aes_optimized_stats aes_stats = {0};
+
+// Макрос для атомарного инкремента (portable)
+#ifdef __GNUC__
+#define ATOMIC_INC(var) __sync_fetch_and_add(&(var), 1)
+#elif defined(_WIN32)
+#define ATOMIC_INC(var) InterlockedIncrement64(&(var))
+#else
+#define ATOMIC_INC(var) (var)++  // Fallback для не-GCC
+#endif
 
 // Кэш предвычисленных ключей AES - ОГРАНИЧЕННЫЙ РАЗМЕР
 #ifndef AES_KEY_CACHE_SIZE
@@ -199,12 +208,12 @@ static struct aes_key_cache_entry *get_cached_aes_context(const unsigned char *k
         memcmp(entry->key, key, 32) == 0 &&
         memcmp(entry->iv, iv, 16) == 0) {
         entry->last_used = ++aes_cache_counter;
-        aes_stats.key_cache_hits++;
+        ATOMIC_INC(aes_stats.key_cache_hits);
         aes_cache_mutex_unlock();
         return entry;
     }
 
-    aes_stats.key_cache_misses++;
+    ATOMIC_INC(aes_stats.key_cache_misses);
 
     // Освобождаем старый контекст если есть
     if (entry->valid) {
@@ -253,10 +262,12 @@ int aes_optimized_encrypt(const unsigned char *key, const unsigned char *iv,
     if (length <= 0 || length % 16 != 0) {
         return -1; // Длина должна быть кратна 16 байтам
     }
-    
+
+    ATOMIC_INC(aes_stats.total_encryptions);
+
     struct aes_key_cache_entry *entry = get_cached_aes_context(key, iv);
     if (!entry || !entry->encrypt_ctx) {
-        aes_stats.fallback_operations++;
+        ATOMIC_INC(aes_stats.fallback_operations);
         // Fallback на стандартную реализацию
         EVP_CIPHER_CTX *ctx = create_aes_context(key, iv, 1);
         if (!ctx) return -1;
@@ -266,18 +277,18 @@ int aes_optimized_encrypt(const unsigned char *key, const unsigned char *iv,
         EVP_CIPHER_CTX_free(ctx);
         
         if (result == 1 && out_len == length) {
-            aes_stats.total_encryptions++;
+            ATOMIC_INC(aes_stats.total_encryptions);
             return length;
         }
         return -1;
     }
-    
+
     int out_len;
     if (EVP_CipherUpdate(entry->encrypt_ctx, ciphertext, &out_len, plaintext, length) != 1) {
         return -1;
     }
-    
-    aes_stats.total_encryptions++;
+
+    ATOMIC_INC(aes_stats.total_encryptions);
     return out_len;
 }
 
@@ -287,10 +298,10 @@ int aes_optimized_decrypt(const unsigned char *key, const unsigned char *iv,
     if (length <= 0 || length % 16 != 0) {
         return -1; // Длина должна быть кратна 16 байтам
     }
-    
+
     struct aes_key_cache_entry *entry = get_cached_aes_context(key, iv);
     if (!entry || !entry->decrypt_ctx) {
-        aes_stats.fallback_operations++;
+        ATOMIC_INC(aes_stats.fallback_operations);
         // Fallback на стандартную реализацию
         EVP_CIPHER_CTX *ctx = create_aes_context(key, iv, 0);
         if (!ctx) return -1;
@@ -323,14 +334,14 @@ int aes_optimized_encrypt_precomputed(const unsigned char *key, const unsigned c
         // Здесь можно добавить часто используемые ключи
         {0}
     };
-    
+
     // Для демонстрации - используем первый общий ключ
     if (memcmp(key, common_keys[0], 32) == 0) {
-        aes_stats.precomputed_keys_used++;
+        ATOMIC_INC(aes_stats.precomputed_keys_used);
         // Здесь можно реализовать специализированную оптимизацию
         // для конкретных ключей
     }
-    
+
     return aes_optimized_encrypt(key, iv, plaintext, ciphertext, length);
 }
 
@@ -339,7 +350,7 @@ void aes_optimized_cleanup(void) {
     if (!aes_key_cache) {
         return;
     }
-    
+
     int i;
     for (i = 0; i < AES_KEY_CACHE_SIZE; i++) {
         struct aes_key_cache_entry *entry = &aes_key_cache[i];
@@ -356,7 +367,15 @@ void aes_optimized_cleanup(void) {
     
     free(aes_key_cache);
     aes_key_cache = NULL;
-    
+
+    // Очистка mutex (fix H2: handle leak на Windows)
+#ifdef _WIN32
+    if (aes_cache_mutex) {
+        CloseHandle(aes_cache_mutex);
+        aes_cache_mutex = NULL;
+    }
+#endif
+
     vkprintf(1, "AES optimized cache cleaned up\n");
 }
 
