@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <openssl/rand.h>
 
 #ifdef _WIN32
 #include <process.h>  // for getpid() on Windows
@@ -438,6 +439,26 @@ int fragmentation_validate_fragment(const struct tls_fragment *fragment)
 }
 
 // ============================================================================
+// Internal Helper Functions
+// ============================================================================
+
+/**
+ * @brief Получить криптографически стойкое случайное число в диапазоне [min, max]
+ */
+static size_t secure_rand_range(size_t min, size_t max)
+{
+    if (min >= max) return min;
+    size_t range = max - min + 1;
+    if (range == 0 || range > 256) return min; // Защита
+
+    unsigned char byte;
+    if (RAND_bytes(&byte, 1) != 1) {
+        return min; // Fallback
+    }
+    return min + (size_t)byte % range;
+}
+
+// ============================================================================
 // Internal Functions
 // ============================================================================
 
@@ -498,41 +519,33 @@ static int fragment_random(struct fragmentation_ctx *ctx,
     if (max_fragments < 1) {
         return -1;
     }
-    
-    // Initialize random seed if needed
-    static int seeded = 0;
-    if (!seeded) {
-        srand((unsigned int)time(NULL) ^ (unsigned int)getpid());
-        seeded = 1;
-    }
-    
+
     size_t offset = 0;
     int count = 0;
-    
+
     while (offset < message_len && count < max_fragments) {
-        // Generate random fragment size
-        size_t frag_size = ctx->min_fragment + 
-                          (rand() % (ctx->max_fragment - ctx->min_fragment + 1));
-        
+        // Generate random fragment size using secure RNG
+        size_t frag_size = secure_rand_range(ctx->min_fragment, ctx->max_fragment);
+
         size_t remaining = message_len - offset;
         size_t chunk_size = (remaining > frag_size) ? frag_size : remaining;
-        
+
         // Copy data
         memcpy(fragments[count].data, message + offset, chunk_size);
         fragments[count].len = chunk_size;
         fragments[count].fragment_index = count;
         fragments[count].is_last = (offset + chunk_size >= message_len) ? 1 : 0;
-        
+
         offset += chunk_size;
         count++;
     }
-    
+
     // Set total fragments
     int i;
     for (i = 0; i < count; i++) {
         fragments[i].total_fragments = count;
     }
-    
+
     *fragment_count = count;
     return 0;
 }

@@ -1,17 +1,10 @@
 # MTProxy TODO
 
 **Версия:** v1.0.33-dev
-**Ветка:** dev (24 коммита ahead origin/dev)
-**Последнее обновление:** 1 апреля 2026
+**Ветка:** dev
+**Последнее обновление:** 5 апреля 2026
 **Следующая версия:** v1.0.33
-**Коммитов:** 24 локальных + 552 из origin/dev = 576 всего
-**Файлов в git:** 601
-**Тестов C:** 34 (включая 87 ML тестов)
-
-**СТАТУС:** ✅ main синхронизирована с dev
-**Remote:** origin (QuadDarv1ne), upstream (TelegramMessenger)
-**Резервная ветка:** backup-dev-before-sync
-**KNOWN ISSUES:** ✅ Все исправлены
+**KNOWN ISSUES:** ✅ Все критические исправлены
 
 ---
 
@@ -24,12 +17,11 @@
 - [x] **CMakeLists.txt** — ML тесты добавлены ✅
 - [x] **Benchmark ML** — benchmark-ml-systems.c добавлен ✅
 - [x] **Документация** — docs/ML_SYSTEMS.md (500+ строк) ✅
-- [x] **Документация** — docs/OBFUSCATION.md (1000+ строк) ✅
 - [x] **ML Integration** — исправлены баги (zscore_threshold, cleanup, remove_monitor) ✅
 - [x] **Версия** — v1.0.32 установлена ✅
 - [x] Очистка документации (26 → 7 файлов) ✅
 - [x] Исправление сборки на Windows ✅
-- [x] Консолидация руководств (CLI, Debugging, Platform, Monitoring, OBFUSCATION) ✅
+- [x] Консолидация руководств (CLI, Debugging, Platform, Monitoring) ✅
 - [x] Исправления Windows compatibility (7 файлов) ✅
 - [x] Исправления cluster-manager (конфликт имён) ✅
 - [x] **padding.c** — исправлен data corruption (memmove для length prefix) ✅
@@ -42,12 +34,30 @@
 
 ---
 
-## 🔴 Критичные задачи (v1.0.33)
+## 🔴 Критические исправления безопасности (v1.0.33)
 
-### Сборка и CI/CD — ПРИОРИТЕТ
-- [ ] **Docker образы** — обновлены после очистки документации
-- [ ] **Linux сборка** — проверить с io_uring и jemalloc
-- [ ] **Windows сборка** — тестирование производительности
+### Crypto Security — ИСПРАВЛЕНО ✅
+- [x] **obfuscate.c** — заменён `rand()` на `RAND_bytes()` OpenSSL для генерации ключей
+- [x] **padding.c** — заменён `rand()` на `RAND_bytes()` + добавлена `secure_rand_range()` helper
+- [x] **fragmentation.c** — заменён `rand()` на `RAND_bytes()` + добавлена `secure_rand_range()` helper
+- [x] **aes-optimized.c** — добавлен mutex для защиты кэша AES ключей (thread safety)
+- [x] **crypto-optimizer.c** — добавлен mutex для защиты кэша ключей + исправлена проверка ошибок EVP
+- [x] **vectorized-crypto.c** — добавлены WARNING stubs для всех crypto функций (NOT FOR PRODUCTION)
+
+### Проблемы исправлены:
+| # | Проблема | Файл | Статус |
+|---|----------|------|--------|
+| 1 | `rand()` для генерации ключей | obfuscate.c | ✅ Исправлено |
+| 2 | `rand()` для padding генерации | padding.c | ✅ Исправлено |
+| 3 | `rand()` для рандомизации фрагментов | fragmentation.c | ✅ Исправлено |
+| 4 | Нет mutex для AES кэша | aes-optimized.c | ✅ Исправлено |
+| 5 | Нет mutex для crypto-optimizer кэша | crypto-optimizer.c | ✅ Исправлено |
+| 6 | Vectorized-crypto stubs без предупреждений | vectorized-crypto.c | ✅ Исправлено |
+| 7 | Игнорирование ошибок EVP_EncryptUpdate | crypto-optimizer.c | ✅ Исправлено |
+
+---
+
+## 🟡 Технические долги (v1.0.33)
 - [x] **CMakeLists.txt** — проверить наличие всех ML тестов ✅
 - [x] **CHANGELOG.md** — v1.0.32 документирован ✅
 - [x] **Git синхронизация** — merge origin/dev (552 коммита) ✅

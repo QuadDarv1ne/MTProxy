@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <openssl/rand.h>
 
 #include "obfuscate.h"
 
@@ -220,20 +221,12 @@ int obfuscate_generate_key(unsigned char *key, size_t key_len)
     if (!key || key_len == 0 || key_len > OBFUSCATE_KEY_SIZE) {
         return -1;
     }
-    
-    // Initialize random number generator
-    static int seeded = 0;
-    if (!seeded) {
-        srand((unsigned int)time(NULL));
-        seeded = 1;
+
+    // Используем криптографически стойкий генератор случайных чисел OpenSSL
+    if (RAND_bytes(key, (int)key_len) != 1) {
+        return -1; // Ошибка генерации случайных данных
     }
-    
-    // Generate random bytes
-    size_t i;
-    for (i = 0; i < key_len; i++) {
-        key[i] = (unsigned char)(rand() % 256);
-    }
-    
+
     return 0;
 }
 
