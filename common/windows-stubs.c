@@ -623,4 +623,92 @@ void tcp_set_max_accept_rate(int rate) { (void)rate; }
 void net_add_nat_info(unsigned int ip, unsigned int mask) { (void)ip; (void)mask; }
 void tcp_set_max_connections(int max) { (void)max; }
 
+// Windows pipe2() emulation using socketpair
+// pipe2() is not available on Windows, so we use socketpair(AF_UNIX, SOCK_STREAM, 0, pipefd)
+#ifndef AF_UNIX
+#define AF_UNIX AF_LOCAL
+#endif
+
+static int win_socketpair(int sv[2]) {
+    // Create listening socket
+    SOCKET listener = socket(AF_INET, SOCK_STREAM, 0);
+    if (listener == INVALID_SOCKET) {
+        return -1;
+    }
+    
+    // Bind to localhost
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    addr.sin_port = 0;  // Let system choose port
+    
+    if (bind(listener, (struct sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) {
+        closesocket(listener);
+        return -1;
+    }
+    
+    // Get assigned port
+    int addr_len = sizeof(addr);
+    if (getsockname(listener, (struct sockaddr*)&addr, &addr_len) == SOCKET_ERROR) {
+        closesocket(listener);
+        return -1;
+    }
+    
+    // Start listening
+    if (listen(listener, 1) == SOCKET_ERROR) {
+        closesocket(listener);
+        return -1;
+    }
+    
+    // Create client socket and connect
+    sv[0] = (int)socket(AF_INET, SOCK_STREAM, 0);
+    if (sv[0] == INVALID_SOCKET) {
+        closesocket(listener);
+        return -1;
+    }
+    
+    if (connect(sv[0], (struct sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) {
+        closesocket((SOCKET)sv[0]);
+        closesocket(listener);
+        sv[0] = -1;
+        return -1;
+    }
+    
+    // Accept connection
+    sv[1] = (int)accept(listener, NULL, NULL);
+    if (sv[1] == INVALID_SOCKET) {
+        closesocket((SOCKET)sv[0]);
+        closesocket(listener);
+        sv[0] = -1;
+        return -1;
+    }
+    
+    closesocket(listener);
+    return 0;
+}
+
+// pipe2() emulation for Windows
+static int win_pipe2(int pipefd[2], int flags) {
+    (void)flags;  // O_NONBLOCK is handled at socket level
+    
+    if (win_socketpair(pipefd) != 0) {
+        return -1;
+    }
+    
+    // Set non-blocking if requested (O_NONBLOCK = 04000)
+    if (flags & 04000) {
+        u_long mode = 1;
+        ioctlsocket((SOCKET)pipefd[0], FIONBIO, &mode);
+        ioctlsocket((SOCKET)pipefd[1], FIONBIO, &mode);
+    }
+    
+    return 0;
+}
+
+// Define pipe2 as macro to our emulation function
+#ifndef pipe2
+#define pipe2(f, flags) win_pipe2(f, flags)
+#endif
+
 #endif /* _WIN32 */

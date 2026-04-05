@@ -2,21 +2,87 @@
  * Реализация векторизованных криптографических операций для MTProxy
  * Использование AVX2/AVX-512 для оптимизации криптографических операций
  *
- * ВНИМАНИЕ: Этот модуль содержит ЗАГЛУШКИ (stubs) вместо реальной криптографии.
- * Функции шифрования используют XOR вместо AES/SHA. НЕ ИСПОЛЬЗОВАТЬ в production!
- * Для production используйте aes-optimized.c и crypto-optimizer.c.
+ * Реализация использует OpenSSL EVP API для криптографических операций.
+ * SIMD-оптимизации применяются автоматически через AES-NI в OpenSSL.
  */
 
 #include "vectorized-crypto.h"
 #include <stdio.h>
 #include <stddef.h>
+#include <string.h>
 
-// Macro to mark stub functions
-#define VEC_CRYPTO_STUB(func_name) \
-    fprintf(stderr, "[WARNING] vectorized-crypto: STUB function called: %s - NOT FOR PRODUCTION USE!\n", func_name)
+#ifdef _WIN32
+    #include <intrin.h>
+#else
+    #include <cpuid.h>
+#endif
+
+#include <openssl/evp.h>
+#include <openssl/aes.h>
+#include <openssl/sha.h>
+#include <openssl/err.h>
 
 // Глобальный контекст векторизованной криптографии
 static vectorized_crypto_context_t g_vec_crypto_ctx = {0};
+
+// Helper: определение доступности SIMD инструкций
+static void vec_crypto_detect_simd_internal(void) {
+    // Сброс флагов
+    g_vec_crypto_ctx.simd_available[SIMD_NONE] = 1;
+    g_vec_crypto_ctx.simd_available[SIMD_SSE] = 0;
+    g_vec_crypto_ctx.simd_available[SIMD_AVX] = 0;
+    g_vec_crypto_ctx.simd_available[SIMD_AVX2] = 0;
+    g_vec_crypto_ctx.simd_available[SIMD_AVX512] = 0;
+
+#ifdef _WIN32
+    int cpu_info[4] = {0};
+    __cpuid(cpu_info, 1);
+    // ECX биты: SSE4.2 (бит 20), AVX (бит 28), AVX2 (требует leaf 7)
+    if (cpu_info[2] & (1 << 20)) {
+        g_vec_crypto_ctx.simd_available[SIMD_SSE] = 1;
+    }
+    if (cpu_info[2] & (1 << 28)) {
+        g_vec_crypto_ctx.simd_available[SIMD_AVX] = 1;
+    }
+    // Проверка AVX2 и AVX-512 через leaf 7
+    __cpuid(cpu_info, 7);
+    if (cpu_info[1] & (1 << 5)) { // EBX бит 5
+        g_vec_crypto_ctx.simd_available[SIMD_AVX2] = 1;
+    }
+    if (cpu_info[1] & (1 << 16)) { // EBX бит 16
+        g_vec_crypto_ctx.simd_available[SIMD_AVX512] = 1;
+    }
+#else
+    unsigned int eax = 0, ebx = 0, ecx = 0, edx = 0;
+    __get_cpuid(1, &eax, &ebx, &ecx, &edx);
+    if (ecx & bit_AVX) {
+        g_vec_crypto_ctx.simd_available[SIMD_AVX] = 1;
+    }
+    if (ecx & bit_SSE4_2) {
+        g_vec_crypto_ctx.simd_available[SIMD_SSE] = 1;
+    }
+    __get_cpuid_count(7, 0, &eax, &ebx, &ecx, &edx);
+    if (ebx & bit_AVX2) {
+        g_vec_crypto_ctx.simd_available[SIMD_AVX2] = 1;
+    }
+    if (ebx & bit_AVX512F) {
+        g_vec_crypto_ctx.simd_available[SIMD_AVX512] = 1;
+    }
+#endif
+
+    // Определение максимального доступного уровня
+    if (g_vec_crypto_ctx.simd_available[SIMD_AVX512]) {
+        g_vec_crypto_ctx.detected_simd = SIMD_AVX512;
+    } else if (g_vec_crypto_ctx.simd_available[SIMD_AVX2]) {
+        g_vec_crypto_ctx.detected_simd = SIMD_AVX2;
+    } else if (g_vec_crypto_ctx.simd_available[SIMD_AVX]) {
+        g_vec_crypto_ctx.detected_simd = SIMD_AVX;
+    } else if (g_vec_crypto_ctx.simd_available[SIMD_SSE]) {
+        g_vec_crypto_ctx.detected_simd = SIMD_SSE;
+    } else {
+        g_vec_crypto_ctx.detected_simd = SIMD_NONE;
+    }
+}
 
 // Инициализация векторизованной криптографии
 int vec_crypto_init(vectorized_crypto_context_t *ctx) {
@@ -60,28 +126,29 @@ int vec_crypto_init(vectorized_crypto_context_t *ctx) {
     
     // Определение доступных SIMD инструкций
     if (ctx->config.auto_detect_simd) {
-        ctx->detected_simd = vec_crypto_detect_simd();
+        vec_crypto_detect_simd_internal();
+        ctx->detected_simd = g_vec_crypto_ctx.detected_simd;
     } else {
         ctx->detected_simd = ctx->config.preferred_simd_level;
     }
-    
+
     // Обновление доступности SIMD
     for (int i = 0; i <= ctx->detected_simd; i++) {
         ctx->simd_available[i] = 1;
     }
-    
+
     // Установка текущего уровня SIMD
     if (ctx->config.force_simd_level) {
         ctx->stats.current_simd_level = ctx->config.force_simd_level;
     } else {
         ctx->stats.current_simd_level = ctx->detected_simd;
     }
-    
+
     ctx->initialized = 1;
-    
+
     // Копирование в глобальный контекст
     g_vec_crypto_ctx = *ctx;
-    
+
     return 0;
 }
 
@@ -119,28 +186,29 @@ int vec_crypto_init_with_config(vectorized_crypto_context_t *ctx,
     
     // Определение доступных SIMD инструкций
     if (ctx->config.auto_detect_simd) {
-        ctx->detected_simd = vec_crypto_detect_simd();
+        vec_crypto_detect_simd_internal();
+        ctx->detected_simd = g_vec_crypto_ctx.detected_simd;
     } else {
         ctx->detected_simd = ctx->config.preferred_simd_level;
     }
-    
+
     // Обновление доступности SIMD
     for (int i = 0; i <= ctx->detected_simd; i++) {
         ctx->simd_available[i] = 1;
     }
-    
+
     // Установка текущего уровня SIMD
     if (ctx->config.force_simd_level) {
         ctx->stats.current_simd_level = ctx->config.force_simd_level;
     } else {
         ctx->stats.current_simd_level = ctx->detected_simd;
     }
-    
+
     ctx->initialized = 1;
-    
+
     // Копирование в глобальный контекст
     g_vec_crypto_ctx = *ctx;
-    
+
     return 0;
 }
 
@@ -179,19 +247,54 @@ void vec_crypto_cleanup(vectorized_crypto_context_t *ctx) {
 int vec_crypto_aes_ecb_encrypt(const unsigned char *in, unsigned char *out,
                               const unsigned char *key, int key_bits,
                               size_t data_len) {
-    VEC_CRYPTO_STUB("vec_crypto_aes_ecb_encrypt");
-
-    // В реальной реализации здесь будет векторизованное AES-ECB шифрование
-    // с использованием AVX2/AVX-512 инструкций
-
-    // Для совместимости с MTProxy возвращаем фиктивный результат
-    // В реальной реализации: шифрование блоков данных с использованием SIMD
-
     if (!in || !out || !key || data_len == 0) {
         return -1;
     }
 
-    // Обновление статистики в зависимости от доступного SIMD
+    // Проверка корректности длины ключа
+    if (key_bits != 128 && key_bits != 192 && key_bits != 256) {
+        return -1;
+    }
+
+    // AES-ECB не рекомендуется для production, используем EVP
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) {
+        return -1;
+    }
+
+    const EVP_CIPHER *cipher = NULL;
+    switch (key_bits) {
+        case 128: cipher = EVP_aes_128_ecb(); break;
+        case 192: cipher = EVP_aes_192_ecb(); break;
+        case 256: cipher = EVP_aes_256_ecb(); break;
+        default:
+            EVP_CIPHER_CTX_free(ctx);
+            return -1;
+    }
+
+    if (EVP_EncryptInit_ex(ctx, cipher, NULL, key, NULL) != 1) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -1;
+    }
+
+    EVP_CIPHER_CTX_set_padding(ctx, 0);  // No padding for ECB
+
+    int out_len = 0;
+    int final_len = 0;
+
+    if (EVP_EncryptUpdate(ctx, out, &out_len, in, (int)data_len) != 1) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -1;
+    }
+
+    if (EVP_EncryptFinal_ex(ctx, out + out_len, &final_len) != 1) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -1;
+    }
+
+    EVP_CIPHER_CTX_free(ctx);
+
+    // Обновление статистики
     if (g_vec_crypto_ctx.simd_available[SIMD_AVX512]) {
         g_vec_crypto_ctx.stats.avx512_operations++;
     } else if (g_vec_crypto_ctx.simd_available[SIMD_AVX2]) {
@@ -204,27 +307,58 @@ int vec_crypto_aes_ecb_encrypt(const unsigned char *in, unsigned char *out,
 
     g_vec_crypto_ctx.stats.total_operations++;
 
-    // В реальной реализации здесь будет SIMD-оптимизированный код
-    // Для совместимости копируем данные напрямую
-    for (size_t i = 0; i < data_len; i++) {
-        out[i] = in[i] ^ key[i % (key_bits / 8)];  // Простая XOR-операция для демонстрации
-    }
-
-    return 0;
+    return out_len + final_len;
 }
 
 // Векторизованное AES-ECB дешифрование
 int vec_crypto_aes_ecb_decrypt(const unsigned char *in, unsigned char *out,
                               const unsigned char *key, int key_bits,
                               size_t data_len) {
-    VEC_CRYPTO_STUB("vec_crypto_aes_ecb_decrypt");
-    // В реальной реализации здесь будет векторизованное AES-ECB дешифрование
-    // с использованием AVX2/AVX-512 инструкций
-    
     if (!in || !out || !key || data_len == 0) {
         return -1;
     }
-    
+
+    if (key_bits != 128 && key_bits != 192 && key_bits != 256) {
+        return -1;
+    }
+
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) {
+        return -1;
+    }
+
+    const EVP_CIPHER *cipher = NULL;
+    switch (key_bits) {
+        case 128: cipher = EVP_aes_128_ecb(); break;
+        case 192: cipher = EVP_aes_192_ecb(); break;
+        case 256: cipher = EVP_aes_256_ecb(); break;
+        default:
+            EVP_CIPHER_CTX_free(ctx);
+            return -1;
+    }
+
+    if (EVP_DecryptInit_ex(ctx, cipher, NULL, key, NULL) != 1) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -1;
+    }
+
+    EVP_CIPHER_CTX_set_padding(ctx, 0);
+
+    int out_len = 0;
+    int final_len = 0;
+
+    if (EVP_DecryptUpdate(ctx, out, &out_len, in, (int)data_len) != 1) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -1;
+    }
+
+    if (EVP_DecryptFinal_ex(ctx, out + out_len, &final_len) != 1) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -1;
+    }
+
+    EVP_CIPHER_CTX_free(ctx);
+
     // Обновление статистики
     if (g_vec_crypto_ctx.simd_available[SIMD_AVX512]) {
         g_vec_crypto_ctx.stats.avx512_operations++;
@@ -235,30 +369,68 @@ int vec_crypto_aes_ecb_decrypt(const unsigned char *in, unsigned char *out,
     } else {
         g_vec_crypto_ctx.stats.fallback_operations++;
     }
-    
+
     g_vec_crypto_ctx.stats.total_operations++;
-    
-    // В реальной реализации здесь будет SIMD-оптимизированный код
-    // Для совместимости копируем данные напрямую
-    for (size_t i = 0; i < data_len; i++) {
-        out[i] = in[i] ^ key[i % (key_bits / 8)];  // Простая XOR-операция для демонстрации
-    }
-    
-    return 0;
+
+    return out_len + final_len;
 }
 
 // Векторизованное AES-CTR шифрование
 int vec_crypto_aes_ctr_encrypt(const unsigned char *in, unsigned char *out,
                               const unsigned char *key, int key_bits,
                               unsigned char *counter, size_t data_len) {
-    VEC_CRYPTO_STUB("vec_crypto_aes_ctr_encrypt");
-    // В реальной реализации здесь будет векторизованное AES-CTR шифрование
-    // с использованием AVX2/AVX-512 инструкций
-    
     if (!in || !out || !key || !counter || data_len == 0) {
         return -1;
     }
-    
+
+    if (key_bits != 128 && key_bits != 192 && key_bits != 256) {
+        return -1;
+    }
+
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) {
+        return -1;
+    }
+
+    const EVP_CIPHER *cipher = NULL;
+    switch (key_bits) {
+        case 128: cipher = EVP_aes_128_ctr(); break;
+        case 192: cipher = EVP_aes_192_ctr(); break;
+        case 256: cipher = EVP_aes_256_ctr(); break;
+        default:
+            EVP_CIPHER_CTX_free(ctx);
+            return -1;
+    }
+
+    // Для CTR mode IV используется как counter
+    unsigned char iv[16] = {0};
+    memcpy(iv, counter, 16);
+
+    if (EVP_EncryptInit_ex(ctx, cipher, NULL, key, iv) != 1) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -1;
+    }
+
+    EVP_CIPHER_CTX_set_padding(ctx, 0);
+
+    int out_len = 0;
+    int final_len = 0;
+
+    if (EVP_EncryptUpdate(ctx, out, &out_len, in, (int)data_len) != 1) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -1;
+    }
+
+    if (EVP_EncryptFinal_ex(ctx, out + out_len, &final_len) != 1) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -1;
+    }
+
+    // Обновление counter после шифрования
+    EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_CTR_GET_IV, 16, counter);
+
+    EVP_CIPHER_CTX_free(ctx);
+
     // Обновление статистики
     if (g_vec_crypto_ctx.simd_available[SIMD_AVX512]) {
         g_vec_crypto_ctx.stats.avx512_operations++;
@@ -269,22 +441,10 @@ int vec_crypto_aes_ctr_encrypt(const unsigned char *in, unsigned char *out,
     } else {
         g_vec_crypto_ctx.stats.fallback_operations++;
     }
-    
+
     g_vec_crypto_ctx.stats.total_operations++;
-    
-    // В реальной реализации здесь будет SIMD-оптимизированный код
-    // Для совместимости копируем данные с применением счетчика
-    for (size_t i = 0; i < data_len; i++) {
-        out[i] = in[i] ^ counter[i % 16] ^ key[i % (key_bits / 8)];
-        // Обновление счетчика
-        if (i % 16 == 15) {  // Обновляем каждый 16-й байт
-            for (int j = 0; j < 16; j++) {
-                if (++counter[j]) break;  // При переполнении переходим к следующему байту
-            }
-        }
-    }
-    
-    return 0;
+
+    return out_len + final_len;
 }
 
 // Векторизованное AES-GCM шифрование
@@ -294,14 +454,76 @@ int vec_crypto_aes_gcm_encrypt(const unsigned char *in, unsigned char *out,
                               const unsigned char *aad, size_t aad_len,
                               unsigned char *tag, size_t tag_len,
                               size_t data_len) {
-    VEC_CRYPTO_STUB("vec_crypto_aes_gcm_encrypt");
-    // В реальной реализации здесь будет векторизованное AES-GCM шифрование
-    // с использованием AVX2/AVX-512 инструкций
-    
     if (!in || !out || !key || !iv || !tag || data_len == 0) {
         return -1;
     }
-    
+
+    if (key_bits != 128 && key_bits != 192 && key_bits != 256) {
+        return -1;
+    }
+
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) {
+        return -1;
+    }
+
+    const EVP_CIPHER *cipher = NULL;
+    switch (key_bits) {
+        case 128: cipher = EVP_aes_128_gcm(); break;
+        case 192: cipher = EVP_aes_192_gcm(); break;
+        case 256: cipher = EVP_aes_256_gcm(); break;
+        default:
+            EVP_CIPHER_CTX_free(ctx);
+            return -1;
+    }
+
+    if (EVP_EncryptInit_ex(ctx, cipher, NULL, NULL, NULL) != 1) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -1;
+    }
+
+    // Установка IV и ключа
+    if (!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, iv_len, NULL)) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -1;
+    }
+
+    if (EVP_EncryptInit_ex(ctx, NULL, NULL, key, iv) != 1) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -1;
+    }
+
+    // Шифрование AAD (Additional Authenticated Data)
+    if (aad && aad_len > 0) {
+        int out_len = 0;
+        if (EVP_EncryptUpdate(ctx, NULL, &out_len, aad, (int)aad_len) != 1) {
+            EVP_CIPHER_CTX_free(ctx);
+            return -1;
+        }
+    }
+
+    int out_len = 0;
+    int final_len = 0;
+
+    // Шифрование данных
+    if (EVP_EncryptUpdate(ctx, out, &out_len, in, (int)data_len) != 1) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -1;
+    }
+
+    if (EVP_EncryptFinal_ex(ctx, out + out_len, &final_len) != 1) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -1;
+    }
+
+    // Получение authentication tag
+    if (!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, tag_len, tag)) {
+        EVP_CIPHER_CTX_free(ctx);
+        return -1;
+    }
+
+    EVP_CIPHER_CTX_free(ctx);
+
     // Обновление статистики
     if (g_vec_crypto_ctx.simd_available[SIMD_AVX512]) {
         g_vec_crypto_ctx.stats.avx512_operations++;
@@ -312,35 +534,42 @@ int vec_crypto_aes_gcm_encrypt(const unsigned char *in, unsigned char *out,
     } else {
         g_vec_crypto_ctx.stats.fallback_operations++;
     }
-    
+
     g_vec_crypto_ctx.stats.total_operations++;
-    
-    // В реальной реализации здесь будет SIMD-оптимизированный код
-    // Для совместимости копируем данные с простой операцией
-    for (size_t i = 0; i < data_len; i++) {
-        out[i] = in[i] ^ iv[i % iv_len] ^ key[i % (key_bits / 8)];
-    }
-    
-    // Генерация простого тега аутентификации
-    for (size_t i = 0; i < tag_len; i++) {
-        tag[i] = data_len ^ i;  // Простой тег для демонстрации
-    }
-    
-    return 0;
+
+    return out_len + final_len;
 }
 
 // Векторизованная обработка SHA-256
 int vec_crypto_sha256_process(const unsigned char *data, size_t data_len,
                              unsigned char *hash) {
-    VEC_CRYPTO_STUB("vec_crypto_sha256_process");
-
-    // В реальной реализации здесь будет векторизованная SHA-256 обработка
-    // с использованием AVX2/AVX-512 инструкций
-    
     if (!data || !hash || data_len == 0) {
         return -1;
     }
-    
+
+    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+    if (!mdctx) {
+        return -1;
+    }
+
+    if (EVP_DigestInit_ex(mdctx, EVP_sha256(), NULL) != 1) {
+        EVP_MD_CTX_free(mdctx);
+        return -1;
+    }
+
+    if (EVP_DigestUpdate(mdctx, data, data_len) != 1) {
+        EVP_MD_CTX_free(mdctx);
+        return -1;
+    }
+
+    unsigned int hash_len = 0;
+    if (EVP_DigestFinal_ex(mdctx, hash, &hash_len) != 1) {
+        EVP_MD_CTX_free(mdctx);
+        return -1;
+    }
+
+    EVP_MD_CTX_free(mdctx);
+
     // Обновление статистики
     if (g_vec_crypto_ctx.simd_available[SIMD_AVX512]) {
         g_vec_crypto_ctx.stats.avx512_operations++;
@@ -351,35 +580,42 @@ int vec_crypto_sha256_process(const unsigned char *data, size_t data_len,
     } else {
         g_vec_crypto_ctx.stats.fallback_operations++;
     }
-    
+
     g_vec_crypto_ctx.stats.total_operations++;
-    
-    // В реальной реализации здесь будет SIMD-оптимизированный SHA-256
-    // Для совместимости устанавливаем фиктивный хэш
-    for (int i = 0; i < 32; i++) {
-        hash[i] = 0;
-    }
-    
-    // Простой расчет хэша для демонстрации
-    for (size_t i = 0; i < data_len; i++) {
-        hash[i % 32] ^= data[i];
-    }
-    
-    return 0;
+
+    return hash_len;
 }
 
 // Векторизованная обработка SHA-512
 int vec_crypto_sha512_process(const unsigned char *data, size_t data_len,
                              unsigned char *hash) {
-    VEC_CRYPTO_STUB("vec_crypto_sha512_process");
-
-    // В реальной реализации здесь будет векторизованная SHA-512 обработка
-    // с использованием AVX2/AVX-512 инструкций
-    
     if (!data || !hash || data_len == 0) {
         return -1;
     }
-    
+
+    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+    if (!mdctx) {
+        return -1;
+    }
+
+    if (EVP_DigestInit_ex(mdctx, EVP_sha512(), NULL) != 1) {
+        EVP_MD_CTX_free(mdctx);
+        return -1;
+    }
+
+    if (EVP_DigestUpdate(mdctx, data, data_len) != 1) {
+        EVP_MD_CTX_free(mdctx);
+        return -1;
+    }
+
+    unsigned int hash_len = 0;
+    if (EVP_DigestFinal_ex(mdctx, hash, &hash_len) != 1) {
+        EVP_MD_CTX_free(mdctx);
+        return -1;
+    }
+
+    EVP_MD_CTX_free(mdctx);
+
     // Обновление статистики
     if (g_vec_crypto_ctx.simd_available[SIMD_AVX512]) {
         g_vec_crypto_ctx.stats.avx512_operations++;
@@ -390,30 +626,16 @@ int vec_crypto_sha512_process(const unsigned char *data, size_t data_len,
     } else {
         g_vec_crypto_ctx.stats.fallback_operations++;
     }
-    
+
     g_vec_crypto_ctx.stats.total_operations++;
-    
-    // В реальной реализации здесь будет SIMD-оптимизированный SHA-512
-    // Для совместимости устанавливаем фиктивный хэш
-    for (int i = 0; i < 64; i++) {
-        hash[i] = 0;
-    }
-    
-    // Простой расчет хэша для демонстрации
-    for (size_t i = 0; i < data_len; i++) {
-        hash[i % 64] ^= data[i];
-    }
-    
-    return 0;
+
+    return hash_len;
 }
 
-// Определение SIMD инструкций
+// Определение SIMD инструкций (для обратной совместимости)
 simd_instruction_set_t vec_crypto_detect_simd(void) {
-    // В реальной реализации здесь будет определение SIMD инструкций
-    // через CPUID инструкции
-    
-    // Для совместимости с MTProxy возвращаем AVX2 как наиболее распространенный
-    return SIMD_AVX2;
+    vec_crypto_detect_simd_internal();
+    return g_vec_crypto_ctx.detected_simd;
 }
 
 // Проверка доступности SIMD
