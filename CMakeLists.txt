@@ -1378,6 +1378,62 @@ set_target_properties(test-admin-cli-integration PROPERTIES
 )
 endif()
 
+# CLI test executable
+add_executable(test-cli
+    testing/test_cli.c
+)
+
+target_link_libraries(test-cli
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-cli PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# Crypto tests executable
+add_executable(test-padding
+    testing/test_padding.c
+    net/padding.c
+)
+
+target_link_libraries(test-padding
+    ${OPENSSL_LIBRARIES}
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-padding PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+add_executable(test-fragmentation
+    testing/test_fragmentation.c
+    net/fragmentation.c
+)
+
+target_link_libraries(test-fragmentation
+    ${OPENSSL_LIBRARIES}
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-fragmentation PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+add_executable(test-obfuscate
+    testing/test_obfuscate.c
+    crypto/obfuscate.c
+)
+
+target_link_libraries(test-obfuscate
+    ${OPENSSL_LIBRARIES}
+    ${PLATFORM_LIBS}
+)
+
+set_target_properties(test-obfuscate PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
 # io_uring test executable (Linux only)
 if(NOT WIN32)
 add_executable(test-io-uring
@@ -1911,6 +1967,9 @@ endif()
 add_test(NAME test-rest-api COMMAND test-rest-api)
 add_test(NAME test-grpc-server COMMAND test-grpc-server)
 add_test(NAME test-cli COMMAND test-cli)
+add_test(NAME test-padding COMMAND test-padding)
+add_test(NAME test-fragmentation COMMAND test-fragmentation)
+add_test(NAME test-obfuscate COMMAND test-obfuscate)
 add_test(NAME test-alert-manager COMMAND test-alert-manager)
 add_test(NAME test-health-check COMMAND test-health-check)
 add_test(NAME test-cluster-manager COMMAND test-cluster-manager)
