@@ -401,39 +401,36 @@ int crypto_batch_encrypt(crypto_optimizer_t *optimizer,
     if (!optimizer || array_size > optimizer->config.batch_size) {
         return -1;
     }
-    
-    // Используем кэшированный контекст если доступен
-    int cache_index = find_key_in_cache(optimizer, key, iv);
-    EVP_CIPHER_CTX *ctx;
-    
-    if (cache_index >= 0) {
-        ctx = optimizer->key_cache[cache_index].encrypt_ctx;
-    } else {
-        ctx = EVP_CIPHER_CTX_new();
-        if (!ctx) return -1;
-        EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv);
-    }
-    
-    // Обработка пакета
+
+    // Fix L10: Каждый буфер шифруется независимо с тем же IV
+    // CBC mode сохраняет state между вызовами, поэтому нельзя
+    // переиспользовать один контекст для независимых буферов
+    crypto_cache_mutex_lock();
+
     for (int i = 0; i < array_size; i++) {
-        int len;
-        EVP_EncryptUpdate(ctx, ciphertext_array[i], &len, 
-                         plaintext_array[i], plaintext_lengths[i]);
-        ciphertext_lengths[i] = len;
-        
-        EVP_EncryptFinal_ex(ctx, ciphertext_array[i] + len, &len);
-        ciphertext_lengths[i] += len;
-    }
-    
-    if (cache_index < 0) {
+        // Создаём отдельный контекст для каждого буфера
+        EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+        if (!ctx) {
+            crypto_cache_mutex_unlock();
+            return -1;
+        }
+
+        int ret1 = EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv);
+        int len = 0;
+        int final_len = 0;
+        int ret2 = EVP_EncryptUpdate(ctx, ciphertext_array[i], &len,
+                                     plaintext_array[i], (int)plaintext_lengths[i]);
+        int ret3 = EVP_EncryptFinal_ex(ctx, ciphertext_array[i] + len, &final_len);
         EVP_CIPHER_CTX_free(ctx);
-    } else {
-        // Сброс контекста для следующего использования
-        EVP_CIPHER_CTX_reset(optimizer->key_cache[cache_index].encrypt_ctx);
-        EVP_EncryptInit_ex(optimizer->key_cache[cache_index].encrypt_ctx, 
-                          EVP_aes_256_cbc(), NULL, key, iv);
+
+        if (ret1 != 1 || ret2 != 1 || ret3 != 1) {
+            crypto_cache_mutex_unlock();
+            return -1;
+        }
+        ciphertext_lengths[i] = len + final_len;
     }
-    
+
+    crypto_cache_mutex_unlock();
     return 0;
 }
 

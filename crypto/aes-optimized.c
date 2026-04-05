@@ -402,33 +402,30 @@ void aes_optimized_print_stats(void) {
 
 // Батчевая обработка AES операций
 int aes_optimized_batch_encrypt(const unsigned char *key, const unsigned char *iv,
-                               const void **plaintext_array, void **ciphertext_array, 
+                               const void **plaintext_array, void **ciphertext_array,
                                int *length_array, int count) {
     if (count <= 0) {
         return 0;
     }
-    
-    struct aes_key_cache_entry *entry = get_cached_aes_context(key, iv);
-    if (!entry || !entry->encrypt_ctx) {
-        // Fallback: обрабатываем по одному
-        int i, total = 0;
-        for (i = 0; i < count; i++) {
-            if (aes_optimized_encrypt(key, iv, plaintext_array[i], ciphertext_array[i], length_array[i]) > 0) {
-                total++;
-            }
-        }
-        return total;
-    }
-    
-    // Оптимизированная батчевая обработка
+
+    // Fix L10: Каждый буфер шифруется независимо с тем же IV
+    // CBC mode сохраняет state между вызовами, поэтому нельзя
+    // переиспользовать один контекст для независимых буферов
     int i, processed = 0;
     for (i = 0; i < count; i++) {
-        int out_len;
-        if (EVP_CipherUpdate(entry->encrypt_ctx, ciphertext_array[i], &out_len, 
-                           plaintext_array[i], length_array[i]) == 1) {
+        EVP_CIPHER_CTX *ctx = create_aes_context(key, iv, 1);
+        if (!ctx) continue;
+
+        int out_len = 0;
+        int ret = EVP_CipherUpdate(ctx, ciphertext_array[i], &out_len,
+                                   plaintext_array[i], length_array[i]);
+        EVP_CIPHER_CTX_free(ctx);
+
+        if (ret == 1) {
             processed++;
+            ATOMIC_INC(aes_stats.total_encryptions);
         }
     }
-    
+
     return processed;
 }
