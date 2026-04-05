@@ -1466,65 +1466,6 @@ int hts_execute (connection_job_t c, struct raw_message *msg, int op) {
 
   fail_connection(c, -1);
   return 0;
-  // lru_insert_conn (c); // dangerous in net-cpu context
-  if (check_conn_buffers (c) < 0) {
-    return -429;
-  }
-
-  if (D->data_size >= MAX_POST_SIZE) {
-    return -413;
-  }
-
-  if (!((D->query_type == htqt_post && D->data_size > 0) || (D->query_type == htqt_options && D->data_size < 0))) {
-    D->query_flags &= ~QF_KEEPALIVE;
-    return -501;
-  }
-
-  if (D->data_size < 0) {
-    D->data_size = 0;
-  }
-
-  if (D->uri_size > 14 || D->header_size > MAX_HTTP_HEADER_SIZE) {
-    return -414;
-  }
-
-  if (D->data_size > 0) {
-    int need_bytes = D->data_size + D->header_size - msg->total_bytes;
-    if (need_bytes > 0) {
-      vkprintf (2, "-- need %d more bytes, waiting\n", need_bytes);
-      return need_bytes;
-    }
-  }
-
-  assert (msg->total_bytes == D->header_size + D->data_size);
-
-  // create http query job here
-  job_t job = create_async_job (http_query_job_run, JSP_PARENT_RWE | JSC_ALLOW (JC_ENGINE, JS_RUN) | JSC_ALLOW (JC_ENGINE, JS_ABORT) | JSC_ALLOW (JC_ENGINE, JS_ALARM) | JSC_ALLOW (JC_CONNECTION, JS_FINISH), -2, sizeof (struct http_query_info) + D->header_size + 1, JT_HAVE_TIMER, JOB_REF_NULL);
-  assert (job);
-  struct http_query_info *HQ = (struct http_query_info *)(job->j_custom);
-
-  rwm_clone (&HQ->msg, msg);
-  HQ->conn = job_incref (c);
-  HQ->conn_fd = CONN_INFO(c)->fd;
-  HQ->conn_generation = CONN_INFO(c)->generation;
-  HQ->flags = 1;  // pending_queries
-  assert (!CONN_INFO(c)->pending_queries);
-  CONN_INFO(c)->pending_queries++;
-  ++pending_http_queries;
-  HQ->query_type = D->query_type;
-  HQ->header_size = D->header_size;
-  HQ->data_size = D->data_size;
-  HQ->first_line_size = D->first_line_size;
-  HQ->host_offset = D->host_offset;
-  HQ->host_size = D->host_size;
-  HQ->uri_offset = D->uri_offset;
-  HQ->uri_size = D->uri_size;
-  assert (rwm_fetch_data (&HQ->msg, HQ->header, HQ->header_size) == HQ->header_size);
-  HQ->header[HQ->header_size] = 0;
-  assert (HQ->msg.total_bytes == HQ->data_size);
-
-  schedule_job (JOB_REF_PASS (job));
-  return 0;
 }
 
 struct rpcs_exec_data {
