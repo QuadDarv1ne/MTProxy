@@ -422,11 +422,18 @@ int do_reload_config (int flags) {
     create_all_outbound_connections ();
   }
 
+  // Освобождаем старый MD5 хеш перед выделением нового (fix memory leak)
+  if (CurConf->config_md5_hex) {
+    free (CurConf->config_md5_hex);
+  }
+
   CurConf->config_loaded_at = now ? now : time (0);
   CurConf->config_bytes = config_bytes;
   CurConf->config_md5_hex = malloc (33);
-  md5_hex_config (CurConf->config_md5_hex);
-  CurConf->config_md5_hex[32] = 0;
+  if (CurConf->config_md5_hex) {
+    md5_hex_config (CurConf->config_md5_hex);
+    CurConf->config_md5_hex[32] = 0;
+  }
 
   kprintf ("configuration file %s re-read successfully (%d bytes parsed), new configuration active\n", config_filename, config_bytes);
 

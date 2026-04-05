@@ -1211,8 +1211,8 @@ int parse_text_ipv6 (unsigned char ip[16], const char *str) {
     int j = 0, v = 0;
     while ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f')) {
       c |= 0x20;
-      // Защита от integer overflow: проверяем перед умножением
-      if (v > 0xFFFFF) {
+      // Защита от integer overflow: проверяем перед умножением (v << 4 не должен превысить 0xFFFF)
+      if (v > 0xFFF) {
         return -1; // Переполнение при вычислении v
       }
       v = (v << 4) + (c <= '9' ? c - '0' : c - 'a' + 10);

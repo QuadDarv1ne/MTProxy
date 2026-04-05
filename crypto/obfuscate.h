@@ -186,12 +186,14 @@ void obfuscate_print_stats(struct obfuscate_ctx *ctx);
  * @param key_len Key length
  * @param key_pos Pointer to current key position (updated)
  */
-static inline void obfuscate_xor_inline(unsigned char *data, 
+static inline void obfuscate_xor_inline(unsigned char *data,
                                         size_t len,
                                         const unsigned char *key,
                                         size_t key_len,
                                         size_t *key_pos)
 {
+    if (!key || key_len == 0 || !key_pos) return; // Защита от division by zero
+
     size_t i;
     for (i = 0; i < len; i++) {
         data[i] ^= key[*key_pos];

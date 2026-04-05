@@ -9,6 +9,12 @@
 #include "mtproto-v3-adapter.h"
 #include <time.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <pthread.h>
+#endif
+
 #ifndef __SIZE_TYPE__
 #define __SIZE_TYPE__ unsigned long
 #endif
@@ -28,6 +34,43 @@ int memcmp(const void *s1, const void *s2, size_t n);
 int strcmp(const char *s1, const char *s2);
 
 #endif
+
+/* Mutex для защиты глобальной конфигурации (thread safety) */
+#ifdef _WIN32
+static HANDLE g_config_mutex = NULL;
+#else
+static pthread_mutex_t g_config_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
+static void g_config_mutex_init(void) {
+#ifdef _WIN32
+    if (!g_config_mutex) {
+        g_config_mutex = CreateMutex(NULL, FALSE, NULL);
+    }
+#else
+    // PTHREAD_MUTEX_INITIALIZER уже инициализирован
+#endif
+}
+
+static void g_config_mutex_lock(void) {
+#ifdef _WIN32
+    if (g_config_mutex) {
+        WaitForSingleObject(g_config_mutex, INFINITE);
+    }
+#else
+    pthread_mutex_lock(&g_config_mutex);
+#endif
+}
+
+static void g_config_mutex_unlock(void) {
+#ifdef _WIN32
+    if (g_config_mutex) {
+        ReleaseMutex(g_config_mutex);
+    }
+#else
+    pthread_mutex_unlock(&g_config_mutex);
+#endif
+}
 
 /* Вспомогательные функции */
 /* Проверка, поддерживается ли данная версия */
@@ -51,30 +94,43 @@ mtproto_init_result_t mtproto_version_manager_init(const mtproto_version_config_
     if (!config) {
         return MTPROTO_INIT_CONFIG_ERROR;
     }
-    
+
+    g_config_mutex_init();
+
     // Проверяем корректность конфигурации
     if (config->min_version > config->max_version) {
         return MTPROTO_INIT_CONFIG_ERROR;
     }
-    
+
     if (!is_supported_version(config->min_version) || !is_supported_version(config->max_version)) {
         return MTPROTO_INIT_UNSUPPORTED_VERSION;
     }
-    
-    // Копируем конфигурацию
+
+    // Копируем конфигурацию под защитой mutex
+    g_config_mutex_lock();
     memcpy(&g_config, config, sizeof(mtproto_version_config_t));
-    
+    g_config_mutex_unlock();
+
     return MTPROTO_INIT_OK;
 }
 
 /* Деинициализация системы управления версиями */
 void mtproto_version_manager_deinit(void) {
+    g_config_mutex_lock();
     // Сбросим конфигурацию к значениям по умолчанию
     g_config.min_version = MTPROTO_VERSION_2_0;
     g_config.max_version = MTPROTO_VERSION_3_0;
     g_config.default_version = MTPROTO_VERSION_2_0;
     g_config.enable_autoupgrade = 0;
     g_config.supported_features = 0x00000007;
+    g_config_mutex_unlock();
+
+#ifdef _WIN32
+    if (g_config_mutex) {
+        CloseHandle(g_config_mutex);
+        g_config_mutex = NULL;
+    }
+#endif
 }
 
 /* Установка конфигурации поддержки версий */
@@ -82,53 +138,71 @@ int mtproto_set_version_config(const mtproto_version_config_t *config) {
     if (!config) {
         return -1;
     }
-    
+
     // Проверяем корректность конфигурации
     if (config->min_version > config->max_version) {
         return -1;
     }
-    
+
     if (!is_supported_version(config->min_version) || !is_supported_version(config->max_version)) {
         return -1;
     }
-    
-    // Копируем конфигурацию
+
+    // Копируем конфигурацию под защитой mutex
+    g_config_mutex_lock();
     memcpy(&g_config, config, sizeof(mtproto_version_config_t));
-    
+    g_config_mutex_unlock();
+
     return 0;
 }
 
 /* Получение текущей конфигурации */
 const mtproto_version_config_t* mtproto_get_version_config(void) {
+    // Возвращаем указатель, но caller должен понимать что это не thread-safe snapshot
     return &g_config;
 }
 
 /* Определение наилучшей версии для соединения */
 mtproto_version_t mtproto_select_best_version(mtproto_version_t client_version) {
+    g_config_mutex_lock();
+
+    mtproto_version_t result;
     if (!is_supported_version(client_version)) {
-        return g_config.default_version;
+        result = g_config.default_version;
+        g_config_mutex_unlock();
+        return result;
     }
-    
+
     // Если версия клиента поддерживается, проверяем, входит ли она в диапазон
     if (client_version >= g_config.min_version && client_version <= g_config.max_version) {
         // Возвращаем максимальную из возможных версий
         if (g_config.enable_autoupgrade && client_version < g_config.max_version) {
-            return g_config.max_version;
+            result = g_config.max_version;
+            g_config_mutex_unlock();
+            return result;
         }
+        g_config_mutex_unlock();
         return client_version;
     }
-    
+
     // Если версия вне диапазона, выбираем ближайшую подходящую
     if (client_version < g_config.min_version) {
-        return g_config.min_version;
+        result = g_config.min_version;
+        g_config_mutex_unlock();
+        return result;
     }
-    
-    return g_config.max_version;
+
+    result = g_config.max_version;
+    g_config_mutex_unlock();
+    return result;
 }
 
 /* Проверка, поддерживается ли версия */
 int mtproto_is_version_supported(mtproto_version_t version) {
-    return (version >= g_config.min_version && version <= g_config.max_version);
+    g_config_mutex_lock();
+    int result = (version >= g_config.min_version && version <= g_config.max_version);
+    g_config_mutex_unlock();
+    return result;
 }
 
 /* Обновление версии соединения с учетом конфигурации */
