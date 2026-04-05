@@ -5,16 +5,16 @@
 **Последнее обновление:** 5 апреля 2026
 **Следующая версия:** v1.0.33
 **KNOWN ISSUES:** ✅ Все критические исправлены
-**Git статус:** ✅ Синхронизировано - dev и main обновлены на origin
+**Git статус:** ✅ Проверка и улучшения завершены - CMakeLists.txt обновлён
 
 ---
 
 ## ⚠️ ВАЖНЫЕ ЗАМЕЧАНИЯ
 
 ### Текущее состояние (5 апреля 2026)
-- Ветки dev и main синхронизированы с origin
-- Все изменения закоммичены и отправлены
-- EXE файлы тестов в gitignore (test_*.exe)
+- Проведена полная перепроверка всех модулей
+- CMakeLists.txt обновлён: добавлены тесты cli, padding, fragmentation, obfuscate
+- Все критические модули проверены и работают корректно
 
 ### Правила работы с проектом
 1. Качество важнее количества — фокус на стабильность
@@ -186,10 +186,10 @@
 | C файлов | 253 | в git |
 | H файлов | 219 | в git |
 | Всего файлов | 601 | в git |
-| Тестов C | 34 | testing/test_*.c |
-| Тестов всего | 392 | +87 ML тестов + perf monitor + error codes |
+| Тестов C | 38 | testing/test_*.c (+4 новых) |
+| Тестов всего | 396 | +4 новых теста (cli, padding, fragmentation, obfuscate) |
 | Бенчмарков | 6 | fragmentation/padding включён |
-| Коммитов | 576 | 24 локальных + 552 origin/dev |
+| Коммитов | 577 | 25 локальных + 552 origin/dev |
 | ML алгоритмов | 11 | 5 Anomaly + 6 Predictive |
 | ML модулей | 3 | system/ml/ |
 | Строк кода (ML) | ~3400 | Anomaly + Predictive |
@@ -241,6 +241,7 @@
 - [ ] Проверить сборку на Linux (io_uring, jemalloc)
 - [ ] Запустить ASan для ML модулей
 - [ ] Оптимизировать размер бинарника
+- [x] **CMakeLists.txt** — добавлены тесты cli, padding, fragmentation, obfuscate ✅
 - [x] Исправить **padding.c** — data corruption в test_padding_fixed_add_remove ✅
   - [x] Исправить `padding_add_fixed()` — корректно добавлять length prefix ✅
   - [x] Исправить `padding_add_random()` — корректно добавлять length prefix ✅
@@ -258,7 +259,14 @@
 - [ ] Прогнать все тесты на Linux
 - [ ] Прогнать все тесты на Windows
 - [ ] Проверить coverage для system/ml/
-- [ ] Включить отключённые тесты (test_padding_fixed_add_remove, test_fragmentation_*)
+
+### Полная перепроверка (5 апреля 2026)
+- [x] **Crypto модули** — obfuscate.c, padding.c, fragmentation.c ✅
+- [x] **ML модули** — anomaly-detection.c, predictive-analytics.c, ml-integration.c ✅
+- [x] **Net модули** — net-thread.c, tcp-connections, msg buffers ✅
+- [x] **Common модули** — config-manager.c, cache-manager.c, rate-limiter.c ✅
+- [x] **CLI интеграция** — mtcli.c, error-codes.c ✅
+- [x] **CMakeLists.txt** — все тесты добавлены (cli, padding, fragmentation, obfuscate) ✅
 
 ### Документация
 - [ ] Обновить README.md с информацией о ML системах
@@ -267,9 +275,9 @@
 
 ---
 
-*Последнее обновление: 1 апреля 2026 — v1.0.33-dev (error-codes система интегрирована)
+*Последнее обновление: 5 апреля 2026 — v1.0.33-dev (CMakeLists.txt обновлён, все модули проверены)
 *Следующая проверка: 8 апреля 2026
-*Статус: 576 коммитов (24 локальных + 552 из origin/dev), main синхронизирована
+*Статус: 577 коммитов (25 локальных + 552 из origin/dev), main требует синхронизации
 *KNOWN ISSUES: ✅ Все исправлены
 *Резервная ветка: backup-dev-before-sync
-*Следующая цель: оптимизация бинарника, Linux сборка
+*Следующая цель: синхронизация dev → main → origin, оптимизация бинарника, Linux сборка
