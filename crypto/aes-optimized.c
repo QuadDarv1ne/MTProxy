@@ -26,6 +26,12 @@
 #include <openssl/evp.h>
 #include <openssl/aes.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <pthread.h>
+#endif
+
 #include "crypto/aes-optimized.h"
 #include "common/kprintf.h"
 #include "common/common-stats.h"
@@ -52,6 +58,44 @@ struct aes_key_cache_entry {
 static struct aes_key_cache_entry *aes_key_cache = NULL;
 static unsigned long long aes_cache_counter = 0;
 
+// Mutex для защиты кэша AES (thread safety)
+#ifdef _WIN32
+static HANDLE aes_cache_mutex = NULL;
+#else
+static pthread_mutex_t aes_cache_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
+// Инициализация mutex для AES кэша
+static void aes_cache_mutex_init(void) {
+#ifdef _WIN32
+    if (!aes_cache_mutex) {
+        aes_cache_mutex = CreateMutex(NULL, FALSE, NULL);
+    }
+#else
+    // PTHREAD_MUTEX_INITIALIZER уже инициализирован
+#endif
+}
+
+static void aes_cache_mutex_lock(void) {
+#ifdef _WIN32
+    if (aes_cache_mutex) {
+        WaitForSingleObject(aes_cache_mutex, INFINITE);
+    }
+#else
+    pthread_mutex_lock(&aes_cache_mutex);
+#endif
+}
+
+static void aes_cache_mutex_unlock(void) {
+#ifdef _WIN32
+    if (aes_cache_mutex) {
+        ReleaseMutex(aes_cache_mutex);
+    }
+#else
+    pthread_mutex_unlock(&aes_cache_mutex);
+#endif
+}
+
 // Предвычисленные константы для ускорения (зарезервировано для будущего использования)
 static const unsigned char precomputed_round_keys[15][16] __attribute__((aligned(16))) __attribute__((unused)) = {
     {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
@@ -77,19 +121,25 @@ int aes_optimized_init(void) {
         return 0; // Уже инициализирован
     }
 
+    // Инициализация mutex
+    aes_cache_mutex_init();
+
     // Проверка лимита памяти перед выделением
     size_t cache_size = AES_KEY_CACHE_SIZE * sizeof(struct aes_key_cache_entry);
     if (cache_size > MAX_CRYPTO_CACHE_MB * 1024 * 1024 / 2) {
         vkprintf(1, "WARNING: AES cache size limited to %d MB\n", MAX_CRYPTO_CACHE_MB/2);
     }
 
+    aes_cache_mutex_lock();
     aes_key_cache = calloc(AES_KEY_CACHE_SIZE, sizeof(struct aes_key_cache_entry));
+    aes_cache_mutex_unlock();
+
     if (!aes_key_cache) {
         vkprintf(0, "ERROR: Failed to allocate AES key cache\n");
         return -1;
     }
 
-    vkprintf(1, "AES optimized cache initialized with %d entries (%zu KB)\n", 
+    vkprintf(1, "AES optimized cache initialized with %d entries (%zu KB)\n",
              AES_KEY_CACHE_SIZE, cache_size / 1024);
     return 0;
 }
@@ -133,7 +183,10 @@ static EVP_CIPHER_CTX *create_aes_context(const unsigned char *key, const unsign
 
 // Получение кэшированного контекста AES
 static struct aes_key_cache_entry *get_cached_aes_context(const unsigned char *key, const unsigned char *iv) {
+    aes_cache_mutex_lock();
+
     if (!aes_key_cache) {
+        aes_cache_mutex_unlock();
         return NULL;
     }
 
@@ -147,6 +200,7 @@ static struct aes_key_cache_entry *get_cached_aes_context(const unsigned char *k
         memcmp(entry->iv, iv, 16) == 0) {
         entry->last_used = ++aes_cache_counter;
         aes_stats.key_cache_hits++;
+        aes_cache_mutex_unlock();
         return entry;
     }
 
@@ -179,6 +233,7 @@ static struct aes_key_cache_entry *get_cached_aes_context(const unsigned char *k
             entry->decrypt_ctx = NULL;
         }
         entry->valid = 0;
+        aes_cache_mutex_unlock();
         return NULL;
     }
 
@@ -188,6 +243,7 @@ static struct aes_key_cache_entry *get_cached_aes_context(const unsigned char *k
     entry->last_used = ++aes_cache_counter;
     entry->valid = 1;
 
+    aes_cache_mutex_unlock();
     return entry;
 }
 

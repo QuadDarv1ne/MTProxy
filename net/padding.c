@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <openssl/rand.h>
 
 #ifdef _WIN32
 #include <process.h>  // for getpid() on Windows
@@ -217,10 +218,10 @@ int padding_calculate_size(struct padding_ctx *ctx, size_t original_len)
         case PADDING_RANDOM:
             // Random padding: original + random(0 to max_padding)
             if (ctx->use_length_prefix) {
-                return (int)(original_len + PADDING_LENGTH_PREFIX_SIZE + 
-                           (rand() % (ctx->max_padding + 1)));
+                return (int)(original_len + PADDING_LENGTH_PREFIX_SIZE +
+                           secure_rand_range(ctx->max_padding));
             }
-            return (int)(original_len + (rand() % (ctx->max_padding + 1)));
+            return (int)(original_len + secure_rand_range(ctx->max_padding));
             
         case PADDING_TLS_LIKE:
             // TLS-like: 256-byte blocks
@@ -299,18 +300,12 @@ int padding_generate_random(unsigned char *buffer, size_t len)
     if (!buffer || len == 0) {
         return -1;
     }
-    
-    static int seeded = 0;
-    if (!seeded) {
-        srand((unsigned int)time(NULL) ^ (unsigned int)getpid());
-        seeded = 1;
+
+    // Используем криптографически стойкий генератор случайных чисел OpenSSL
+    if (RAND_bytes(buffer, (int)len) != 1) {
+        return -1; // Ошибка генерации случайных данных
     }
-    
-    size_t i;
-    for (i = 0; i < len; i++) {
-        buffer[i] = (unsigned char)(rand() % 256);
-    }
-    
+
     return 0;
 }
 
@@ -331,6 +326,25 @@ int padding_generate_pattern(unsigned char *buffer, size_t len, unsigned char st
     }
     
     return 0;
+}
+
+// ============================================================================
+// Internal Helper Functions
+// ============================================================================
+
+/**
+ * @brief Получить криптографически стойкое случайное число в диапазоне [0, max)
+ */
+static size_t secure_rand_range(size_t max)
+{
+    if (max == 0) return 0;
+    if (max == SIZE_MAX) return 0; // Защита от деления на ноль
+
+    unsigned char byte;
+    if (RAND_bytes(&byte, 1) != 1) {
+        return 0; // Fallback
+    }
+    return (size_t)byte % (max + 1);
 }
 
 // ============================================================================
@@ -387,7 +401,7 @@ static int padding_add_random(struct padding_ctx *ctx,
     size_t original_len = *packet_len;
 
     // Generate random padding size
-    size_t padding_size = rand() % (ctx->max_padding + 1);
+    size_t padding_size = secure_rand_range(ctx->max_padding);
     size_t total_len = original_len + padding_size;
 
     if (ctx->use_length_prefix) {

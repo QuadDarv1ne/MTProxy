@@ -1,10 +1,19 @@
 /*
  * Реализация векторизованных криптографических операций для MTProxy
  * Использование AVX2/AVX-512 для оптимизации криптографических операций
+ *
+ * ВНИМАНИЕ: Этот модуль содержит ЗАГЛУШКИ (stubs) вместо реальной криптографии.
+ * Функции шифрования используют XOR вместо AES/SHA. НЕ ИСПОЛЬЗОВАТЬ в production!
+ * Для production используйте aes-optimized.c и crypto-optimizer.c.
  */
 
 #include "vectorized-crypto.h"
+#include <stdio.h>
 #include <stddef.h>
+
+// Macro to mark stub functions
+#define VEC_CRYPTO_STUB(func_name) \
+    fprintf(stderr, "[WARNING] vectorized-crypto: STUB function called: %s - NOT FOR PRODUCTION USE!\n", func_name)
 
 // Глобальный контекст векторизованной криптографии
 static vectorized_crypto_context_t g_vec_crypto_ctx = {0};
@@ -167,19 +176,21 @@ void vec_crypto_cleanup(vectorized_crypto_context_t *ctx) {
 }
 
 // Векторизованное AES-ECB шифрование
-int vec_crypto_aes_ecb_encrypt(const unsigned char *in, unsigned char *out, 
-                              const unsigned char *key, int key_bits, 
+int vec_crypto_aes_ecb_encrypt(const unsigned char *in, unsigned char *out,
+                              const unsigned char *key, int key_bits,
                               size_t data_len) {
+    VEC_CRYPTO_STUB("vec_crypto_aes_ecb_encrypt");
+
     // В реальной реализации здесь будет векторизованное AES-ECB шифрование
     // с использованием AVX2/AVX-512 инструкций
-    
+
     // Для совместимости с MTProxy возвращаем фиктивный результат
     // В реальной реализации: шифрование блоков данных с использованием SIMD
-    
+
     if (!in || !out || !key || data_len == 0) {
         return -1;
     }
-    
+
     // Обновление статистики в зависимости от доступного SIMD
     if (g_vec_crypto_ctx.simd_available[SIMD_AVX512]) {
         g_vec_crypto_ctx.stats.avx512_operations++;
@@ -190,22 +201,23 @@ int vec_crypto_aes_ecb_encrypt(const unsigned char *in, unsigned char *out,
     } else {
         g_vec_crypto_ctx.stats.fallback_operations++;
     }
-    
+
     g_vec_crypto_ctx.stats.total_operations++;
-    
+
     // В реальной реализации здесь будет SIMD-оптимизированный код
     // Для совместимости копируем данные напрямую
     for (size_t i = 0; i < data_len; i++) {
         out[i] = in[i] ^ key[i % (key_bits / 8)];  // Простая XOR-операция для демонстрации
     }
-    
+
     return 0;
 }
 
 // Векторизованное AES-ECB дешифрование
-int vec_crypto_aes_ecb_decrypt(const unsigned char *in, unsigned char *out, 
-                              const unsigned char *key, int key_bits, 
+int vec_crypto_aes_ecb_decrypt(const unsigned char *in, unsigned char *out,
+                              const unsigned char *key, int key_bits,
                               size_t data_len) {
+    VEC_CRYPTO_STUB("vec_crypto_aes_ecb_decrypt");
     // В реальной реализации здесь будет векторизованное AES-ECB дешифрование
     // с использованием AVX2/AVX-512 инструкций
     
@@ -236,9 +248,10 @@ int vec_crypto_aes_ecb_decrypt(const unsigned char *in, unsigned char *out,
 }
 
 // Векторизованное AES-CTR шифрование
-int vec_crypto_aes_ctr_encrypt(const unsigned char *in, unsigned char *out, 
-                              const unsigned char *key, int key_bits, 
+int vec_crypto_aes_ctr_encrypt(const unsigned char *in, unsigned char *out,
+                              const unsigned char *key, int key_bits,
                               unsigned char *counter, size_t data_len) {
+    VEC_CRYPTO_STUB("vec_crypto_aes_ctr_encrypt");
     // В реальной реализации здесь будет векторизованное AES-CTR шифрование
     // с использованием AVX2/AVX-512 инструкций
     
@@ -275,12 +288,13 @@ int vec_crypto_aes_ctr_encrypt(const unsigned char *in, unsigned char *out,
 }
 
 // Векторизованное AES-GCM шифрование
-int vec_crypto_aes_gcm_encrypt(const unsigned char *in, unsigned char *out, 
+int vec_crypto_aes_gcm_encrypt(const unsigned char *in, unsigned char *out,
                               const unsigned char *key, int key_bits,
                               const unsigned char *iv, size_t iv_len,
                               const unsigned char *aad, size_t aad_len,
                               unsigned char *tag, size_t tag_len,
                               size_t data_len) {
+    VEC_CRYPTO_STUB("vec_crypto_aes_gcm_encrypt");
     // В реальной реализации здесь будет векторизованное AES-GCM шифрование
     // с использованием AVX2/AVX-512 инструкций
     
@@ -316,8 +330,10 @@ int vec_crypto_aes_gcm_encrypt(const unsigned char *in, unsigned char *out,
 }
 
 // Векторизованная обработка SHA-256
-int vec_crypto_sha256_process(const unsigned char *data, size_t data_len, 
+int vec_crypto_sha256_process(const unsigned char *data, size_t data_len,
                              unsigned char *hash) {
+    VEC_CRYPTO_STUB("vec_crypto_sha256_process");
+
     // В реальной реализации здесь будет векторизованная SHA-256 обработка
     // с использованием AVX2/AVX-512 инструкций
     
@@ -353,8 +369,10 @@ int vec_crypto_sha256_process(const unsigned char *data, size_t data_len,
 }
 
 // Векторизованная обработка SHA-512
-int vec_crypto_sha512_process(const unsigned char *data, size_t data_len, 
+int vec_crypto_sha512_process(const unsigned char *data, size_t data_len,
                              unsigned char *hash) {
+    VEC_CRYPTO_STUB("vec_crypto_sha512_process");
+
     // В реальной реализации здесь будет векторизованная SHA-512 обработка
     // с использованием AVX2/AVX-512 инструкций
     
