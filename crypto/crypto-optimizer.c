@@ -9,7 +9,45 @@
     #include <malloc.h>
 #else
     #include <sys/time.h>
+    #include <pthread.h>
 #endif
+
+// Mutex для защиты кэша ключей
+#ifdef _WIN32
+static HANDLE crypto_cache_mutex = NULL;
+#else
+static pthread_mutex_t crypto_cache_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
+static void crypto_cache_mutex_init(void) {
+#ifdef _WIN32
+    if (!crypto_cache_mutex) {
+        crypto_cache_mutex = CreateMutex(NULL, FALSE, NULL);
+    }
+#else
+    // PTHREAD_MUTEX_INITIALIZER уже инициализирован
+#endif
+}
+
+static void crypto_cache_mutex_lock(void) {
+#ifdef _WIN32
+    if (crypto_cache_mutex) {
+        WaitForSingleObject(crypto_cache_mutex, INFINITE);
+    }
+#else
+    pthread_mutex_lock(&crypto_cache_mutex);
+#endif
+}
+
+static void crypto_cache_mutex_unlock(void) {
+#ifdef _WIN32
+    if (crypto_cache_mutex) {
+        ReleaseMutex(crypto_cache_mutex);
+    }
+#else
+    pthread_mutex_unlock(&crypto_cache_mutex);
+#endif
+}
 
 // Обнаружение поддерживаемых оптимизаций
 int crypto_optimizer_detect_capabilities(void) {
@@ -64,7 +102,10 @@ crypto_optimizer_t* crypto_optimizer_init(void) {
     if (!optimizer) {
         return NULL;
     }
-    
+
+    // Инициализация mutex для кэша
+    crypto_cache_mutex_init();
+
     // Обнаружение возможностей
     optimizer->supported_optimizations = crypto_optimizer_detect_capabilities();
     optimizer->active_optimization = crypto_optimizer_get_best_optimization();
@@ -146,11 +187,12 @@ int crypto_optimizer_configure(crypto_optimizer_t *optimizer,
     return 0;
 }
 
-// Поиск ключа в кэше
+// Поиск ключа в кэше (caller должен держать mutex)
 static int find_key_in_cache(crypto_optimizer_t *optimizer,
                            const unsigned char *key,
                            const unsigned char *iv) {
-    for (int i = 0; i < optimizer->cache_size; i++) {
+    int i;
+    for (i = 0; i < optimizer->cache_size; i++) {
         if (optimizer->key_cache[i].valid &&
             memcmp(optimizer->key_cache[i].key, key, 32) == 0 &&
             memcmp(optimizer->key_cache[i].iv, iv, 16) == 0) {
@@ -161,15 +203,16 @@ static int find_key_in_cache(crypto_optimizer_t *optimizer,
     return -1;
 }
 
-// Добавление ключа в кэш
+// Добавление ключа в кэш (caller должен держать mutex)
 static int add_key_to_cache(crypto_optimizer_t *optimizer,
                           const unsigned char *key,
                           const unsigned char *iv) {
-    // Найти наименее используемую запись
     int oldest_index = 0;
     unsigned long long oldest_time = (unsigned long long)time(NULL);
-    
-    for (int i = 0; i < optimizer->cache_size; i++) {
+    int i;
+
+    // Найти наименее используемую запись
+    for (i = 0; i < optimizer->cache_size; i++) {
         if (!optimizer->key_cache[i].valid) {
             oldest_index = i;
             break;
@@ -179,7 +222,7 @@ static int add_key_to_cache(crypto_optimizer_t *optimizer,
             oldest_index = i;
         }
     }
-    
+
     // Очистить старый контекст
     if (optimizer->key_cache[oldest_index].encrypt_ctx) {
         EVP_CIPHER_CTX_free(optimizer->key_cache[oldest_index].encrypt_ctx);
@@ -187,27 +230,27 @@ static int add_key_to_cache(crypto_optimizer_t *optimizer,
     if (optimizer->key_cache[oldest_index].decrypt_ctx) {
         EVP_CIPHER_CTX_free(optimizer->key_cache[oldest_index].decrypt_ctx);
     }
-    
+
     // Создать новые контексты
     optimizer->key_cache[oldest_index].encrypt_ctx = EVP_CIPHER_CTX_new();
     optimizer->key_cache[oldest_index].decrypt_ctx = EVP_CIPHER_CTX_new();
-    
-    if (!optimizer->key_cache[oldest_index].encrypt_ctx || 
+
+    if (!optimizer->key_cache[oldest_index].encrypt_ctx ||
         !optimizer->key_cache[oldest_index].decrypt_ctx) {
         return -1;
     }
-    
+
     // Инициализация контекстов
-    EVP_EncryptInit_ex(optimizer->key_cache[oldest_index].encrypt_ctx, 
+    EVP_EncryptInit_ex(optimizer->key_cache[oldest_index].encrypt_ctx,
                        EVP_aes_256_cbc(), NULL, key, iv);
-    EVP_DecryptInit_ex(optimizer->key_cache[oldest_index].decrypt_ctx, 
+    EVP_DecryptInit_ex(optimizer->key_cache[oldest_index].decrypt_ctx,
                        EVP_aes_256_cbc(), NULL, key, iv);
-    
+
     memcpy(optimizer->key_cache[oldest_index].key, key, 32);
     memcpy(optimizer->key_cache[oldest_index].iv, iv, 16);
     optimizer->key_cache[oldest_index].last_used = (unsigned long long)time(NULL);
     optimizer->key_cache[oldest_index].valid = 1;
-    
+
     return oldest_index;
 }
 
@@ -225,52 +268,59 @@ int crypto_optimized_encrypt(crypto_optimizer_t *optimizer,
 
     uint64_t start_time = utils_time_ms();
     optimizer->stats.total_operations++;
-    
+
+    crypto_cache_mutex_lock();
+
     // Попытка использовать кэш
     int cache_index = find_key_in_cache(optimizer, key, iv);
     if (cache_index >= 0) {
         optimizer->stats.cache_hits++;
         optimizer->stats.optimized_operations++;
-        
-        int len;
-        EVP_EncryptUpdate(optimizer->key_cache[cache_index].encrypt_ctx,
+
+        int len = 0;
+        int final_len = 0;
+        int ret1 = EVP_EncryptUpdate(optimizer->key_cache[cache_index].encrypt_ctx,
                          ciphertext, &len, plaintext, plaintext_len);
-        *ciphertext_len = len;
-        
-        EVP_EncryptFinal_ex(optimizer->key_cache[cache_index].encrypt_ctx,
-                           ciphertext + len, &len);
-        *ciphertext_len += len;
-        
+        int ret2 = EVP_EncryptFinal_ex(optimizer->key_cache[cache_index].encrypt_ctx,
+                           ciphertext + len, &final_len);
+        crypto_cache_mutex_unlock();
+
+        if (ret1 != 1 || ret2 != 1) {
+            return -1; // Ошибка шифрования
+        }
+        *ciphertext_len = len + final_len;
+
     } else {
         optimizer->stats.cache_misses++;
         optimizer->stats.fallback_operations++;
-        
+        crypto_cache_mutex_unlock();
+
         // Fallback на стандартное шифрование
         EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
         if (!ctx) return -1;
-        
-        EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv);
-        int len;
-        EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len);
-        *ciphertext_len = len;
-        
-        EVP_EncryptFinal_ex(ctx, ciphertext + len, &len);
-        *ciphertext_len += len;
-        
+
+        int len = 0;
+        int final_len = 0;
+        int ret1 = EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv);
+        int ret2 = EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len);
+        int ret3 = EVP_EncryptFinal_ex(ctx, ciphertext + len, &final_len);
         EVP_CIPHER_CTX_free(ctx);
-        
+
+        if (ret1 != 1 || ret2 != 1 || ret3 != 1) {
+            return -1;
+        }
+        *ciphertext_len = len + final_len;
+
         // Добавить в кэш для будущих операций
+        crypto_cache_mutex_lock();
         add_key_to_cache(optimizer, key, iv);
+        crypto_cache_mutex_unlock();
     }
 
     uint64_t end_time = utils_time_ms();
     double operation_time = (double)(end_time - start_time);
     optimizer->stats.total_processing_time_ms += operation_time;
-    
-    if (cache_index >= 0) {
-        optimizer->stats.optimized_processing_time_ms += operation_time;
-    }
-    
+
     return 0;
 }
 
@@ -285,46 +335,57 @@ int crypto_optimized_decrypt(crypto_optimizer_t *optimizer,
     if (!optimizer || !optimizer->is_initialized) {
         return -1;
     }
-    
+
     optimizer->stats.total_operations++;
-    
+
+    crypto_cache_mutex_lock();
+
     // Попытка использовать кэш
     int cache_index = find_key_in_cache(optimizer, key, iv);
     if (cache_index >= 0) {
         optimizer->stats.cache_hits++;
         optimizer->stats.optimized_operations++;
-        
-        int len;
-        EVP_DecryptUpdate(optimizer->key_cache[cache_index].decrypt_ctx,
+
+        int len = 0;
+        int final_len = 0;
+        int ret1 = EVP_DecryptUpdate(optimizer->key_cache[cache_index].decrypt_ctx,
                          plaintext, &len, ciphertext, ciphertext_len);
-        *plaintext_len = len;
-        
-        EVP_DecryptFinal_ex(optimizer->key_cache[cache_index].decrypt_ctx,
-                           plaintext + len, &len);
-        *plaintext_len += len;
-        
+        int ret2 = EVP_DecryptFinal_ex(optimizer->key_cache[cache_index].decrypt_ctx,
+                           plaintext + len, &final_len);
+        crypto_cache_mutex_unlock();
+
+        if (ret1 != 1 || ret2 != 1) {
+            return -1;
+        }
+        *plaintext_len = len + final_len;
+
     } else {
         optimizer->stats.cache_misses++;
         optimizer->stats.fallback_operations++;
-        
+        crypto_cache_mutex_unlock();
+
         // Fallback на стандартное дешифрование
         EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
         if (!ctx) return -1;
-        
-        EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv);
-        int len;
-        EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, ciphertext_len);
-        *plaintext_len = len;
-        
-        EVP_DecryptFinal_ex(ctx, plaintext + len, &len);
-        *plaintext_len += len;
-        
+
+        int len = 0;
+        int final_len = 0;
+        int ret1 = EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv);
+        int ret2 = EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, ciphertext_len);
+        int ret3 = EVP_DecryptFinal_ex(ctx, plaintext + len, &final_len);
         EVP_CIPHER_CTX_free(ctx);
-        
+
+        if (ret1 != 1 || ret2 != 1 || ret3 != 1) {
+            return -1;
+        }
+        *plaintext_len = len + final_len;
+
         // Добавить в кэш
+        crypto_cache_mutex_lock();
         add_key_to_cache(optimizer, key, iv);
+        crypto_cache_mutex_unlock();
     }
-    
+
     return 0;
 }
 

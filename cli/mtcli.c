@@ -173,6 +173,9 @@ static void print_usage(void) {
     printf("  reload              Перезагрузить конфигурацию\n");
     printf("  restart             Перезапустить сервер\n");
     printf("  stop                Остановить сервер\n");
+    printf("  ml-stats            ML статистика\n");
+    printf("  ml-anomaly [status] ML детекция аномалий\n");
+    printf("  ml-predict [metric] ML прогнозирование\n");
     printf("  help [command]      Показать справку\n");
     printf("  version             Показать версию\n\n");
     printf("Опции:\n");
@@ -265,7 +268,7 @@ int mtcli_parse_args(int argc, char **argv, mtcli_config_t *config,
 
 mtcli_command_t mtcli_parse_command(const char *cmd_str) {
     if (!cmd_str) return MTCLI_CMD_UNKNOWN;
-    
+
     if (strcmp(cmd_str, "status") == 0) return MTCLI_CMD_STATUS;
     if (strcmp(cmd_str, "stats") == 0) return MTCLI_CMD_STATS;
     if (strcmp(cmd_str, "config") == 0) return MTCLI_CMD_CONFIG;
@@ -280,7 +283,10 @@ mtcli_command_t mtcli_parse_command(const char *cmd_str) {
     if (strcmp(cmd_str, "stop") == 0) return MTCLI_CMD_STOP;
     if (strcmp(cmd_str, "help") == 0) return MTCLI_CMD_HELP;
     if (strcmp(cmd_str, "version") == 0) return MTCLI_CMD_VERSION;
-    
+    if (strcmp(cmd_str, "ml-stats") == 0) return MTCLI_CMD_ML_STATS;
+    if (strcmp(cmd_str, "ml-anomaly") == 0) return MTCLI_CMD_ML_ANOMALY;
+    if (strcmp(cmd_str, "ml-predict") == 0) return MTCLI_CMD_ML_PREDICT;
+
     return MTCLI_CMD_UNKNOWN;
 }
 
@@ -879,13 +885,129 @@ mtcli_result_t mtcli_cmd_help(const char *command) {
 mtcli_result_t mtcli_cmd_version(void) {
     mtcli_result_t result = {0};
     char output[256] = {0};
-    
+
     snprintf(output, sizeof(output), "MTProxy CLI v%s\n", MTCLI_VERSION);
-    
+
     result.output = strdup(output);
     result.output_size = strlen(output);
     result.exit_code = 0;
+
+    return result;
+}
+
+// ============================================================================
+// ML команды
+// ============================================================================
+
+mtcli_result_t mtcli_cmd_ml_stats(mtcli_config_t *config) {
+    mtcli_result_t result = {0};
+    char response[MTCLI_MAX_RESPONSE] = {0};
+    char output[4096] = {0};
+    int offset = 0;
+
+    // Получаем ML статистику через REST API
+    int ret = mtcli_rest_call(config, "GET", "/api/v1/ml/stats", NULL,
+                              response, sizeof(response));
+
+    if (ret < 0) {
+        result.exit_code = 1;
+        snprintf(result.error, sizeof(result.error), "ML stats request failed");
+        return result;
+    }
+
+    // Форматируем вывод
+    offset += snprintf(output + offset, sizeof(output) - offset, 
+                       "=== ML Statistics ===\n\n");
     
+    // Парсим JSON ответ (упрощённо)
+    if (strstr(response, "anomaly_detection")) {
+        offset += snprintf(output + offset, sizeof(output) - offset,
+                           "Anomaly Detection:\n");
+        offset += snprintf(output + offset, sizeof(output) - offset,
+                           "  Status: Active\n");
+    }
+    if (strstr(response, "predictive_analytics")) {
+        offset += snprintf(output + offset, sizeof(output) - offset,
+                           "Predictive Analytics:\n");
+        offset += snprintf(output + offset, sizeof(output) - offset,
+                           "  Status: Active\n");
+    }
+    
+    offset += snprintf(output + offset, sizeof(output) - offset,
+                       "\nRaw response:\n%s\n", response);
+
+    result.output = strdup(output);
+    result.output_size = strlen(output);
+    result.exit_code = 0;
+
+    return result;
+}
+
+mtcli_result_t mtcli_cmd_ml_anomaly(mtcli_config_t *config, const char *action) {
+    mtcli_result_t result = {0};
+    char response[MTCLI_MAX_RESPONSE] = {0};
+    char output[4096] = {0};
+    int offset = 0;
+    char endpoint[256] = {0};
+
+    if (!action) action = "status";
+    
+    snprintf(endpoint, sizeof(endpoint), "/api/v1/ml/anomaly/%s", action);
+
+    int ret = mtcli_rest_call(config, "GET", endpoint, NULL,
+                              response, sizeof(response));
+
+    if (ret < 0) {
+        result.exit_code = 1;
+        snprintf(result.error, sizeof(result.error), "ML anomaly request failed");
+        return result;
+    }
+
+    offset += snprintf(output + offset, sizeof(output) - offset,
+                       "=== Anomaly Detection ===\n\n");
+    offset += snprintf(output + offset, sizeof(output) - offset,
+                       "Action: %s\n\n", action);
+    offset += snprintf(output + offset, sizeof(output) - offset,
+                       "Response:\n%s\n", response);
+
+    result.output = strdup(output);
+    result.output_size = strlen(output);
+    result.exit_code = 0;
+
+    return result;
+}
+
+mtcli_result_t mtcli_cmd_ml_predict(mtcli_config_t *config, const char *metric) {
+    mtcli_result_t result = {0};
+    char response[MTCLI_MAX_RESPONSE] = {0};
+    char output[4096] = {0};
+    int offset = 0;
+    char endpoint[256] = {0};
+
+    if (!metric) metric = "connections";
+    
+    snprintf(endpoint, sizeof(endpoint), "/api/v1/ml/predict?metric=%s", metric);
+
+    int ret = mtcli_rest_call(config, "GET", endpoint, NULL,
+                              response, sizeof(response));
+
+    if (ret < 0) {
+        result.exit_code = 1;
+        snprintf(result.error, sizeof(result.error), "ML predict request failed");
+        return result;
+    }
+
+    offset += snprintf(output + offset, sizeof(output) - offset,
+                       "=== Predictive Analytics ===\n\n");
+    offset += snprintf(output + offset, sizeof(output) - offset,
+                       "Metric: %s\n\n", metric);
+    offset += snprintf(output + offset, sizeof(output) - offset,
+                       "Prediction:\n%s\n", response);
+
+    result.output = strdup(output);
+    result.output_size = strlen(output);
+    result.exit_code = 0;
+
     return result;
 }
 
@@ -1181,6 +1303,15 @@ int main(int argc, char **argv) {
             break;
         case MTCLI_CMD_VERSION:
             result = mtcli_cmd_version();
+            break;
+        case MTCLI_CMD_ML_STATS:
+            result = mtcli_cmd_ml_stats(&config);
+            break;
+        case MTCLI_CMD_ML_ANOMALY:
+            result = mtcli_cmd_ml_anomaly(&config, cmd_args ? cmd_args[0] : NULL);
+            break;
+        case MTCLI_CMD_ML_PREDICT:
+            result = mtcli_cmd_ml_predict(&config, cmd_args ? cmd_args[0] : NULL);
             break;
         case MTCLI_CMD_UNKNOWN:
         default:

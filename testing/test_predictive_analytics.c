@@ -764,6 +764,154 @@ static void test_predict_insufficient_data(void) {
 }
 
 /* ============================================
+ * Edge Cases Tests
+ * ============================================ */
+
+static void test_predict_edge_cases(void) {
+    printf("\n=== Test: Edge Cases ===\n");
+    
+    predictive_analytics_t predictor;
+    predict_config_t config;
+    predict_result_t result;
+    double single_value[1] = {42.0};
+    double huge_values[100];
+    double nan_values[10];
+    double inf_values[10];
+    int ret;
+    
+    memset(&config, 0, sizeof(config));
+    
+    /* Инициализация */
+    predictive_analytics_init(&predictor, &config);
+    TEST_ASSERT(predictor.initialized, "Edge cases: predictor init");
+    
+    /* Тест 1: Один образец */
+    ret = predictive_analytics_train(&predictor, single_value, 1);
+    TEST_ASSERT(ret == 0, "Edge cases: train with single sample");
+    
+    ret = predictive_analytics_forecast(&predictor, 1, &result);
+    /* Прогноз с одним образцом может вернуть ошибку */
+    TEST_ASSERT(ret == 0 || ret == -1, "Edge cases: forecast with single sample handled");
+    
+    predictive_analytics_cleanup(&predictor);
+    
+    /* Тест 2: NULL данные */
+    predictive_analytics_init(&predictor, &config);
+    ret = predictive_analytics_train(&predictor, NULL, 0);
+    TEST_ASSERT(ret == -1, "Edge cases: train with NULL data returns -1");
+    predictive_analytics_cleanup(&predictor);
+    
+    /* Тест 3: Огромные значения */
+    predictive_analytics_init(&predictor, &config);
+    for (int i = 0; i < 100; i++) {
+        huge_values[i] = (i % 2 == 0) ? 1e10 : -1e10;
+    }
+    ret = predictive_analytics_train(&predictor, huge_values, 100);
+    TEST_ASSERT(ret == 0, "Edge cases: train with huge values");
+    
+    ret = predictive_analytics_forecast(&predictor, 5, &result);
+    TEST_ASSERT(ret == 0 || ret == -1, "Edge cases: forecast with huge values handled");
+    if (ret == 0) {
+        free(result.forecast_values);
+        free(result.lower_bound);
+        free(result.upper_bound);
+    }
+    
+    predictive_analytics_cleanup(&predictor);
+    
+    /* Тест 4: NaN значения */
+    predictive_analytics_init(&predictor, &config);
+    for (int i = 0; i < 10; i++) {
+        nan_values[i] = (i == 0) ? NAN : (double)i;
+    }
+    ret = predictive_analytics_train(&predictor, nan_values, 10);
+    TEST_ASSERT(ret == 0 || ret == -1, "Edge cases: train with NaN handled");
+    predictive_analytics_cleanup(&predictor);
+    
+    /* Тест 5: Бесконечные значения */
+    predictive_analytics_init(&predictor, &config);
+    for (int i = 0; i < 10; i++) {
+        inf_values[i] = (i == 0) ? INFINITY : (double)i;
+    }
+    ret = predictive_analytics_train(&predictor, inf_values, 10);
+    TEST_ASSERT(ret == 0 || ret == -1, "Edge cases: train with Inf handled");
+    predictive_analytics_cleanup(&predictor);
+    
+    /* Тест 6: Предсказание без обучения */
+    predictive_analytics_init(&predictor, &config);
+    ret = predictive_analytics_forecast(&predictor, 5, &result);
+    TEST_ASSERT(ret == -1, "Edge cases: forecast without training returns -1");
+    predictive_analytics_cleanup(&predictor);
+    
+    /* Тест 7: Нулевой контекст */
+    ret = predictive_analytics_train(NULL, single_value, 1);
+    TEST_ASSERT(ret == -1, "Edge cases: train with NULL context returns -1");
+    
+    ret = predictive_analytics_forecast(NULL, 1, &result);
+    TEST_ASSERT(ret == -1, "Edge cases: forecast with NULL context returns -1");
+    
+    predictive_analytics_cleanup(NULL);  /* no-op */
+    TEST_ASSERT(1, "Edge cases: cleanup with NULL is safe");
+}
+
+static void test_predict_stress(void) {
+    printf("\n=== Test: Stress Tests ===\n");
+    
+    predictive_analytics_t predictor;
+    predict_config_t config;
+    const size_t n_samples = 500;
+    double *data = malloc(n_samples * sizeof(double));
+    predict_result_t result;
+    int ret;
+    
+    TEST_ASSERT(data != NULL, "Stress: allocate data");
+    if (!data) return;
+    
+    memset(&config, 0, sizeof(config));
+    
+    /* Генерация данных */
+    srand(54321);
+    for (size_t i = 0; i < n_samples; i++) {
+        data[i] = 50.0 + (double)(rand() % 100);
+    }
+    
+    /* Инициализация */
+    predictive_analytics_init(&predictor, &config);
+    TEST_ASSERT(predictor.initialized, "Stress: predictor init");
+    
+    /* Множественное обучение */
+    for (int i = 0; i < 5; i++) {
+        ret = predictive_analytics_train(&predictor, data, n_samples);
+        TEST_ASSERT(ret == 0, "Stress: repeated training (iteration %d)", i);
+    }
+    
+    /* Множественные прогнозы */
+    for (int i = 0; i < 50; i++) {
+        ret = predictive_analytics_forecast(&predictor, 10, &result);
+        TEST_ASSERT(ret == 0, "Stress: repeated forecast (iteration %d)", i);
+        if (ret == 0) {
+            free(result.forecast_values);
+            free(result.lower_bound);
+            free(result.upper_bound);
+        }
+    }
+    
+    /* Добавление множества точек */
+    for (int i = 0; i < 100; i++) {
+        ret = predictive_analytics_add_data(&predictor, (double)i, 0);
+        TEST_ASSERT(ret == 0, "Stress: add data %d", i);
+    }
+    
+    /* Статистика */
+    predict_evaluation_t eval;
+    ret = predictive_analytics_evaluate(&predictor, &eval);
+    TEST_ASSERT(ret == 0, "Stress: evaluate after stress operations");
+    
+    free(data);
+    predictive_analytics_cleanup(&predictor);
+}
+
+/* ============================================
  * Главная функция тестирования
  * ============================================ */
 
@@ -790,7 +938,9 @@ int main(void) {
     test_predict_json_export();
     test_predict_performance();
     test_predict_insufficient_data();
-    
+    test_predict_edge_cases();
+    test_predict_stress();
+
     /* Итоговый отчет */
     printf("\n============================================\n");
     printf("  Test Summary\n");
